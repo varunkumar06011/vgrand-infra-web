@@ -60,7 +60,7 @@ export const projects = [
       'Electrical': 'Concealed copper wiring'
     },
     image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1200&auto=format',
-    brochure: '/brochures/elite-homes.pdf'
+    brochure: '/brochures/V grand tripura brocher.pdf'
   },
   {
     slug: 'green-valley',

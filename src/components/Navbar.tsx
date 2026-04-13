@@ -25,7 +25,7 @@ const Navbar = () => {
         zIndex: 1000,
         background: '#ffffff',
         borderBottom: '1px solid #f0e0e0',
-        height: 64,
+        height: 84, // Increased from 72 for larger logo visibility
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -36,20 +36,21 @@ const Navbar = () => {
       }}
     >
       <div className="container mx-auto flex items-center justify-between">
-        {/* Logo + Brand */}
-        <Link href="/" className="flex items-center gap-3 no-underline">
-          <Image
-            src="/icon.io/apple-touch-icon.png"
-            alt="V Grand Infra Logo"
-            width={38}
-            height={38}
-            unoptimized={true}
-            style={{ borderRadius: 6, objectFit: 'contain' }}
-          />
-          <span className="text-xl font-bold tracking-widest text-[#1a1a1a]">
-            VGRAND{' '}
-            <span style={{ color: '#C0392B' }}>INFRA</span>
-          </span>
+        <Link href="/" className="flex items-center no-underline">
+          <div className="relative w-[58px] h-[58px] md:w-[72px] md:h-[72px]">
+            <Image
+              src="/icon.io/apple-touch-icon.png"
+              alt="V Grand Infra Logo"
+              fill
+              priority
+              unoptimized={true}
+              style={{ 
+                borderRadius: 10, 
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))'
+              }}
+            />
+          </div>
         </Link>
 
         {/* Desktop Nav */}
