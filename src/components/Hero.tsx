@@ -9,6 +9,7 @@ export default function Hero() {
   const framesRef = useRef<HTMLImageElement[]>([])
   const rafRef = useRef<number>(0)
   const currentFrameRef = useRef(-1)
+  const sizeRef = useRef({ w: 0, h: 0 })
   const [loaded, setLoaded] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
 
@@ -21,7 +22,28 @@ export default function Hero() {
       const img = new Image()
       const num = String(i + 1)
       img.src = `/frames/frame-${num}.png`
-      img.onload = () => {
+      img.onload = async () => {
+        await img.decode().catch(() => {})
+
+        // Fix 2: Draw frame 1 immediately as soon as it loads
+        if (i === 0) {
+          const canvas = canvasRef.current
+          if (canvas) {
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              canvas.width = window.innerWidth
+              canvas.height = window.innerHeight
+              sizeRef.current = { w: window.innerWidth, h: window.innerHeight }
+              const scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight)
+              const x = (canvas.width - img.naturalWidth * scale) / 2
+              const y = (canvas.height - img.naturalHeight * scale) / 2
+              ctx.drawImage(img, x, y, img.naturalWidth * scale, img.naturalHeight * scale)
+              // Show canvas immediately
+              canvas.style.display = 'block'
+            }
+          }
+        }
+
         count++
         setLoadProgress(Math.floor((count / TOTAL_FRAMES) * 100))
         if (count === TOTAL_FRAMES) setLoaded(true)
@@ -46,6 +68,12 @@ export default function Hero() {
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
+
+    // Fix 4: Set size immediately
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    sizeRef.current = { w: window.innerWidth, h: window.innerHeight }
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -53,7 +81,6 @@ export default function Hero() {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
-    resize()
     window.addEventListener('resize', resize)
 
     const draw = () => {
@@ -111,20 +138,21 @@ export default function Hero() {
         top: 0,
         height: '100vh',
         width: '100vw',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        background: '#000000'
       }}>
 
-        {/* First frame shown instantly before load */}
-        {!loaded && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: 'url(/frames/frame-1.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            zIndex: 0
-          }} />
-        )}
+        {/* Fix 1: Always visible until canvas draws first frame */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'url(/frames/frame-1.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          zIndex: 0,
+          opacity: loaded ? 0 : 1,
+          transition: 'opacity 0.3s ease'
+        }} />
 
         {/* Canvas — same on mobile and desktop */}
         <canvas
@@ -135,7 +163,9 @@ export default function Hero() {
             width: '100%',
             height: '100%',
             zIndex: 1,
-            display: loaded ? 'block' : 'none'
+            display: 'block',
+            willChange: 'contents',
+            transform: 'translateZ(0)'
           }}
         />
 

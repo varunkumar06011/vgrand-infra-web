@@ -20,7 +20,7 @@ export default function ProjectsPage() {
     padding: '11px 16px',
     fontSize: 14,
     color: '#1a1a1a',
-    background: '#fff',
+    background: '#fff5f5',
     outline: 'none',
     fontFamily: 'inherit',
     cursor: 'pointer',
@@ -47,7 +47,7 @@ export default function ProjectsPage() {
 
         {/* Filter bar */}
         <div style={{
-          background: '#fff',
+          background: '#fff5f5',
           border: '1px solid #e8d5d5',
           borderRadius: 10,
           padding: '24px 28px',
@@ -95,18 +95,31 @@ export default function ProjectsPage() {
           {filtered.length === 0 ? (
             <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>No projects match your filters.</p>
           ) : filtered.map(project => (
-            <div key={project.slug} style={{ background: '#fff', borderRadius: 8, overflow: 'hidden', border: '1px solid #e8d5d5' }}>
+            <div key={project.slug} style={{ background: '#fff5f5', borderRadius: 8, overflow: 'hidden', border: '1px solid #e8d5d5' }}>
               <div style={{ position: 'relative', height: 220 }}>
                 <img src={project.image} alt={project.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
                 <span style={{
-                  position: 'absolute', top: 14, right: 14,
-                  background: project.status === 'Ongoing' ? '#C0392B' : '#1a1a1a',
-                  color: '#fff', fontSize: 10, fontWeight: 700,
-                  letterSpacing: 2, textTransform: 'uppercase',
-                  padding: '5px 10px', borderRadius: 4
-                }}>{project.status}</span>
+                  position: 'absolute',
+                  top: 14,
+                  right: 14,
+                  background: project.status === 'Ongoing'
+                    ? '#C0392B'
+                    : project.status === 'Upcoming'
+                    ? '#1a1a1a'
+                    : '#2E7D32',
+                  color: '#ffffff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  padding: '5px 12px',
+                  borderRadius: 4,
+                  zIndex: 5
+                }}>
+                  {project.status}
+                </span>
               </div>
               <div style={{ padding: '20px 20px 24px' }}>
                 <p style={{ fontSize: 11, color: '#C0392B', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>{project.type}</p>

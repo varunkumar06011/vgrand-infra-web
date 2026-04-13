@@ -27,7 +27,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.1, duration: 0.5 }}
         viewport={{ once: true }}
-        className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 aspect-[4/5]"
+        className="relative overflow-hidden rounded-2xl bg-[#fff5f5] border border-[#e8d5d5] aspect-[4/5]"
       >
         <div className="absolute inset-0 z-0">
           <img
@@ -36,6 +36,27 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0 opacity-60 group-hover:opacity-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
+          
+          <span style={{
+            position: 'absolute',
+            top: 14,
+            right: 14,
+            background: project.status === 'Ongoing'
+              ? '#C0392B'
+              : project.status === 'Upcoming'
+              ? '#1a1a1a'
+              : '#2E7D32',
+            color: '#ffffff',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            padding: '5px 12px',
+            borderRadius: 4,
+            zIndex: 5
+          }}>
+            {project.status}
+          </span>
         </div>
 
         <div className="absolute inset-0 z-10 p-8 flex flex-col justify-end">
@@ -44,17 +65,17 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 + 0.2 }}
             className="text-xs font-bold uppercase tracking-widest mb-2"
-            style={{ color: '#C0392B' }}
+            style={{ color: '#fff' }}
           >
             {project.type}
           </motion.span>
           <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-red-400 transition-colors">
             {project.name}
           </h3>
-          <p className="text-white/50 text-xs mb-3">{project.location}</p>
+          <p className="text-white/70 text-xs mb-3">{project.location}</p>
           <p style={{
             fontSize: 12,
-            color: '#C0392B',
+            color: '#fff',
             fontWeight: 600,
             letterSpacing: '0.5px',
             marginTop: 8,
@@ -63,7 +84,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           }}>
             Adjacent to NH-16 Highway — High Appreciation Value
           </p>
-          <p className="text-white/60 text-sm line-clamp-2 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+          <p className="text-white/80 text-sm line-clamp-2 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
             {project.description}
           </p>
           <div

@@ -38,7 +38,7 @@ export default function AboutPage() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 80 }}>
           {[['2017', 'Established'], ['60+', 'Apartments Built'], ['2', 'Active Projects'], ['22+', 'Years Experience']].map(([num, label]) => (
-            <div key={label} style={{ background: '#fff', border: '1px solid #e8d5d5', borderRadius: 8, padding: '28px 20px', textAlign: 'center' }}>
+            <div key={label} style={{ background: '#fff5f5', border: '1px solid #e8d5d5', borderRadius: 8, padding: '28px 20px', textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-heading)', fontSize: 36, fontWeight: 700, color: '#C0392B', margin: '0 0 8px' }}>{num}</p>
               <p style={{ color: '#555', fontSize: 14, margin: 0, letterSpacing: 1 }}>{label}</p>
             </div>
@@ -55,7 +55,7 @@ export default function AboutPage() {
             ['On-Time Delivery', 'We respect your time and your investment. Timely handover is a commitment, not a promise.'],
             ['Customer First', 'Every decision we make is centered around the families who will call our buildings home.']
           ].map(([title, desc]) => (
-            <div key={title} style={{ background: '#fff', border: '1px solid #e8d5d5', borderRadius: 8, padding: '28px 24px', borderLeft: '3px solid #C0392B' }}>
+            <div key={title} style={{ background: '#fff5f5', border: '1px solid #e8d5d5', borderRadius: 8, padding: '28px 24px', borderLeft: '3px solid #C0392B' }}>
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: '#1a1a1a', fontWeight: 700, marginBottom: 12 }}>{title}</h3>
               <p style={{ color: '#555', fontSize: 14, lineHeight: 1.75, margin: 0 }}>{desc}</p>
             </div>

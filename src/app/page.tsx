@@ -17,7 +17,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-[#fff5f5]">
       <Hero />
       
       {/* Marquee Scroller */}
@@ -51,7 +51,7 @@ export default function Home() {
       </div>
 
       {/* Featured Projects Section */}
-      <section style={{ padding: '100px 24px', background: '#fff' }}>
+      <section style={{ padding: '100px 24px', background: '#fff5f5' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
             <div>
@@ -108,7 +108,7 @@ export default function Home() {
       </section>
 
       {/* Values Section */}
-      <section style={{ padding: '100px 24px', background: '#fff' }}>
+      <section style={{ padding: '100px 24px', background: '#fff5f5' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <p style={labelStyle}>What We Stand For</p>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,4vw,44px)', color: '#1a1a1a', fontWeight: 700, marginBottom: 48 }}>Our Core Values</h2>
@@ -119,7 +119,7 @@ export default function Home() {
               ['On-Time Delivery', 'We respect your time and your investment. Timely handover is a commitment, not a promise.'],
               ['Customer First', 'Every decision we make is centered around the families who will call our buildings home.']
             ].map(([title, desc]) => (
-              <div key={title} style={{ background: '#fff', border: '1px solid #e8d5d5', borderRadius: 8, padding: '32px 28px', borderLeft: '4px solid #C0392B' }}>
+              <div key={title} style={{ background: '#fff5f5', border: '1px solid #e8d5d5', borderRadius: 8, padding: '32px 28px', borderLeft: '4px solid #C0392B' }}>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, color: '#1a1a1a', fontWeight: 700, marginBottom: 12 }}>{title}</h3>
                 <p style={{ color: '#555', fontSize: 15, lineHeight: 1.75, margin: 0 }}>{desc}</p>
               </div>
