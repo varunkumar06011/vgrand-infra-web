@@ -8,6 +8,7 @@ export const projects = [
     status: 'Ongoing',
     handover: 'December 2026',
     startingPrice: 'Starting from ₹30 Lakhs*',
+    rera: 'P08440065656',
     description: 'Elite Homes is V Grand Infra flagship gated community in Koppolu, Ongole. 60 meticulously crafted 3BHK apartments across 5 floors. The first gated community in Koppolu, designed for families who demand quality, space, and community living.',
     highlights: [
       'Located on Koppolu Road near Dreams School',

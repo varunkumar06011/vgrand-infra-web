@@ -1,8 +1,9 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Contact Us | V Grand Infra | Ongole',
-  description: 'Get in touch with V Grand Infra. Book a site visit or enquire about our projects in Ongole and Koppolu.'
+  title: 'Contact V Grand Infra | Book Site Visit | Ongole',
+  description: 'Contact V Grand Infra to book a free site visit for Elite Homes or Tripura in Koppolu, Ongole. Call +91 90301 43333 or WhatsApp us.',
+  keywords: 'contact v grand infra, book site visit ongole, flat enquiry ongole, apartment booking ongole, v grand infra phone number'
 }
 
 export default function ContactPage() {

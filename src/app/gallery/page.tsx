@@ -1,6 +1,7 @@
 export const metadata = {
-  title: 'Gallery | V Grand Infra | Real Estate in Ongole',
-  description: 'View photos and progress updates for V Grand Infra residential projects in Ongole.'
+  title: 'Gallery | V Grand Infra Construction Progress | Ongole',
+  description: 'View construction progress photos of Elite Homes and Tripura by V Grand Infra in Koppolu, Ongole.',
+  keywords: 'v grand infra gallery, elite homes construction photos, koppolu apartments images, ongole real estate photos'
 }
 
 export default function GalleryPage() {

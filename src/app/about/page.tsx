@@ -1,6 +1,7 @@
 export const metadata = {
-  title: 'About Us | V Grand Infra | Ongole',
-  description: 'V Grand Infra — building homes and flats for every family in Ongole and Andhra Pradesh. Quality construction, honest pricing, timely delivery.'
+  title: 'About Us | V Grand Infra | Trusted Builder in Ongole',
+  description: 'V Grand Infra — trusted real estate developer in Ongole since 2017. Founded by Vinod Kumar Talasila. Building quality homes for every family in Andhra Pradesh.',
+  keywords: 'best builder ongole, trusted real estate ongole, v grand infra about, vinod kumar talasila, construction company ongole andhra pradesh'
 }
 
 export default function AboutPage() {

@@ -18,19 +18,48 @@ const inter = Inter({
   display: 'swap'
 })
 
-export const metadata: Metadata = {
-  title: 'V Grand Infra | Premium Apartments in Ongole, Andhra Pradesh',
-  description: 'V Grand Infra builds luxury 3BHK gated community apartments in Ongole and Koppolu, Andhra Pradesh. Elite Homes starts from 29 Lakhs. First gated community in Koppolu. Adjacent to NH-16 highway.',
-  keywords: 'apartments in ongole, flats in ongole, 3bhk ongole, gated community ongole, best real estate ongole, koppolu apartments, v grand infra, elite homes ongole, property in ongole, luxury apartments ongole andhra pradesh',
+export const metadata = {
+  title: 'V Grand Infra | Apartments & Flats in Ongole, Andhra Pradesh',
+  description: 'V Grand Infra builds premium 3BHK gated community apartments in Ongole and Koppolu, Andhra Pradesh. Starting from ₹29 Lakhs. RERA registered. Adjacent to NH-16 highway. Best flats, plots and homes near Ongole.',
+  keywords: [
+    'apartments in ongole',
+    'flats in ongole',
+    '3bhk flats ongole',
+    'gated community ongole',
+    'plots near ongole',
+    'best infra ongole',
+    'ongole real estate',
+    'koppolu apartments',
+    'koppolu flats',
+    'budget apartments ongole',
+    'quality flats ongole andhra pradesh',
+    'affordable homes ongole',
+    'new flats in ongole 2025',
+    'residential projects ongole',
+    'v grand infra',
+    'elite homes koppolu',
+    'rera registered apartments ongole',
+    'nh16 highway apartments',
+    'luxury flats ongole',
+    'home in ongole',
+    'flat booking ongole',
+    'best builder ongole',
+    'construction company ongole',
+    'plots koppolu ongole',
+    'prakasam district apartments'
+  ].join(', '),
   openGraph: {
-    title: 'V Grand Infra | Premium Apartments in Ongole',
-    description: 'Luxury 3BHK gated community apartments from 29 Lakhs in Ongole, AP. Adjacent to NH-16 highway.',
+    title: 'V Grand Infra | Best Apartments in Ongole from ₹29 Lakhs',
+    description: 'Premium 3BHK gated community flats in Ongole & Koppolu. RERA registered P08440065656. Adjacent to NH-16 highway. Starting ₹29 Lakhs.',
     url: 'https://vgrandgroup.com',
     siteName: 'V Grand Infra',
     locale: 'en_IN',
     type: 'website',
+  },
+  alternates: {
+    canonical: 'https://vgrandgroup.com'
   }
-};
+}
 
 export default function RootLayout({
   children,

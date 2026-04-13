@@ -6,8 +6,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const project = projects.find(p => p.slug === slug)
   if (!project) return {}
   return {
-    title: `${project.name} | V Grand Infra | Apartments in Ongole`,
-    description: `${project.name} by V Grand Infra. ${project.type} in ${project.location}. ${project.startingPrice}.`
+    title: `${project.name} | ${project.type} in ${project.location} | V Grand Infra`,
+    description: `${project.name} by V Grand Infra — ${project.type} in ${project.location}. ${project.startingPrice}. RERA: ${project.rera || 'Applied'}. ${project.highlights[0]}. ${project.highlights[1]}.`,
+    keywords: `${project.name.toLowerCase()} ongole, ${project.type.toLowerCase()} koppolu, flats in ${project.location.toLowerCase()}, ${project.name.toLowerCase()} price, rera apartments ongole, v grand infra ${project.name.toLowerCase()}`
   }
 }
 
@@ -31,11 +32,30 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
+
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 5vw, 64px) 24px' }}>
+
+        {/* RERA Badge */}
+        {(project as any).rera && (
+          <div style={{
+            background: '#fff',
+            border: '1.5px solid #C0392B',
+            borderRadius: 6,
+            padding: '10px 20px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 32
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B' }}>RERA Registered</span>
+            <span style={{ width: 1, height: 16, background: '#e0d0d0' }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', fontFamily: 'monospace' }}>{(project as any).rera}</span>
+          </div>
+        )}
 
         {/* Stats grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 56 }}>
-          {[['Location', project.location], ['Type', project.type], ['Area', project.area], ['Status', project.status], ['Handover', project.handover], ['Price', project.startingPrice]].map(([label, value]) => (
+          {[['Location', project.location], ['Type', project.type], ['Area', project.area], ['Status', project.status], ['Handover', project.handover], ['Price', project.startingPrice], ['RERA No.', (project as any).rera || 'Applied']].map(([label, value]) => (
             <div key={label} style={{ background: '#fff', border: '1px solid #e8d5d5', borderRadius: 8, padding: '16px 20px' }}>
               <p style={{ color: '#C0392B', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, margin: '0 0 6px' }}>{label}</p>
               <p style={{ color: '#1a1a1a', fontWeight: 600, fontSize: 14, margin: 0, lineHeight: 1.4 }}>{value}</p>
