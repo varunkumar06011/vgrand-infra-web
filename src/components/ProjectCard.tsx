@@ -21,13 +21,35 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
   return (
-    <Link href={`/projects/${project.slug}`} className="block group">
+    <Link 
+      href={`/projects/${project.slug}`} 
+      className="block group relative"
+      style={{ isolation: 'isolate' }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1, duration: 0.5 }}
-        viewport={{ once: true }}
-        className="relative overflow-hidden rounded-2xl bg-[#fff5f5] border border-[#e8d5d5] aspect-[4/5]"
+        whileInView={{ 
+          opacity: 1, 
+          y: 0,
+          boxShadow: '0 0 25px rgba(192, 57, 43, 0.15)',
+          borderColor: 'rgba(192, 57, 43, 0.2)'
+        }}
+        whileHover={{ 
+          scale: 1.02,
+          boxShadow: '0 0 40px rgba(192, 57, 43, 0.35)',
+          borderColor: 'rgba(192, 57, 43, 0.5)'
+        }}
+        transition={{ 
+          type: 'spring',
+          stiffness: 300,
+          damping: 20,
+          opacity: { duration: 0.5 },
+          y: { duration: 0.5 },
+          boxShadow: { duration: 0.3 },
+          borderColor: { duration: 0.3 }
+        }}
+        viewport={{ once: false, amount: 0.6 }}
+        className="relative overflow-hidden rounded-2xl bg-[#fff5f5] border border-[#e8d5d5] aspect-[4/5] cursor-pointer"
       >
         <div className="absolute inset-0 z-0">
           <img
@@ -92,6 +114,10 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
             style={{ background: '#C0392B', color: '#fff' }}
           >
             View Project →
+          </div>
+          {/* Mobile indicator for interactivity */}
+          <div className="md:hidden mt-2 text-[10px] font-bold text-red-500/50 uppercase tracking-widest">
+            Tap to view Details
           </div>
         </div>
       </motion.div>

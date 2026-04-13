@@ -12,6 +12,15 @@ export default function Hero() {
   const sizeRef = useRef({ w: 0, h: 0 })
   const [loaded, setLoaded] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Preload all frames
   useEffect(() => {
@@ -46,10 +55,17 @@ export default function Hero() {
 
         count++
         setLoadProgress(Math.floor((count / TOTAL_FRAMES) * 100))
+        
+        // Progressively allow interaction after first 30 frames
+        if (count >= 30 && !loaded) {
+          setLoaded(true)
+        }
+        
         if (count === TOTAL_FRAMES) setLoaded(true)
       }
       img.onerror = () => {
         count++
+        if (count >= 30 && !loaded) setLoaded(true)
         if (count === TOTAL_FRAMES) setLoaded(true)
       }
       imgs[i] = img
@@ -63,7 +79,8 @@ export default function Hero() {
 
   // Draw loop — works on both mobile and desktop
   useEffect(() => {
-    if (!loaded) return
+    // We allow draw loop to start if at least partial loading happened
+    if (!loaded && loadProgress < 15) return
 
     const canvas = canvasRef.current
     const container = containerRef.current
@@ -93,9 +110,10 @@ export default function Hero() {
       )
 
       if (frameIndex !== currentFrameRef.current) {
-        currentFrameRef.current = frameIndex
         const img = framesRef.current[frameIndex]
+        // Only update if image is actually loaded, otherwise keep current frame
         if (img?.complete && img.naturalWidth > 0) {
+          currentFrameRef.current = frameIndex
           canvas.width = window.innerWidth
           canvas.height = window.innerHeight
           ctx.imageSmoothingEnabled = true
@@ -127,7 +145,7 @@ export default function Hero() {
     <div
       ref={containerRef}
       style={{
-        height: '500vh',
+        height: isMobile ? '250vh' : '500vh',
         position: 'relative',
         zIndex: 1
       }}
