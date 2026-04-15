@@ -343,9 +343,8 @@ export default function Hero() {
           alt=""
           className="hero-image"
           fetchPriority="high"
-          priority="true"
           sizes="(max-width: 768px) 100vw, 100vw"
-          decoding="eager"
+          decoding="sync"
           style={{
             position: 'absolute',
             top: NAVBAR_H,
