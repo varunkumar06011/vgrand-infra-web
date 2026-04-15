@@ -2,9 +2,10 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Middleware to protect /admin routes using Supabase Session.
+ * Proxy to protect /admin routes using Supabase Session.
+ * (Renamed from middleware.ts → proxy.ts as per Next.js 16 convention)
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -82,7 +83,7 @@ export async function middleware(request: NextRequest) {
     // Add custom header to pass the current URL to the React components
     response.headers.set('x-url', request.url)
   } catch (error) {
-    console.error('Middleware Exception:', error)
+    console.error('Proxy Exception:', error)
   }
 
   return response
