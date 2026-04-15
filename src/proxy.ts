@@ -2,10 +2,11 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Proxy to protect /admin routes using Supabase Session.
- * (Renamed from middleware.ts → proxy.ts as per Next.js 16 convention)
+ * Next.js 16 Proxy Middleware (Standardized)
+ * Handles session synchronization between browser and server via cookies.
  */
 export async function proxy(request: NextRequest) {
+  // 1. Create the base response
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -20,6 +21,7 @@ export async function proxy(request: NextRequest) {
   }
 
   try {
+    // 2. Initialize Supabase client with standardized cookie handler
     const supabase = createServerClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -29,61 +31,56 @@ export async function proxy(request: NextRequest) {
             return request.cookies.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            })
+            // Update request cookies (for subsequent server-side checks in this request)
+            request.cookies.set({ name, value, ...options })
+            
+            // Update response cookies (to persist in the browser)
+            response.cookies.set({ name, value, ...options })
           },
           remove(name: string, options: CookieOptions) {
-            request.cookies.set({
-              name,
-              value: '',
-              ...options,
-            })
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            })
+            // Remove from request
+            request.cookies.set({ name, value: '', ...options })
+            
+            // Remove from response
+            response.cookies.set({ name, value: '', ...options })
           },
         },
       }
     )
 
-    const { data: { user } } = await supabase.auth.getUser()
+    // 3. Retrieve user session (this may trigger token refresh via cookies.set)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    const isLoginPage = request.nextUrl.pathname === '/admin'
-    const isAdminPath = request.nextUrl.pathname.startsWith('/admin')
-
-    // If trying to access admin subpages without login, redirect to /admin
-    if (isAdminPath && !isLoginPage && !user) {
-      return NextResponse.redirect(new URL('/admin', request.url))
+    if (userError) {
+      // If there's an error getting user, we just treat it as not logged in
+      // unless it's a critical error we want to log.
     }
 
-    // If logged in and on login page, redirect to dashboard
-    if (isLoginPage && user) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    const { pathname } = request.nextUrl
+    const isLoginPage = pathname === '/admin'
+    const isAdminPath = pathname.startsWith('/admin')
+
+    // 4. Handle Redirection Logic
+    if (isAdminPath) {
+      if (!isLoginPage && !user) {
+        // Not logged in -> forced to login
+        const redirectUrl = new URL('/admin', request.url)
+        return NextResponse.redirect(redirectUrl)
+      }
+
+      if (isLoginPage && user) {
+        // Already logged in -> skip login page
+        const redirectUrl = new URL('/admin/dashboard', request.url)
+        return NextResponse.redirect(redirectUrl)
+      }
     }
-    // Add custom header to pass the current URL to the React components
+
+    // 5. Inject custom headers for the app to know context
     response.headers.set('x-url', request.url)
+    
   } catch (error) {
-    console.error('Proxy Exception:', error)
+    console.error('Middleware Processing Error:', error)
+    // Return base response on error to avoid crashing the whole path
   }
 
   return response

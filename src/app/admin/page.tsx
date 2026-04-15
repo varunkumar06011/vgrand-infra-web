@@ -46,19 +46,18 @@ export default function AdminLoginPage() {
       });
 
       if (authError) {
-        console.warn('Auth Error encountered:', authError.message);
         throw authError;
       }
 
       if (data.user) {
-        console.log('Login successful! Redirecting...');
+        // Refresh the router to ensure cookies are parsed by the server on next navigation
+        router.refresh();
         // Using router.push instead of window.location for better SPA experience
         router.push('/admin/dashboard');
       } else {
         throw new Error('No user data returned from authentication');
       }
     } catch (err: any) {
-      console.error('Login process failed:', err);
       // Map common errors to friendly messages
       let message = 'Invalid email or password';
       if (err.message?.includes('Email not confirmed')) {
