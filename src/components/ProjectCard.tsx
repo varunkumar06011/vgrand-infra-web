@@ -34,12 +34,6 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           boxShadow: '0 0 25px rgba(192, 57, 43, 0.15)',
           borderColor: 'rgba(192, 57, 43, 0.2)'
         }}
-        whileInView={{
-          opacity: 1,
-          y: 0,
-          boxShadow: '0 0 25px rgba(192, 57, 43, 0.15)',
-          borderColor: 'rgba(192, 57, 43, 0.2)'
-        }}
         transition={{
           type: 'spring',
           stiffness: 300,
