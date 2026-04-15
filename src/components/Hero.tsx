@@ -41,7 +41,7 @@ export default function Hero() {
     check()
     window.addEventListener('resize', check)
     // Performance: Primary frame warm-up
-    const warm = [0, 1, 2];
+    const warm = [0, 89, 179, 269];
     warm.forEach(i => { const img = new Image(); img.src = FRAME_SRC(i); img.decoding = 'async'; img.decode().catch(() => {}); });
     return () => window.removeEventListener('resize', check)
   }, [])
@@ -336,6 +336,7 @@ export default function Hero() {
         <img
           src={FRAME_SRC(0)}
           alt=""
+          className="hero-image"
           fetchPriority="high"
           sizes="(max-width: 768px) 100vw, 100vw"
           decoding="async"
