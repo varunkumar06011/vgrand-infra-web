@@ -40,6 +40,9 @@ export default function Hero() {
     const check = () => setIsMobile(window.innerWidth < MOBILE_BP)
     check()
     window.addEventListener('resize', check)
+    // Performance: Primary frame warm-up
+    const warm = [0, 1, 2];
+    warm.forEach(i => { const img = new Image(); img.src = FRAME_SRC(i); img.decoding = 'async'; img.decode().catch(() => {}); });
     return () => window.removeEventListener('resize', check)
   }, [])
 

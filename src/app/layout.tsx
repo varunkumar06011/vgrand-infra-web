@@ -90,6 +90,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${montserrat.variable} ${inter.variable}`}>
+      <head>
+        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-001.png" as="image" fetchPriority="high" />
+        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-002.png" as="image" fetchPriority="high" />
+        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-003.png" as="image" fetchPriority="high" />
+      </head>
       <body>
         <RouteHandler />
         {!isAdmin && <Navbar />}
