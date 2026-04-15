@@ -54,14 +54,23 @@ const Services = () => {
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+        <motion.div 
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, amount: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
+        >
           {services.map((service, index) => (
             <motion.div
               key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              viewport={{ once: true }}
+              variants={{
+                initial: { opacity: 0, y: 20 },
+                animate: { 
+                  opacity: 1, 
+                  y: 0,
+                  transition: { duration: 0.5, delay: index * 0.05 }
+                }
+              }}
               className="group p-8 border border-white/5 bg-white/[0.02] rounded-3xl hover:bg-white/[0.04] hover:border-orange-500/30 transition-all duration-300"
             >
               <h3 className="text-xl font-bold text-white mb-4 group-hover:text-orange-500 transition-colors">
@@ -72,7 +81,7 @@ const Services = () => {
               </p>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

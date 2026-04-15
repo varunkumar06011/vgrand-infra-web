@@ -8,16 +8,17 @@ let supabaseInstance: any = null;
  * and handles environment-safe initialization.
  */
 export const supabase = () => {
-  // If no environment variables, throw error early
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     if (typeof window !== 'undefined') {
-      console.error('Supabase configuration missing in .env.local');
+      console.warn(
+        '🚀 SUPABASE CONFIGURATION MISSING: Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your Environment Variables on Vercel/GitHub.'
+      );
     }
-    // Return a dummy client or throw to avoid hard crash on import
-    throw new Error('Supabase configuration missing');
+    // Return null instead of throwing to avoid crashing the entire app
+    return null;
   }
 
   // Server-side: always create a new client (or use createServerClient in middleware/actions)

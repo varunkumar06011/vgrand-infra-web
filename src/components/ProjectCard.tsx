@@ -20,6 +20,25 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
+  const cardVariants = {
+    initial: { opacity: 0, y: 30 },
+    animate: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: [0.22, 1, 0.36, 1],
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    initial: { opacity: 0, x: -10 },
+    animate: { opacity: 1, x: 0 }
+  };
+
   return (
     <Link
       href={`/projects/${project.slug}`}
@@ -27,21 +46,10 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
       style={{ isolation: 'isolate' }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{
-          opacity: 1,
-          y: 0,
-          boxShadow: '0 0 25px rgba(192, 57, 43, 0.15)',
-          borderColor: 'rgba(192, 57, 43, 0.2)'
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 20,
-          opacity: { duration: 0.5 },
-          y: { duration: 0.5 }
-        }}
-        viewport={{ once: false, amount: 0.6 }}
+        variants={cardVariants}
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.2 }}
         className="relative overflow-hidden rounded-2xl bg-[#fff5f5] border border-[#e8d5d5] aspect-[4/5] cursor-pointer"
       >
         <div className="absolute inset-0 z-0">
@@ -76,9 +84,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
 
         <div className="absolute inset-0 z-10 p-8 flex flex-col justify-end">
           <motion.span
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 + 0.2 }}
+            variants={itemVariants}
             className="text-xs font-bold uppercase tracking-widest mb-2"
             style={{ color: '#fff' }}
           >
