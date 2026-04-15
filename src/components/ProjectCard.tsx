@@ -19,7 +19,7 @@ interface ProjectCardProps {
   index: number;
 }
 
-const ProjectCard = ({ project, index }: ProjectCardProps) => {
+const ProjectCard = ({ project, index: _index }: ProjectCardProps) => {
   const cardVariants = {
     initial: { opacity: 0, y: 30 },
     animate: { 
@@ -27,11 +27,11 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.22, 1, 0.36, 1],
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
         staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
+        delayChildren: 0.2,
+      },
+    },
   };
 
   const itemVariants = {
