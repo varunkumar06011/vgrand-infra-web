@@ -207,4 +207,5 @@ img {
   overflow-anchor: none;
   overscroll-behavior-y: none;
   touch-action: pan-y;
+  contain: paint;
 }

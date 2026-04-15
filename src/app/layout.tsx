@@ -59,6 +59,9 @@ export const metadata = {
   },
   alternates: {
     canonical: 'https://vgrandgroup.com'
+  },
+  other: {
+    'preload': '/NEW%20FRAMES/ezgif-frame-001.png'
   }
 }
 
