@@ -195,16 +195,17 @@ img {
 
 /* Performance Optimization: GPU Layer Promotion */
 .hero-container,
-.hero-image {
-  will-change: transform, opacity;
-  transform: translate3d(0, 0, 1px);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  perspective: 1000px;
-  contain: paint;
-  content-visibility: auto;
-  -webkit-transform-style: preserve-3d;
-  isolation: isolate;
+.hero-image,
+[data-next-image] {
+  will-change: opacity, transform !important;
+  transform: translate3d(0, 0, 1px) !important;
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+  perspective: 1000px !important;
+  contain: strict !important;
+  content-visibility: auto !important;
+  -webkit-transform-style: preserve-3d !important;
+  isolation: isolate !important;
 }
 
 /* Eliminate scroll-anchoring behavior that can cause jumps during frame swaps */
