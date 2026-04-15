@@ -194,13 +194,16 @@ img {
 }
 
 /* Performance Optimization: GPU Layer Promotion */
-.hero-gpu-layer {
+.hero-gpu-layer,
+.hero-container,
+.hero-image-wrapper {
   will-change: transform, opacity;
   transform: translate3d(0, 0, 1px);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   perspective: 1000px;
   contain: paint;
+  content-visibility: auto;
   -webkit-transform-style: preserve-3d;
   isolation: isolate;
 }

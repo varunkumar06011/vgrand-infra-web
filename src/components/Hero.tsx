@@ -336,6 +336,7 @@ export default function Hero() {
         <img
           src={FRAME_SRC(0)}
           alt=""
+          fetchPriority="high"
           sizes="(max-width: 768px) 100vw, 100vw"
           decoding="async"
           style={{
@@ -348,7 +349,7 @@ export default function Hero() {
             objectPosition: 'center',
             zIndex: 0,
             display: 'block',
-            transform: 'translate3d(0,0,0.1px)',
+            transform: 'translate3d(0,0,1px)',
             backfaceVisibility: 'hidden',
             imageRendering: '-webkit-optimize-contrast'
           }}
