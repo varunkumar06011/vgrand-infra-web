@@ -61,7 +61,18 @@ export const metadata = {
     canonical: 'https://vgrandgroup.com'
   },
   other: {
-    'preload': '/NEW%20FRAMES/ezgif-frame-001.png'
+    'preload': [
+      '/NEW%20FRAMES/ezgif-frame-001.png',
+      '/NEW%20FRAMES/ezgif-frame-002.png',
+      '/NEW%20FRAMES/ezgif-frame-003.png',
+      '/NEW%20FRAMES/ezgif-frame-004.png',
+      '/NEW%20FRAMES/ezgif-frame-005.png',
+      '/NEW%20FRAMES/ezgif-frame-006.png',
+      '/NEW%20FRAMES/ezgif-frame-007.png',
+      '/NEW%20FRAMES/ezgif-frame-008.png',
+      '/NEW%20FRAMES/ezgif-frame-009.png',
+      '/NEW%20FRAMES/ezgif-frame-010.png'
+    ]
   }
 }
 

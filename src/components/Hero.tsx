@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation'
 const TOTAL_FRAMES = 270
 const NAVBAR_H = 84          // fixed navbar height in px
 const MOBILE_BP = 1024        // breakpoint: below this = mobile/tablet
-const BATCH_SIZE = 8           // concurrent image loads at a time
-const PRIORITY_HEAD = 20          // first N frames to load before batching rest
+const BATCH_SIZE = 12
+const PRIORITY_HEAD = 30
 
 const FRAME_SRC = (i: number) =>
   `/NEW%20FRAMES/ezgif-frame-${String(i + 1).padStart(3, '0')}.png`
@@ -184,12 +184,17 @@ export default function Hero() {
       // 1. Load frame 0 (fallback/start)
       await loadOne(0)
 
-      // 2. If scrolled, load initial target frame plus small buffer
-      if (initialTargetFrame > 0) {
-        const start = Math.max(0, initialTargetFrame - 2)
-        const end = Math.min(TOTAL_FRAMES - 1, initialTargetFrame + 5)
+      // 2. Load first 10 frames sequentially for instant sequence start
+      for (let i = 1; i <= Math.min(10, TOTAL_FRAMES - 1); i++) {
+        await loadOne(i)
+      }
+
+      // 3. If scrolled deep, load initial target frame plus buffer
+      if (initialTargetFrame > 10) {
+        const start = Math.max(0, initialTargetFrame - 5)
+        const end = Math.min(TOTAL_FRAMES - 1, initialTargetFrame + 10)
         for (let j = start; j <= end; j++) {
-          if (j !== 0) await loadOne(j)
+          if (!GLOBAL_FRAMES[j]?.complete) await loadOne(j)
         }
       }
 
@@ -391,6 +396,7 @@ export default function Hero() {
             zIndex: 10,
             pointerEvents: 'none',
             userSelect: 'none',
+            willChange: 'transform, opacity'
           }}
         >
           <p

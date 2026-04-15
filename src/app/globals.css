@@ -28,6 +28,8 @@ body {
 section {
   content-visibility: auto;
   contain-intrinsic-size: 1px 500px;
+  contain: paint;
+  will-change: transform;
 }
 
 .gpu-accelerated {
@@ -208,4 +210,17 @@ img {
   overscroll-behavior-y: none;
   touch-action: pan-y;
   contain: paint;
+}
+
+/* Site-wide Scrolling Performance Hardening */
+.projects-grid > * {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.motion-safe-gpu {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
