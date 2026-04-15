@@ -7,14 +7,15 @@ export const projects = [
     area: '1,771 sq.ft',
     status: 'Ongoing',
     handover: 'December 2026',
-    startingPrice: 'Starting from ₹30 Lakhs*',
+    startingPrice: '₹76 Lakhs (All Inclusive — Registration & End-to-End)',
     rera: 'P08440065656',
     description: 'Elite Homes is V Grand Infra flagship gated community in Koppolu, Ongole. 60 meticulously crafted 3BHK apartments across 5 floors. The first gated community in Koppolu, designed for families who demand quality, space, and community living.',
     highlights: [
       'Located on Koppolu Road near Dreams School',
       'Adjacent to NH-16 Chennai to Vijayawada Highway — excellent price appreciation',
       'First gated community in Koppolu',
-      '1771 sq.ft per unit — East and West facing available',
+      '3 BHK — 1771 sq.ft per unit — East and West facing available',
+      'Price: ₹76 Lakhs (all inclusive — registration & end-to-end)',
       'Handover: December 2026',
       '60 apartments across 5 floors'
     ],
@@ -33,7 +34,7 @@ export const projects = [
       'Toilets': 'Ceramic tile flooring, European WC, American Standard wash basin',
       'Plastering': 'Sponge finish in cement mortar'
     },
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format',
+    image: '/images/elite-homes.jpg',
     brochure: '/brochures/elite-homes.pdf'
   },
   {
@@ -44,10 +45,12 @@ export const projects = [
     area: 'Contact for details',
     status: 'Ongoing',
     handover: 'June 2026',
-    startingPrice: 'Starting from ₹30 Lakhs*',
+    startingPrice: '₹40 Lakhs (All Inclusive — Registration & End-to-End)',
     description: 'Tripura by V Grand Infra is a premium residential project in Koppolu, Ongole. Thoughtfully designed 2BHK homes that balance affordability with quality modern living.',
     highlights: [
       'Prime location in Koppolu, Ongole',
+      '2 BHK — East facing units available',
+      'Price: ₹40 Lakhs (all inclusive — registration & end-to-end)',
       'Affordable premium living',
       'Quality construction materials',
       'Close to schools, hospitals and NH-16 highway'
@@ -59,7 +62,7 @@ export const projects = [
       'Windows': 'UPVC windows',
       'Electrical': 'Concealed copper wiring'
     },
-    image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1200&auto=format',
+    image: '/images/tripura.jpg',
     brochure: '/brochures/V grand tripura brocher.pdf'
   },
   {

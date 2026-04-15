@@ -29,7 +29,7 @@ export default function AboutPage() {
             <p style={{ color: '#555', fontSize: 16, lineHeight: 1.85 }}>Every brick we lay is centered around the people who will call it home. We build not just structures, but communities where families thrive.</p>
           </div>
           <div>
-            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&auto=format"
+            <img src="/images/founder-vinod-kumar.jpg"
               alt="Vinod Kumar Talasila - Founder V Grand Infra"
               style={{ width: '100%', borderRadius: 8, objectFit: 'cover', aspectRatio: '4/5' }} />
             <p style={{ color: '#888', fontSize: 13, marginTop: 12, textAlign: 'center' }}>Vinod Kumar Talasila — Founder, V Grand Infra</p>

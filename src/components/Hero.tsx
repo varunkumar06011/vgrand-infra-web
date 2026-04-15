@@ -1,227 +1,308 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-const TOTAL_FRAMES = 174
+// ─── Constants ──────────────────────────────────────────────────────────────
+const TOTAL_FRAMES  = 270
+const NAVBAR_H      = 84          // fixed navbar height in px
+const MOBILE_BP     = 1024        // breakpoint: below this = mobile/tablet
+const BATCH_SIZE    = 8           // concurrent image loads at a time
+const PRIORITY_HEAD = 20          // first N frames to load before batching rest
 
+const FRAME_SRC = (i: number) =>
+  `/NEW%20FRAMES/ezgif-frame-${String(i + 1).padStart(3, '0')}.png`
+
+// ─── Hero Component ──────────────────────────────────────────────────────────
 export default function Hero() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const framesRef = useRef<HTMLImageElement[]>([])
-  const rafRef = useRef<number>(0)
-  const currentFrameRef = useRef(-1)
-  const sizeRef = useRef({ w: 0, h: 0 })
-  const [loaded, setLoaded] = useState(false)
-  const [loadProgress, setLoadProgress] = useState(0)
-  const [isMobile, setIsMobile] = useState(false)
+  const canvasRef       = useRef<HTMLCanvasElement>(null)
+  const containerRef    = useRef<HTMLDivElement>(null)
+  const framesRef       = useRef<HTMLImageElement[]>([])
+  const rafRef          = useRef<number>(0)
+  const currentFrameRef = useRef<number>(-1)
+  const scrollDirtyRef  = useRef<boolean>(false)   // true when scroll changed since last draw
 
-  // Detect mobile
+  const [loadProgress, setLoadProgress]   = useState(0)
+  const [canvasHasDrawn, setCanvasHasDrawn] = useState(false)
+  const [isMobile, setIsMobile]           = useState(false)
+
+  // Detect mobile client-side only (avoids SSR hydration mismatch)
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024)
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    const check = () => setIsMobile(window.innerWidth < MOBILE_BP)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Preload all frames
-  useEffect(() => {
-    const imgs: HTMLImageElement[] = new Array(TOTAL_FRAMES)
-    let count = 0
+  // ── Resize canvas to full viewport ──────────────────────────────────────
+  const syncCanvasSize = (canvas: HTMLCanvasElement) => {
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+  }
 
-    for (let i = 0; i < TOTAL_FRAMES; i++) {
-      const img = new Image()
-      const num = String(i + 1)
-      img.src = `/frames/frame-${num}.png`
-      img.onload = async () => {
-        await img.decode().catch(() => {})
+  // ── Shared draw function ──────────────────────────────────────────────────
+  // Draws the correct layout without mutating smoothing settings each call
+  // (smoothing is set once on ctx init — no repeated state changes).
+  const paintFrame = (
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement
+  ) => {
+    const isMob  = canvas.width < MOBILE_BP
+    const availH = canvas.height - NAVBAR_H
 
-        // Fix 2: Draw frame 1 immediately as soon as it loads
-        if (i === 0) {
-          const canvas = canvasRef.current
-          if (canvas) {
-            const ctx = canvas.getContext('2d')
-            if (ctx) {
-              canvas.width = window.innerWidth
-              canvas.height = window.innerHeight
-              sizeRef.current = { w: window.innerWidth, h: window.innerHeight }
-              const scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight)
-              const x = (canvas.width - img.naturalWidth * scale) / 2
-              const y = (canvas.height - img.naturalHeight * scale) / 2
-              ctx.drawImage(img, x, y, img.naturalWidth * scale, img.naturalHeight * scale)
-              // Show canvas immediately
-              canvas.style.display = 'block'
-            }
-          }
-        }
+    // alpha:false canvas — fillRect is faster than clearRect for opaque canvas
+    ctx.fillStyle = '#000'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-        count++
-        setLoadProgress(Math.floor((count / TOTAL_FRAMES) * 100))
-        
-        // Progressively allow interaction after first 30 frames
-        if (count >= 30 && !loaded) {
-          setLoaded(true)
-        }
-        
-        if (count === TOTAL_FRAMES) setLoaded(true)
-      }
-      img.onerror = () => {
-        count++
-        if (count >= 30 && !loaded) setLoaded(true)
-        if (count === TOTAL_FRAMES) setLoaded(true)
-      }
-      imgs[i] = img
+    if (isMob) {
+      const scale   = canvas.width / img.naturalWidth
+      const scaledH = img.naturalHeight * scale
+      const y       = NAVBAR_H + Math.max(0, (availH - scaledH) / 2)
+      ctx.drawImage(img, 0, y, canvas.width, scaledH)
+    } else {
+      const scaleW  = canvas.width  / img.naturalWidth
+      const scaleH  = availH        / img.naturalHeight
+      const scale   = Math.max(scaleW, scaleH)
+      const scaledW = img.naturalWidth  * scale
+      const scaledH = img.naturalHeight * scale
+      const x       = (canvas.width  - scaledW) / 2
+      const y       = NAVBAR_H + (availH - scaledH) / 2
+      ctx.drawImage(img, x, y, scaledW, scaledH)
     }
+  }
+
+  // ── Priority batch preload ────────────────────────────────────────────────
+  // Loads PRIORITY_HEAD frames first (sequential), then bulk-loads the rest
+  // in BATCH_SIZE concurrent chunks. Keeps network from being overwhelmed with
+  // 270 simultaneous requests that starve early frames users actually scroll to.
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    // alpha:false = no compositing needed, much faster drawImage
+    const ctx = canvas.getContext('2d', { alpha: false })
+    if (!ctx) return
+
+    // Set smoothing once — no need to reset per draw call
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'medium'   // 'medium' vs 'high': imperceptible at scroll speed
+
+    syncCanvasSize(canvas)
+
+    const imgs: HTMLImageElement[] = new Array(TOTAL_FRAMES)
+    let loadedCount = 0
+
+    const loadOne = (i: number): Promise<void> =>
+      new Promise<void>(resolve => {
+        const img = new Image()
+        imgs[i]   = img
+        img.onload = async () => {
+          await img.decode().catch(() => {})
+          if (i === 0) {
+            syncCanvasSize(canvas)
+            paintFrame(canvas, ctx, img)
+            setCanvasHasDrawn(true)
+          }
+          loadedCount++
+          setLoadProgress(Math.floor((loadedCount / TOTAL_FRAMES) * 100))
+          resolve()
+        }
+        img.onerror = () => { loadedCount++; resolve() }
+        img.src = FRAME_SRC(i)
+      })
+
+    // Load first PRIORITY_HEAD frames one-by-one so they're ready immediately
+    const loadPriority = async () => {
+      const priorityEnd = Math.min(PRIORITY_HEAD, TOTAL_FRAMES)
+      for (let i = 0; i < priorityEnd; i++) {
+        await loadOne(i)
+      }
+
+      // Then load the rest in concurrent batches
+      const remaining = Array.from(
+        { length: TOTAL_FRAMES - priorityEnd },
+        (_, k) => k + priorityEnd
+      )
+      const runBatch = async (startIdx: number) => {
+        if (startIdx >= remaining.length) return
+        const batch = remaining.slice(startIdx, startIdx + BATCH_SIZE)
+        await Promise.all(batch.map(i => loadOne(i)))
+        runBatch(startIdx + BATCH_SIZE)
+      }
+      runBatch(0)
+    }
+
+    loadPriority()
     framesRef.current = imgs
 
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-    }
-  }, [])
+    return () => { cancelAnimationFrame(rafRef.current) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Draw loop — works on both mobile and desktop
+  // ── Scroll-driven RAF loop ────────────────────────────────────────────────
+  // Uses a "dirty flag" pattern: scroll events mark dirty=true, the RAF loop
+  // only redraws when dirty. This avoids wasting GPU budget on frames where
+  // nothing changed (60fps loop was running even when user wasn't scrolling).
   useEffect(() => {
-    // We allow draw loop to start if at least partial loading happened
-    if (!loaded && loadProgress < 15) return
-
-    const canvas = canvasRef.current
+    const canvas    = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
 
-    // Fix 4: Set size immediately
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-    sizeRef.current = { w: window.innerWidth, h: window.innerHeight }
-
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { alpha: false })
     if (!ctx) return
 
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'medium'
+    syncCanvasSize(canvas)
+
+    const onResize = () => {
+      syncCanvasSize(canvas)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'medium'
+      const idx = Math.max(0, currentFrameRef.current)
+      const img = framesRef.current[idx]
+      if (img?.complete && img.naturalWidth > 0) paintFrame(canvas, ctx, img)
     }
-    window.addEventListener('resize', resize)
+    window.addEventListener('resize', onResize)
 
-    const draw = () => {
-      const scrolled = window.scrollY - container.offsetTop
-      const scrollable = container.offsetHeight - window.innerHeight
-      const progress = Math.max(0, Math.min(1, scrolled / Math.max(scrollable, 1)))
-      const frameIndex = Math.min(
-        TOTAL_FRAMES - 1,
-        Math.floor(progress * (TOTAL_FRAMES - 1))
-      )
+    // Mark dirty on every scroll — passive listener has zero jank impact
+    const onScroll = () => { scrollDirtyRef.current = true }
+    window.addEventListener('scroll', onScroll, { passive: true })
 
-      if (frameIndex !== currentFrameRef.current) {
-        const img = framesRef.current[frameIndex]
-        // Only update if image is actually loaded, otherwise keep current frame
-        if (img?.complete && img.naturalWidth > 0) {
-          currentFrameRef.current = frameIndex
-          canvas.width = window.innerWidth
-          canvas.height = window.innerHeight
-          ctx.imageSmoothingEnabled = true
-          ctx.imageSmoothingQuality = 'high'
+    // ── RAF loop: only redraws canvas when scroll position has changed ──
+    const loop = () => {
+      if (scrollDirtyRef.current) {
+        scrollDirtyRef.current = false
 
-          // Cover fit — same as CSS object-fit: cover
-          const scale = Math.max(
-            canvas.width / img.naturalWidth,
-            canvas.height / img.naturalHeight
-          )
-          const x = (canvas.width - img.naturalWidth * scale) / 2
-          const y = (canvas.height - img.naturalHeight * scale) / 2
-          ctx.drawImage(img, x, y, img.naturalWidth * scale, img.naturalHeight * scale)
+        const scrolled   = window.scrollY - container.offsetTop
+        const scrollable = container.offsetHeight - window.innerHeight
+        const progress   = Math.max(0, Math.min(1, scrolled / Math.max(scrollable, 1)))
+        const idx        = Math.min(TOTAL_FRAMES - 1, Math.floor(progress * (TOTAL_FRAMES - 1)))
+
+        if (idx !== currentFrameRef.current) {
+          const img = framesRef.current[idx]
+          if (img?.complete && img.naturalWidth > 0) {
+            currentFrameRef.current = idx
+            if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+              syncCanvasSize(canvas)
+              ctx.imageSmoothingEnabled = true
+              ctx.imageSmoothingQuality = 'medium'
+            }
+            paintFrame(canvas, ctx, img)
+            if (!canvasHasDrawn) setCanvasHasDrawn(true)
+          }
         }
       }
 
-      rafRef.current = requestAnimationFrame(draw)
+      rafRef.current = requestAnimationFrame(loop)
     }
 
-    draw()
-
+    loop()
     return () => {
       cancelAnimationFrame(rafRef.current)
-      window.removeEventListener('resize', resize)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('scroll', onScroll)
     }
-  }, [loaded])
+  }, [canvasHasDrawn]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
-      style={{
-        height: isMobile ? '250vh' : '500vh',
-        position: 'relative',
-        zIndex: 1
-      }}
+      style={{ height: isMobile ? '250vh' : '450vh', position: 'relative', zIndex: 1 }}
     >
-      {/* Sticky viewport */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        width: '100vw',
-        overflow: 'hidden',
-        background: '#000000'
-      }}>
-
-        {/* Fix 1: Always visible until canvas draws first frame */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: 'url(/frames/frame-1.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          zIndex: 0,
-          opacity: loaded ? 0 : 1,
-          transition: 'opacity 0.3s ease'
-        }} />
-
-        {/* Canvas — same on mobile and desktop */}
-        <canvas
-          ref={canvasRef}
+      {/* ── Sticky viewport: full viewport, always top:0 ─────────────── */}
+      <div
+        style={{
+          position : 'sticky',
+          top      : 0,
+          height   : '100vh',
+          width    : '100%',
+          overflow : 'hidden',
+          background: '#000',
+        }}
+      >
+        {/* ── Fallback image ────────────────────────────────────────────
+            Uses a real <img> tag so it renders immediately — no black
+            flash while JS / canvas initialises. Sits behind canvas
+            (zIndex 0). Once canvas draws its first frame it takes over. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={FRAME_SRC(0)}
+          alt=""
           style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 1,
-            display: 'block',
-            willChange: 'contents',
-            transform: 'translateZ(0)'
+            position      : 'absolute',
+            top           : NAVBAR_H,
+            left          : 0,
+            width         : '100%',
+            height        : `calc(100% - ${NAVBAR_H}px)`,
+            objectFit     : 'contain',
+            objectPosition: 'center',
+            zIndex        : 0,
+            display       : 'block',
           }}
         />
 
-        {/* Loading bar — thin red line at top */}
-        {!loaded && (
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0,
-            height: 3,
-            background: '#C0392B',
-            width: `${loadProgress}%`,
-            zIndex: 20,
-            transition: 'width 0.2s ease'
-          }} />
+        {/* ── Canvas ────────────────────────────────────────────────────
+            alpha:false → browser skips transparency compositing.
+            Hidden (opacity:0) until the first frame is painted so the
+            fallback <img> shows through — no black flash on load.       */}
+        <canvas
+          ref={canvasRef}
+          style={{
+            position  : 'absolute',
+            inset     : 0,
+            width     : '100%',
+            height    : '100%',
+            zIndex    : 1,
+            display   : 'block',
+            opacity   : canvasHasDrawn ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}
+        />
+
+        {/* ── Loading progress bar ─────────────────────────────────── */}
+        {loadProgress < 100 && (
+          <div
+            style={{
+              position  : 'absolute',
+              top       : 0,
+              left      : 0,
+              height    : 3,
+              width     : `${loadProgress}%`,
+              background: '#C0392B',
+              zIndex    : 30,
+              transition: 'width 0.2s ease',
+            }}
+          />
         )}
 
-        {/* Welcome text */}
-        <div style={{
-          position: 'absolute',
-          bottom: '10%',
-          left: 0, right: 0,
-          textAlign: 'center',
-          zIndex: 10,
-          pointerEvents: 'none',
-          userSelect: 'none'
-        }}>
-          <p style={{
-            display: 'inline-block',
-            color: '#ffffff',
-            fontSize: 'clamp(11px, 1.5vw, 16px)',
-            letterSpacing: '10px',
-            fontFamily: 'var(--font-heading), Montserrat, sans-serif',
-            textTransform: 'uppercase',
-            fontWeight: 600,
-            textShadow: '0 0 40px rgba(0,0,0,1), 0 2px 8px rgba(0,0,0,0.9)',
-            borderBottom: '1px solid rgba(255,255,255,0.35)',
-            paddingBottom: 8
-          }}>
+        {/* ── Welcome text ─────────────────────────────────────────── */}
+        <div
+          style={{
+            position     : 'absolute',
+            bottom       : '8%',
+            left         : 0,
+            right        : 0,
+            textAlign    : 'center',
+            zIndex       : 10,
+            pointerEvents: 'none',
+            userSelect   : 'none',
+          }}
+        >
+          <p
+            style={{
+              display      : 'inline-block',
+              color        : '#ffffff',
+              fontSize     : 'clamp(10px, 1.4vw, 15px)',
+              letterSpacing: '8px',
+              fontFamily   : 'var(--font-heading), Montserrat, sans-serif',
+              textTransform: 'uppercase',
+              fontWeight   : 600,
+              textShadow   : '0 0 40px rgba(0,0,0,1), 0 2px 8px rgba(0,0,0,0.9)',
+              borderBottom : '1px solid rgba(255,255,255,0.35)',
+              paddingBottom: 6,
+              margin       : 0,
+            }}
+          >
             WELCOME TO V GRAND INFRA
           </p>
         </div>
