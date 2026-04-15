@@ -38,7 +38,7 @@ export default function AboutPage() {
 
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 80 }}>
-          {[['2017', 'Established'], ['60+', 'Apartments Built'], ['2', 'Active Projects'], ['22+', 'Years Experience']].map(([num, label]) => (
+          {[['60+', 'Apartments Built'], ['2', 'Active Projects'], ['22+', 'Years Experience']].map(([num, label]) => (
             <div key={label} style={{ background: '#fff5f5', border: '1px solid #e8d5d5', borderRadius: 8, padding: '28px 20px', textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-heading)', fontSize: 36, fontWeight: 700, color: '#C0392B', margin: '0 0 8px' }}>{num}</p>
               <p style={{ color: '#555', fontSize: 14, margin: 0, letterSpacing: 1 }}>{label}</p>
@@ -61,6 +61,13 @@ export default function AboutPage() {
               <p style={{ color: '#555', fontSize: 14, lineHeight: 1.75, margin: 0 }}>{desc}</p>
             </div>
           ))}
+        </div>
+
+        {/* Our Businesses & Experience */}
+        <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 16 }}>Our Businesses &amp; Experience</p>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(26px, 4vw, 40px)', color: '#1a1a1a', fontWeight: 700, marginBottom: 40 }}>Our Businesses &amp; Experience</h2>
+        <div style={{ background: '#fff5f5', border: '1px solid #e8d5d5', borderRadius: 8, padding: '32px 28px', borderLeft: '3px solid #C0392B', marginBottom: 80 }}>
+          <p style={{ color: '#555', fontSize: 16, lineHeight: 1.85, margin: 0 }}>Our founder and team bring 15+ years of rich experience in the business field. We successfully operate V Grand Family Restaurant in Ongole and Kandukur, run a granite mining business, and develop premium real estate projects under V Grand Infra. With 50+ happy clients, we are committed to delivering quality and building lasting communities.</p>
         </div>
       </div>
     </main>

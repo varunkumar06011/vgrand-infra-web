@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { projects } from '@/data/projects'
+import ProjectCard from '@/components/ProjectCard'
 
 export default function ProjectsPage() {
   const [location, setLocation] = useState('all')
@@ -91,54 +92,14 @@ export default function ProjectsPage() {
         </div>
 
         {/* Cards grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 28 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
           {filtered.length === 0 ? (
             <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>No projects match your filters.</p>
-          ) : filtered.map(project => (
-            <div key={project.slug} style={{ background: '#fff5f5', borderRadius: 8, overflow: 'hidden', border: '1px solid #e8d5d5' }}>
-              <div style={{ position: 'relative', height: 220 }}>
-                <img src={project.image} alt={project.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-                <span style={{
-                  position: 'absolute',
-                  top: 14,
-                  right: 14,
-                  background: project.status === 'Ongoing'
-                    ? '#C0392B'
-                    : project.status === 'Upcoming'
-                    ? '#1a1a1a'
-                    : '#2E7D32',
-                  color: '#ffffff',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase',
-                  padding: '5px 12px',
-                  borderRadius: 4,
-                  zIndex: 5
-                }}>
-                  {project.status}
-                </span>
-              </div>
-              <div style={{ padding: '20px 20px 24px' }}>
-                <p style={{ fontSize: 11, color: '#C0392B', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>{project.type}</p>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, color: '#1a1a1a', fontWeight: 700, marginBottom: 4 }}>{project.name}</h3>
-                <p style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>{project.location}</p>
-                <p style={{ fontSize: 12, color: '#C0392B', fontWeight: 600, borderLeft: '2px solid #C0392B', paddingLeft: 8, marginBottom: 12 }}>
-                  Adjacent to NH-16 Highway — High Appreciation Value
-                </p>
-                <p style={{ color: '#555', fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>{project.description.slice(0, 90)}...</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#C0392B', fontWeight: 700, fontSize: 15 }}>{project.startingPrice}</span>
-                  <a href={`/projects/${project.slug}`}
-                    style={{ color: '#C0392B', fontSize: 13, fontWeight: 700, letterSpacing: 1, textDecoration: 'none', borderBottom: '1px solid #C0392B', paddingBottom: 1 }}>
-                    View Details
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
+          ) : (
+            filtered.map((project, index) => (
+              <ProjectCard key={project.slug} project={project} index={index} />
+            ))
+          )}
         </div>
       </div>
     </main>
