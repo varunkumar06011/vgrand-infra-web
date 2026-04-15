@@ -199,9 +199,12 @@ img {
   backface-visibility: hidden;
   perspective: 1000px;
   contain: layout paint;
+  -webkit-transform-style: preserve-3d;
 }
 
 /* Eliminate scroll-anchoring behavior that can cause jumps during frame swaps */
 .hero-container {
   overflow-anchor: none;
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
 }

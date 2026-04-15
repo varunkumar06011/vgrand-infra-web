@@ -123,7 +123,8 @@ export default function Hero() {
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     // alpha:false = no compositing needed, much faster drawImage
-    const ctx = canvas.getContext('2d', { alpha: false })
+    // desynchronized:true = high-perf hint for low latency
+    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })
     if (!ctx) return
 
     // Set smoothing once — no need to reset per draw call
@@ -230,7 +231,7 @@ export default function Hero() {
     const container = containerRef.current
     if (!canvas || !container || !isVisible) return
 
-    const ctx = canvas.getContext('2d', { alpha: false })
+    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })
     if (!ctx) return
 
     ctx.imageSmoothingEnabled = true
@@ -328,6 +329,7 @@ export default function Hero() {
         <img
           src={FRAME_SRC(0)}
           alt=""
+          sizes="100vw"
           decoding="async"
           style={{
             position: 'absolute',
@@ -341,6 +343,7 @@ export default function Hero() {
             display: 'block',
             transform: 'translate3d(0,0,0)',
             backfaceVisibility: 'hidden',
+            imageRendering: '-webkit-optimize-contrast'
           }}
         />
 
