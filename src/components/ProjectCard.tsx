@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -19,7 +20,7 @@ interface ProjectCardProps {
   index: number;
 }
 
-const ProjectCard = ({ project, index: _index }: ProjectCardProps) => {
+const ProjectCard = ({ project, index }: ProjectCardProps) => {
   const cardVariants = {
     initial: { opacity: 0, y: 30 },
     animate: {
@@ -53,10 +54,14 @@ const ProjectCard = ({ project, index: _index }: ProjectCardProps) => {
         className="relative overflow-hidden rounded-2xl bg-[#fff5f5] border border-[#e8d5d5] aspect-[4/5] cursor-pointer"
       >
         <div className="absolute inset-0 z-0">
-          <img
+          <Image
             src={project.image}
             alt={project.name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            loading={index < 3 ? 'eager' : 'lazy'}
+            priority={index < 2}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
 

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  MoreVertical, 
+import {
+  Search,
+  Filter,
+  Download,
+  MoreVertical,
   ExternalLink,
   Phone,
   MessageSquare
@@ -28,8 +28,8 @@ export default function LeadsPage() {
   const [sourceFilter, setSourceFilter] = useState('All');
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          lead.phone.includes(searchTerm);
+    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.phone.includes(searchTerm);
     const matchesSource = sourceFilter === 'All' || lead.source === sourceFilter;
     return matchesSearch && matchesSource;
   });
@@ -41,15 +41,15 @@ export default function LeadsPage() {
         <div className="flex flex-1 items-center gap-4 min-w-[300px]">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search by name or phone..."
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select 
+          <select
             className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
@@ -59,7 +59,7 @@ export default function LeadsPage() {
             <option value="WhatsApp">WhatsApp</option>
           </select>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm font-semibold">
             <Download size={18} /> Export CSV
@@ -95,9 +95,8 @@ export default function LeadsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      lead.source === 'WhatsApp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${lead.source === 'WhatsApp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
                       {lead.source === 'WhatsApp' ? <MessageSquare size={10} /> : <Filter size={10} />}
                       {lead.source}
                     </span>
@@ -109,11 +108,10 @@ export default function LeadsPage() {
                     <span className="text-sm text-slate-500">{lead.date}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase border ${
-                      lead.status === 'New' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                      lead.status === 'Lost' ? 'bg-slate-50 text-slate-500 border-slate-200' :
-                      'bg-green-50 text-green-600 border-green-200'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase border ${lead.status === 'New' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                        lead.status === 'Lost' ? 'bg-slate-50 text-slate-500 border-slate-200' :
+                          'bg-green-50 text-green-600 border-green-200'
+                      }`}>
                       {lead.status}
                     </span>
                   </td>
@@ -135,7 +133,7 @@ export default function LeadsPage() {
             </tbody>
           </table>
         </div>
-        
+
         {filteredLeads.length === 0 && (
           <div className="p-12 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-400 mb-4">

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     initCloudinary();
     const supabase = getAdminClient();
     const formData = await request.formData();
-    
+
     // Extract metadata
     const name = formData.get('name') as string;
     const type = formData.get('type') as string;
@@ -62,13 +62,13 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('projects')
       .insert([
-        { 
-          name, 
-          type, 
-          location, 
-          status, 
-          images: imageUrls, 
-          brochure_url: brochureUrl 
+        {
+          name,
+          type,
+          location,
+          status,
+          images: imageUrls,
+          brochure_url: brochureUrl
         }
       ])
       .select();

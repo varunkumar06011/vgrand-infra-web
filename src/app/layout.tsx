@@ -63,6 +63,7 @@ export const metadata = {
 }
 
 import { headers } from 'next/headers';
+import SmoothScroll from '@/components/SmoothScroll';
 
 export default async function RootLayout({
   children,
@@ -78,7 +79,9 @@ export default async function RootLayout({
       <body>
         <RouteHandler />
         {!isAdmin && <Navbar />}
-        <main>{children}</main>
+        <SmoothScroll>
+          <main>{children}</main>
+        </SmoothScroll>
         {!isAdmin && <Footer />}
         {!isAdmin && (
           <a

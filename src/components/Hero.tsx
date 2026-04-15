@@ -12,6 +12,10 @@ const PRIORITY_HEAD = 20          // first N frames to load before batching rest
 const FRAME_SRC = (i: number) =>
   `/NEW%20FRAMES/ezgif-frame-${String(i + 1).padStart(3, '0')}.png`
 
+// Cache frames globally to prevent reload lag when navigating back to home
+const GLOBAL_FRAMES: HTMLImageElement[] = []
+let globalLoadProgress = 0
+
 // ─── Hero Component ──────────────────────────────────────────────────────────
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -20,11 +24,16 @@ export default function Hero() {
   const rafIdRef = useRef<number | null>(null)
   const currentFrameRef = useRef<number>(-1)
   const scrollDirtyRef = useRef<boolean>(true)
+  const widthRef = useRef<number>(0)
+  const heightRef = useRef<number>(0)
+  const containerHeightRef = useRef<number>(0)
+  const offsetTopRef = useRef<number>(0)
   const pathname = usePathname()
 
   const [loadProgress, setLoadProgress] = useState(0)
   const [canvasHasDrawn, setCanvasHasDrawn] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
 
   // Detect mobile client-side only (avoids SSR hydration mismatch)
   useEffect(() => {
@@ -34,10 +43,40 @@ export default function Hero() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Store dims in refs to avoid layout thrashing during animation loop
+  const updateDims = () => {
+    widthRef.current = window.innerWidth
+    heightRef.current = window.innerHeight
+    if (containerRef.current) {
+      containerHeightRef.current = containerRef.current.offsetHeight
+      offsetTopRef.current = containerRef.current.offsetTop
+    }
+  }
+
+  useEffect(() => {
+    updateDims()
+  }, [])
+
+  // ── Intersection Observer to pause when off-screen ────────────────────────
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting)
+      },
+      { threshold: 0 }
+    )
+
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
+
   // ── Resize canvas to full viewport ──────────────────────────────────────
   const syncCanvasSize = (canvas: HTMLCanvasElement) => {
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    canvas.width = widthRef.current || window.innerWidth
+    canvas.height = heightRef.current || window.innerHeight
   }
 
   // ── Shared draw function ──────────────────────────────────────────────────
@@ -93,12 +132,27 @@ export default function Hero() {
 
     syncCanvasSize(canvas)
 
-    const imgs: HTMLImageElement[] = new Array(TOTAL_FRAMES)
-    let loadedCount = 0
+    // Reuse global cache if available
+    if (GLOBAL_FRAMES.length > 0 && GLOBAL_FRAMES.every(img => img && img.complete)) {
+      framesRef.current = GLOBAL_FRAMES
+      setLoadProgress(100)
+      if (ctx && GLOBAL_FRAMES[0]) {
+        paintFrame(canvas, ctx, GLOBAL_FRAMES[0])
+        setCanvasHasDrawn(true)
+      }
+      return
+    }
+
+    const imgs: HTMLImageElement[] = GLOBAL_FRAMES.length > 0 ? GLOBAL_FRAMES : new Array(TOTAL_FRAMES)
+    let loadedCount = GLOBAL_FRAMES.filter(img => img?.complete).length
 
     const loadOne = (i: number): Promise<void> =>
       new Promise<void>(resolve => {
-        const img = new Image()
+        const img = GLOBAL_FRAMES[i] || new Image()
+        if (!GLOBAL_FRAMES[i]) {
+          GLOBAL_FRAMES[i] = img
+          img.decoding = 'async'
+        }
         imgs[i] = img
         img.onload = async () => {
           await img.decode().catch(() => { })
@@ -114,16 +168,16 @@ export default function Hero() {
           resolve()
         }
         img.onerror = () => { loadedCount++; resolve() }
-        img.src = FRAME_SRC(i)
+        if (!img.src) img.src = FRAME_SRC(i)
+        else if (img.complete) resolve()
       })
 
-    // Determine if we are starting mid-page
-    const containerTop = containerRef.current?.offsetTop || 0
-    const containerH = containerRef.current?.offsetHeight || (window.innerHeight * 4.5)
-    const scrolled = window.scrollY - containerTop
-    const scrollable = containerH - window.innerHeight
-    const progress = Math.max(0, Math.min(1, scrolled / Math.max(scrollable, 1)))
-    const initialTargetFrame = Math.min(TOTAL_FRAMES - 1, Math.floor(progress * (TOTAL_FRAMES - 1)))
+    const initialTargetFrame = (() => {
+      const scrolled = window.scrollY - offsetTopRef.current
+      const scrollable = containerHeightRef.current - heightRef.current
+      const progress = Math.max(0, Math.min(1, scrolled / Math.max(scrollable, 1)))
+      return Math.min(TOTAL_FRAMES - 1, Math.floor(progress * (TOTAL_FRAMES - 1)))
+    })()
 
     // Load first PRIORITY_HEAD frames AND the current scroll target immediately
     const loadPriority = async () => {
@@ -162,8 +216,8 @@ export default function Hero() {
     loadPriority()
     framesRef.current = imgs
 
-    return () => { 
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current) 
+    return () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -174,7 +228,7 @@ export default function Hero() {
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
-    if (!canvas || !container) return
+    if (!canvas || !container || !isVisible) return
 
     const ctx = canvas.getContext('2d', { alpha: false })
     if (!ctx) return
@@ -190,6 +244,7 @@ export default function Hero() {
     }
 
     const onResize = () => {
+      updateDims()
       syncCanvasSize(canvas)
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'medium'
@@ -208,8 +263,8 @@ export default function Hero() {
       if (scrollDirtyRef.current) {
         scrollDirtyRef.current = false
 
-        const scrolled = window.scrollY - container.offsetTop
-        const scrollable = container.offsetHeight - window.innerHeight
+        const scrolled = window.scrollY - offsetTopRef.current
+        const scrollable = containerHeightRef.current - heightRef.current
         const progress = Math.max(0, Math.min(1, scrolled / Math.max(scrollable, 1)))
         const idx = Math.min(TOTAL_FRAMES - 1, Math.floor(progress * (TOTAL_FRAMES - 1)))
 
@@ -217,7 +272,7 @@ export default function Hero() {
           const img = framesRef.current[idx]
           if (img?.complete && img.naturalWidth > 0) {
             currentFrameRef.current = idx
-            if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+            if (canvas.width !== widthRef.current || canvas.height !== heightRef.current) {
               syncCanvasSize(canvas)
               ctx.imageSmoothingEnabled = true
               ctx.imageSmoothingQuality = 'medium'
@@ -248,10 +303,12 @@ export default function Hero() {
     <div
       ref={containerRef}
       key={pathname}
+      className="hero-container hero-gpu-layer"
       style={{ height: isMobile ? '250vh' : '450vh', position: 'relative', zIndex: 1 }}
     >
       {/* ── Sticky viewport: full viewport, always top:0 ─────────────── */}
       <div
+        className="hero-gpu-layer"
         style={{
           position: 'sticky',
           top: 0,
@@ -259,6 +316,8 @@ export default function Hero() {
           width: '100%',
           overflow: 'hidden',
           background: '#000',
+          willChange: 'transform',
+          contain: 'paint'
         }}
       >
         {/* ── Fallback image ────────────────────────────────────────────
@@ -269,6 +328,7 @@ export default function Hero() {
         <img
           src={FRAME_SRC(0)}
           alt=""
+          decoding="async"
           style={{
             position: 'absolute',
             top: NAVBAR_H,
@@ -279,6 +339,8 @@ export default function Hero() {
             objectPosition: 'center',
             zIndex: 0,
             display: 'block',
+            transform: 'translate3d(0,0,0)',
+            backfaceVisibility: 'hidden',
           }}
         />
 

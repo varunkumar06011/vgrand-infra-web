@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  Package, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Package,
+  LogOut,
   ShieldCheck,
   Menu,
   X,
@@ -47,7 +47,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm transition-all"
           onClick={closeSidebar}
         />
@@ -63,7 +63,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         {/* Logo Section - Fixed Positioning */}
         <div className={`pt-12 pb-8 px-4 flex flex-col items-center gap-4 border-b border-slate-50 relative transition-all duration-300 ${isSidebarCollapsed ? 'px-2' : 'px-8'}`}>
           {/* Close button for mobile inside sidebar */}
-          <button 
+          <button
             onClick={closeSidebar}
             className="absolute top-4 right-4 p-2 text-slate-400 md:hidden hover:text-slate-600 transition-colors"
           >
@@ -71,16 +71,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           </button>
 
           {/* Collapse toggle desktop button */}
-          <button 
+          <button
             onClick={toggleCollapse}
             className="hidden md:flex absolute -right-3 top-20 bg-white border border-slate-200 rounded-full p-1 text-slate-400 hover:text-blue-600 hover:border-blue-200 shadow-sm z-50 transition-all hover:scale-110"
           >
             {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
 
-          <img 
-            src="/icon.io/android-chrome-192x192.png" 
-            alt="V Grand Logo" 
+          <img
+            src="/icon.io/android-chrome-192x192.png"
+            alt="V Grand Logo"
             className={`rounded-2xl shadow-lg shadow-blue-100 transition-all duration-500 ${isSidebarCollapsed ? 'w-10 h-10' : 'w-24 h-24'}`}
           />
           <div className={`text-center transition-all duration-300 ${isSidebarCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
@@ -92,17 +92,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
-            
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={closeSidebar}
-                className={`flex items-center rounded-lg transition-all ${isSidebarCollapsed ? 'justify-center py-3' : 'gap-3 px-4 py-3'} ${
-                  isActive 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 rounded-l-none font-semibold' 
+                className={`flex items-center rounded-lg transition-all ${isSidebarCollapsed ? 'justify-center py-3' : 'gap-3 px-4 py-3'} ${isActive
+                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 rounded-l-none font-semibold'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
                 title={isSidebarCollapsed ? item.name : ''}
               >
                 <Icon size={20} className={isSidebarCollapsed ? 'flex-shrink-0' : ''} />
@@ -129,7 +128,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         {/* Top bar */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-8 sticky top-0 z-10 shadow-sm gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-1.5 text-slate-600 md:hidden hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
             >
@@ -139,7 +138,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
               {title}
             </h2>
           </div>
-          
+
           <div className="flex items-center gap-2 px-2 md:px-3 py-1 bg-slate-100 rounded-full flex-shrink-0">
             <ShieldCheck size={14} className="text-slate-600 md:block hidden" />
             <span className="text-[10px] md:text-xs font-bold text-slate-600 uppercase tracking-wider">Admin</span>

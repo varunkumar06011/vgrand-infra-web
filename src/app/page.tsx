@@ -3,6 +3,8 @@ import ProjectCard from '@/components/ProjectCard';
 import { projects } from '@/data/projects';
 import Link from 'next/link';
 
+import Image from 'next/image';
+
 export default function Home() {
   const featuredProjects = projects.slice(0, 3);
 
@@ -19,7 +21,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#fff5f5]">
       <Hero />
-      
+
       {/* Marquee Scroller */}
       <div style={{
         background: '#C0392B',
@@ -58,14 +60,14 @@ export default function Home() {
               <p style={labelStyle}>Latest Developments</p>
               <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px, 5vw, 48px)', color: '#1a1a1a', fontWeight: 700, margin: 0 }}>Featured Projects</h2>
             </div>
-            <Link 
-              href="/projects" 
-              style={{ 
-                color: '#C0392B', 
-                fontWeight: 700, 
-                textDecoration: 'none', 
-                fontSize: 14, 
-                letterSpacing: 1, 
+            <Link
+              href="/projects"
+              style={{
+                color: '#C0392B',
+                fontWeight: 700,
+                textDecoration: 'none',
+                fontSize: 14,
+                letterSpacing: 1,
                 borderBottom: '2px solid #C0392B',
                 paddingBottom: 4
               }}

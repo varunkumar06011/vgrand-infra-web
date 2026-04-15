@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
       if (error) {
         throw error;
       }
-      
+
       if (data.user) {
         // Force a page refresh and redirect to dashboard
         // The middleware will also help ensure they are on the right page
@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
               <ShieldAlert className="text-white" size={32} />
             </div>
           </div>
-          
+
           <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">V Grand Admin</h1>
           <p className="text-slate-500 text-center mb-8">Please sign in to access the dashboard</p>
 
@@ -116,7 +116,7 @@ export default function AdminLoginPage() {
             </button>
           </form>
         </div>
-        
+
         <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
           <p className="text-xs text-slate-400">
             &copy; {new Date().getFullYear()} V Grand Group. All rights reserved.
