@@ -1,34 +1,49 @@
-import { projects } from '@/data/projects'
+import { getAdminClient } from '@/lib/supabaseAdmin'
 import { notFound } from 'next/navigation'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const project = projects.find(p => p.slug === slug)
+  const supabase = getAdminClient()
+  const { data: project } = await supabase.from('projects').select('*').eq('slug', slug).single()
+  
   if (!project) return {}
   return {
     title: `${project.name} | ${project.type} in ${project.location} | V Grand Infra`,
-    description: `${project.name} by V Grand Infra — ${project.type} in ${project.location}. ${project.startingPrice}. RERA: ${project.rera || 'Applied'}. ${project.highlights[0]}. ${project.highlights[1]}.`,
-    keywords: `${project.name.toLowerCase()} ongole, ${project.type.toLowerCase()} koppolu, flats in ${project.location.toLowerCase()}, ${project.name.toLowerCase()} price, rera apartments ongole, v grand infra ${project.name.toLowerCase()}`
+    description: `${project.description?.substring(0, 160) || project.name}`,
+    keywords: `${project.name.toLowerCase()} ongole, ${project.type.toLowerCase()}, property in ${project.location.toLowerCase()}`
   }
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const project = projects.find(p => p.slug === slug)
-  if (!project) return notFound()
+  const supabase = getAdminClient()
+  const { data: project, error } = await supabase.from('projects').select('*').eq('slug', slug).single()
+  
+  if (!project || error) return notFound()
+
+  // Map database fields to UI keys (handling snake_case conversion if needed)
+  const uiProject = {
+    ...project,
+    image: project.images?.[0] || '/images/elite-homes.jpg',
+    startingPrice: project.starting_price || 'Contact for details',
+    brochure: project.brochure_url || '#',
+    highlights: project.highlights || [],
+    amenities: project.amenities || [],
+    specs: project.specs || {},
+  }
 
   return (
     <main style={{ background: '#fff5f5', minHeight: '100vh', paddingTop: 80 }}>
 
       {/* Hero */}
       <div style={{ width: '100%', height: '60vh', position: 'relative', overflow: 'hidden' }}>
-        <img src={project.image} alt={project.name}
+        <img src={uiProject.image} alt={uiProject.name}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 60%)' }} />
         <div style={{ position: 'absolute', bottom: 40, left: 40 }}>
           <p style={{ color: '#C0392B', letterSpacing: 3, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>V Grand Infra</p>
-          <h1 style={{ color: '#fff', fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px, 5vw, 52px)', margin: 0, fontWeight: 700 }}>{project.name}</h1>
-          <p style={{ color: '#ddd', marginTop: 8, fontSize: 15 }}>{project.location}</p>
+          <h1 style={{ color: '#fff', fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px, 5vw, 52px)', margin: 0, fontWeight: 700 }}>{uiProject.name}</h1>
+          <p style={{ color: '#ddd', marginTop: 8, fontSize: 15 }}>{uiProject.location}</p>
         </div>
       </div>
 
@@ -36,7 +51,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 5vw, 64px) 24px' }}>
 
         {/* RERA Badge */}
-        {(project as any).rera && (
+        {uiProject.rera && (
           <div style={{
             background: '#fff',
             border: '1.5px solid #C0392B',
@@ -49,13 +64,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B' }}>RERA Registered</span>
             <span style={{ width: 1, height: 16, background: '#e0d0d0' }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', fontFamily: 'monospace' }}>{(project as any).rera}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', fontFamily: 'monospace' }}>{uiProject.rera}</span>
           </div>
         )}
 
         {/* Stats grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 56 }}>
-          {[['Location', project.location], ['Type', project.type], ['Area', project.area], ['Status', project.status], ['Handover', project.handover], ['Price', project.startingPrice], ['RERA No.', (project as any).rera || 'Applied']].map(([label, value]) => (
+          {[['Location', uiProject.location], ['Type', uiProject.type], ['Area', uiProject.area], ['Status', uiProject.status], ['Handover', uiProject.handover], ['Price', uiProject.startingPrice], ['RERA No.', uiProject.rera || 'Applied']].map(([label, value]) => (
             <div key={label} style={{ background: '#fff', border: '1px solid #e8d5d5', borderRadius: 8, padding: '16px 20px' }}>
               <p style={{ color: '#C0392B', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, margin: '0 0 6px' }}>{label}</p>
               <p style={{ color: '#1a1a1a', fontWeight: 600, fontSize: 14, margin: 0, lineHeight: 1.4 }}>{value}</p>
@@ -64,12 +79,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Description */}
-        <p style={{ fontSize: 17, lineHeight: 1.9, color: '#444', marginBottom: 56 }}>{project.description}</p>
+        <p style={{ fontSize: 17, lineHeight: 1.9, color: '#444', marginBottom: 56 }}>{uiProject.description}</p>
 
         {/* Highlights */}
         <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Key Highlights</h2>
         <div style={{ marginBottom: 56 }}>
-          {project.highlights.map((h, i) => (
+          {uiProject.highlights.map((h: string, i: number) => (
             <div key={i} style={{ borderLeft: '3px solid #C0392B', paddingLeft: 18, marginBottom: 16, color: '#333', fontSize: 15, lineHeight: 1.7 }}>{h}</div>
           ))}
         </div>
@@ -77,18 +92,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         {/* Amenities */}
         <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Amenities</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 56 }}>
-          {project.amenities.map((a, i) => (
+          {uiProject.amenities.map((a: string, i: number) => (
             <div key={i} style={{ border: '1px solid #e8d5d5', borderRadius: 6, padding: '12px 16px', color: '#333', fontSize: 14, background: '#fff', textAlign: 'center' }}>{a}</div>
           ))}
         </div>
 
         {/* Specs */}
-        {Object.keys(project.specs).length > 0 && (
+        {Object.keys(uiProject.specs).length > 0 && (
           <>
             <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Specifications & Materials</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 56 }}>
               <tbody>
-                {Object.entries(project.specs).map(([key, val], i) => (
+                {Object.entries(uiProject.specs).map(([key, val], i) => (
                   <tr key={i} style={{ background: i % 2 === 0 ? '#fff5f5' : '#fff' }}>
                     <td style={{ padding: '14px 18px', fontWeight: 700, color: '#C0392B', width: '28%', fontSize: 14, borderBottom: '1px solid #f0e0e0' }}>{key}</td>
                     <td style={{ padding: '14px 18px', color: '#333', fontSize: 14, borderBottom: '1px solid #f0e0e0', lineHeight: 1.6 }}>{val as string}</td>
@@ -110,12 +125,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
         {/* CTAs */}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 80 }}>
-          <a href={`https://wa.me/919030143333?text=Hi%2C%20I%20want%20to%20book%20a%20site%20visit%20for%20${encodeURIComponent(project.name)}`}
+          <a href={`https://wa.me/919030143333?text=Hi%2C%20I%20want%20to%20book%20a%20site%20visit%20for%20${encodeURIComponent(uiProject.name)}`}
             target="_blank"
             style={{ background: '#C0392B', color: '#fff', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, display: 'inline-block' }}>
             Book a Site Visit
           </a>
-          <a href={project.brochure} download
+          <a href={uiProject.brochure} download
             style={{ border: '2px solid #C0392B', color: '#C0392B', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, background: 'transparent', display: 'inline-block' }}>
             Download Brochure
           </a>

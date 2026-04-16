@@ -49,10 +49,43 @@ const materialsSummary = [
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
+  const [stats, setStats] = useState({
+    leads: 0,
+    visits: 0,
+    projects: 0,
+    recentLeads: [] as any[]
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [leadsRes, visitsRes, projectsRes] = await Promise.all([
+        fetch('/api/leads'),
+        fetch('/api/visits/track'),
+        fetch('/api/projects')
+      ]);
+
+      const leadsData = await leadsRes.json();
+      const visitsData = await visitsRes.json();
+      const projectsData = await projectsRes.json();
+
+      setStats({
+        leads: Array.isArray(leadsData) ? leadsData.length : 0,
+        visits: visitsData.total_visits_today || 0,
+        projects: Array.isArray(projectsData) ? projectsData.length : 0,
+        recentLeads: Array.isArray(leadsData) ? leadsData.slice(0, 5) : []
+      });
+    } catch (error) {
+      console.error('Failed to fetch stats', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!mounted) return null;
 
@@ -62,21 +95,21 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <MetricCard 
           title="Total Leads" 
-          value="1,248" 
+          value={loading ? '...' : stats.leads.toLocaleString()} 
           icon={Users} 
           trend={{ value: 12, isUp: true }}
           color="blue"
         />
         <MetricCard 
           title="Visits Today" 
-          value="254" 
+          value={loading ? '...' : stats.visits.toLocaleString()} 
           icon={Eye} 
           trend={{ value: 8, isUp: true }}
           color="purple"
         />
         <MetricCard 
           title="Active Projects" 
-          value="4" 
+          value={loading ? '...' : stats.projects.toLocaleString()} 
           icon={Building2} 
           color="green"
         />
@@ -132,32 +165,38 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <h3 className="font-bold text-slate-800">Recent Leads</h3>
-            <button className="text-blue-600 text-sm font-semibold hover:underline flex items-center gap-1">
+            <a href="/admin/leads" className="text-blue-600 text-sm font-semibold hover:underline flex items-center gap-1">
               View All <ArrowUpRight size={14} />
-            </button>
+            </a>
           </div>
           <div className="divide-y divide-slate-50">
-            {recentLeads.map((lead) => (
-              <div key={lead.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm">
-                    {lead.name.split(' ').map(n => n[0]).join('')}
+            {stats.recentLeads.length > 0 ? (
+              stats.recentLeads.map((lead: any) => (
+                <div key={lead.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm">
+                      {lead.name.split(' ').map((n: string) => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">{lead.name}</p>
+                      <p className="text-xs text-slate-500">{lead.project || 'General Inquiry'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">{lead.name}</p>
-                    <p className="text-xs text-slate-500">{lead.type} • {lead.budget}</p>
+                  <div className="text-right">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
+                      lead.source === 'WhatsApp' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                    }`}>
+                      {lead.source || 'Web'}
+                    </span>
+                    <p className="text-[10px] text-slate-400 mt-1">{new Date(lead.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
-                    lead.source === 'WhatsApp' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
-                  }`}>
-                    {lead.source}
-                  </span>
-                  <p className="text-[10px] text-slate-400 mt-1">{lead.date}</p>
-                </div>
+              ))
+            ) : (
+              <div className="p-10 text-center text-slate-400 text-sm">
+                No recent leads found.
               </div>
-            ))}
+            )}
           </div>
         </div>
 

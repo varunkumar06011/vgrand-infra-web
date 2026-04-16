@@ -1,11 +1,36 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { useState } from 'react';
 
 const Contact = () => {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        setSuccess(true);
+        setFormData({ name: '', email: '', message: '' });
+      }
+    } catch (error) {
+      console.error('Submission failed', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <section id="contact" className="py-24 bg-black overflow-hidden">
+    <section id="contact" className="py-24 bg-black overflow-hidden text-Inter">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div>
@@ -33,7 +58,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <div className="text-white/40 text-xs uppercase tracking-widest mb-1">Call Us</div>
-                  <div className="text-white text-xl font-medium">+91 98765 43210</div>
+                  <div className="text-white text-xl font-medium">+91 90301 43333</div>
                 </div>
               </div>
 
@@ -52,8 +77,8 @@ const Contact = () => {
                   <MapPin size={24} />
                 </div>
                 <div>
-                  <div className="text-white/40 text-xs uppercase tracking-widest mb-1">Our Studio</div>
-                  <div className="text-white text-xl font-medium">VGRAND Skyline, DLF Cyber City, Hyd</div>
+                  <div className="text-white/40 text-xs uppercase tracking-widest mb-1">Our Office</div>
+                  <div className="text-white text-xl font-medium">Koppolu Road, Ongole, AP</div>
                 </div>
               </div>
             </div>
@@ -63,40 +88,68 @@ const Contact = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="bg-white/5 p-10 rounded-[2rem] border border-white/10 backdrop-blur-sm"
+            className="bg-white/5 p-10 rounded-[2rem] border border-white/10 backdrop-blur-sm relative"
           >
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-white/60 text-xs uppercase tracking-widest ml-1">Name</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition-colors"
-                    placeholder="John Doe"
-                  />
+            {success ? (
+              <div className="py-20 text-center animate-in fade-in zoom-in duration-500">
+                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Send size={40} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2 font-Inter">Thank You!</h3>
+                <p className="text-white/60">Your message has been received. Our team will contact you shortly.</p>
+                <button 
+                  onClick={() => setSuccess(false)}
+                  className="mt-8 text-orange-500 font-bold uppercase tracking-widest text-sm hover:text-orange-400"
+                >
+                  Send another message
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-white/60 text-xs uppercase tracking-widest ml-1">Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-white/60 text-xs uppercase tracking-widest ml-1">Email / Phone</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                      placeholder="Email or Phone"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-white/60 text-xs uppercase tracking-widest ml-1">Email</label>
-                  <input
-                    type="email"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition-colors"
-                    placeholder="john@example.com"
-                  />
+                  <label className="text-white/60 text-xs uppercase tracking-widest ml-1">Project Brief / Message</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition-colors resize-none"
+                    placeholder="Tell us about your vision..."
+                  ></textarea>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-white/60 text-xs uppercase tracking-widest ml-1">Project Brief</label>
-                <textarea
-                  rows={4}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition-colors resize-none"
-                  placeholder="Tell us about your vision..."
-                ></textarea>
-              </div>
-              <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-5 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 group">
-                <span className="uppercase tracking-widest">Submit Proposal</span>
-                <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              </button>
-            </form>
+                <button 
+                  disabled={loading}
+                  className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-900 text-white font-bold py-5 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 group"
+                >
+                  <span className="uppercase tracking-widest">{loading ? 'Sending...' : 'Submit Proposal'}</span>
+                  {!loading && <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />}
+                </button>
+              </form>
+            )}
           </motion.div>
         </div>
       </div>

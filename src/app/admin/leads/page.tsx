@@ -13,26 +13,35 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-// Mock leads data
-const LEADS_DATA = [
-  { id: 1, name: 'Anil Kumar', phone: '9030143333', email: 'anil@gmail.com', source: 'Form', project: 'Elite Homes', date: '2025-05-15', status: 'New' },
-  { id: 2, name: 'Suresh Varma', phone: '9123456789', email: 'suresh@yahoo.com', source: 'WhatsApp', project: 'V Grand Paradise', date: '2025-05-14', status: 'Contacted' },
-  { id: 3, name: 'Megha Rao', phone: '9876543210', email: 'megha@outlook.com', source: 'Form', project: 'None (General)', date: '2025-05-12', status: 'Qualified' },
-  { id: 4, name: 'Vijay P', phone: '9000800070', email: 'vijay@gmail.com', source: 'WhatsApp', project: 'Elite Homes', date: '2025-05-10', status: 'Lost' },
-  { id: 5, name: 'Ravi Teja', phone: '8888777766', email: 'ravi@gmail.com', source: 'Form', project: 'V Grand Paradise', date: '2025-05-08', status: 'New' },
-];
-
 export default function LeadsPage() {
-  const [leads, setLeads] = useState(LEADS_DATA);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('All');
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone.includes(searchTerm);
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const res = await fetch('/api/leads');
+        const data = await res.json();
+        setLeads(data);
+      } catch (error) {
+        console.error('Failed to fetch leads', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeads();
+  }, []);
+
+  const filteredLeads = Array.isArray(leads) ? leads.filter(lead => {
+    const name = lead.name || '';
+    const phone = lead.phone || '';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          phone.includes(searchTerm);
     const matchesSource = sourceFilter === 'All' || lead.source === sourceFilter;
     return matchesSearch && matchesSource;
-  });
+  }) : [];
 
   return (
     <AdminLayout title="Lead Management">
@@ -88,9 +97,7 @@ export default function LeadsPage() {
                     <div>
                       <p className="font-bold text-slate-800">{lead.name}</p>
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                        <span className="flex items-center gap-1"><Phone size={12} /> {lead.phone}</span>
-                        <span className="text-slate-300">|</span>
-                        <span>{lead.email}</span>
+                        <span className="flex items-center gap-1"><Phone size={12} /> {lead.email}</span>
                       </div>
                     </div>
                   </td>
@@ -98,21 +105,18 @@ export default function LeadsPage() {
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${lead.source === 'WhatsApp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                       }`}>
                       {lead.source === 'WhatsApp' ? <MessageSquare size={10} /> : <Filter size={10} />}
-                      {lead.source}
+                      {lead.source || 'Form'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-slate-600 font-medium">{lead.project}</span>
+                    <span className="text-sm text-slate-600 font-medium">{lead.project || 'General Inquiry'}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-slate-500">{lead.date}</span>
+                    <span className="text-sm text-slate-500">{new Date(lead.created_at).toLocaleDateString()}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase border ${lead.status === 'New' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                        lead.status === 'Lost' ? 'bg-slate-50 text-slate-500 border-slate-200' :
-                          'bg-green-50 text-green-600 border-green-200'
-                      }`}>
-                      {lead.status}
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase border bg-blue-50 text-blue-600 border-blue-200`}>
+                      NEW
                     </span>
                   </td>
                   <td className="px-6 py-4">

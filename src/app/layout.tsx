@@ -3,6 +3,7 @@ import { Montserrat, Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import RouteHandler from '@/components/RouteHandler';
+import SmoothScroll from '@/components/SmoothScroll';
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -68,7 +69,7 @@ export const metadata = {
 }
 
 import { headers } from 'next/headers';
-import SmoothScroll from '@/components/SmoothScroll';
+import VisitTracker from '@/components/VisitTracker';
 
 export default async function RootLayout({
   children,
@@ -85,6 +86,7 @@ export default async function RootLayout({
         <link rel="preload" href="/images/elite-homes.jpg" as="image" fetchPriority="high" />
       </head>
       <body suppressHydrationWarning>
+        <VisitTracker />
         <RouteHandler />
         {!isAdmin && <Navbar />}
         <SmoothScroll>

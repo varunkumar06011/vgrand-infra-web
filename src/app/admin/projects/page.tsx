@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { 
   Plus, 
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface Project {
-  id: string;
+  id: string | number;
   name: string;
   type: string;
   location: string;
@@ -31,7 +31,7 @@ const MOCK_PROJECTS: Project[] = [
     type: '3BHK Apartments', 
     location: 'Koppolu, Ongole', 
     status: 'Ongoing',
-    images: ['/images/project1.png'],
+    images: ['/images/elite-homes.jpg'],
     brochure: 'link-to-pdf'
   },
   { 
@@ -40,14 +40,32 @@ const MOCK_PROJECTS: Project[] = [
     type: 'Luxury Villa Plots', 
     location: 'Surareddypalem, Ongole', 
     status: 'Upcoming',
-    images: ['/images/project2.png']
+    images: ['/images/tripura.jpg']
   },
 ];
 
 export default function ProjectsManagement() {
-  const [projects, setProjects] = useState(MOCK_PROJECTS);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | number | null>(null);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      setProjects(data);
+    } catch (error) {
+      console.error('Failed to fetch projects', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -55,6 +73,13 @@ export default function ProjectsManagement() {
     type: '',
     location: '',
     status: 'Ongoing',
+    description: '',
+    area: '',
+    handover: '',
+    starting_price: '',
+    rera: '',
+    highlights: '', // will be comma separated
+    amenities: '',  // will be comma separated
     images: [] as File[],
     brochure: null as File | null
   });
@@ -62,26 +87,110 @@ export default function ProjectsManagement() {
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate API call to Cloudinary/DB
-    setTimeout(() => {
-      const newProject: Project = {
-        id: Date.now().toString(),
-        name: formData.name,
-        type: formData.type,
-        location: formData.location,
-        status: formData.status as any,
-        images: ['/images/placeholder.jpg']
-      };
-      setProjects([newProject, ...projects]);
-      setLoading(false);
+
+    try {
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('type', formData.type);
+      payload.append('location', formData.location);
+      payload.append('status', formData.status);
+      payload.append('description', formData.description);
+      payload.append('area', formData.area);
+      payload.append('handover', formData.handover);
+      payload.append('starting_price', formData.starting_price);
+      payload.append('rera', formData.rera);
+      
+      // Process highlights and amenities into arrays
+      const highlightsArray = formData.highlights.split(',').map(h => h.trim()).filter(h => h);
+      const amenitiesArray = formData.amenities.split(',').map(a => a.trim()).filter(a => a);
+      payload.append('highlights', JSON.stringify(highlightsArray));
+      payload.append('amenities', JSON.stringify(amenitiesArray));
+      payload.append('specs', JSON.stringify({})); // Default empty for now
+
+      formData.images.forEach(img => payload.append('images', img));
+      if (formData.brochure) payload.append('brochure', formData.brochure);
+
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        body: payload
+      });
+
+      if (!res.ok) throw new Error('Failed to create project');
+
+      await fetchProjects();
       setIsAdding(false);
-      setFormData({ name: '', type: '', location: '', status: 'Ongoing', images: [], brochure: null });
-    }, 1500);
+      setFormData({ 
+        name: '', type: '', location: '', status: 'Ongoing', 
+        description: '', area: '', handover: '', starting_price: '', rera: '',
+        highlights: '', amenities: '',
+        images: [], brochure: null 
+      });
+    } catch (error) {
+      console.error('Project creation failed', error);
+      alert('Failed to save project. Check console for details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 1: Trigger the modal
+  const openDeleteModal = (id: string | number) => {
+    setDeleteConfirmId(id);
+  };
+
+  // Step 2: User confirmed in the modal
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/projects?id=${id}`, { 
+        method: 'DELETE',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Server Error: ${res.status}`);
+
+      setDeleteConfirmId(null); // Close modal
+      alert(`SUCCESS: Project ${id} deleted.`);
+      await fetchProjects();
+    } catch (error: any) {
+      console.error('[FRONTEND] Delete failed', error);
+      alert(`CRITICAL ERROR: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <AdminLayout title="Project Management">
+    <AdminLayout title="Project Management (System v2.2)">
+      {/* Debug & Manual Tools */}
+      <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-4">
+        <div className="flex-1">
+          <h4 className="font-bold text-orange-800 text-sm">Diagnostic Power Tools</h4>
+          <p className="text-xs text-orange-600">Use this if the trash icon doesn't respond. Type the ID number to delete.</p>
+        </div>
+        <div className="flex gap-2">
+          <input 
+            id="manual-id"
+            type="number" 
+            placeholder="Project ID" 
+            className="px-3 py-1.5 border border-orange-200 rounded-lg text-sm w-32 outline-none focus:ring-2 focus:ring-orange-500"
+          />
+          <button 
+            onClick={() => {
+              const input = document.getElementById('manual-id') as HTMLInputElement;
+              if (input && input.value) openDeleteModal(Number(input.value));
+            }}
+            className="px-4 py-1.5 bg-orange-600 text-white rounded-lg text-sm font-bold hover:bg-orange-700 shadow-sm"
+          >
+            Delete by ID
+          </button>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h3 className="font-bold text-slate-800 text-lg">Active Listings</h3>
@@ -151,9 +260,86 @@ export default function ProjectsManagement() {
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+                <textarea 
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]" 
+                  placeholder="Detailed project description..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Starting Price</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="e.g., ₹76 Lakhs"
+                    value={formData.starting_price}
+                    onChange={(e) => setFormData({...formData, starting_price: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">RERA No.</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="P08..."
+                    value={formData.rera}
+                    onChange={(e) => setFormData({...formData, rera: e.target.value})}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Total Area</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="e.g., 1771 sq.ft"
+                    value={formData.area}
+                    onChange={(e) => setFormData({...formData, area: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Handover Date</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="e.g., June 2026"
+                    value={formData.handover}
+                    onChange={(e) => setFormData({...formData, handover: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Key Highlights (Comma Separated)</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Feature 1, Feature 2, Feature 3..."
+                  value={formData.highlights}
+                  onChange={(e) => setFormData({...formData, highlights: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Amenities (Comma Separated)</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Pool, Gym, Security..."
+                  value={formData.amenities}
+                  onChange={(e) => setFormData({...formData, amenities: e.target.value})}
+                />
+              </div>
               {/* Image Upload Area */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Project Media (Images)</label>
@@ -162,8 +348,21 @@ export default function ProjectsManagement() {
                     <ImageIcon className="text-slate-400 mb-2 group-hover:text-blue-500 transition-colors" size={28} />
                     <p className="text-xs text-slate-500">Click to upload multiple project photos</p>
                   </div>
-                  <input type="file" multiple className="hidden" accept="image/*" />
+                  <input 
+                    type="file" 
+                    multiple 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setFormData({...formData, images: Array.from(e.target.files)});
+                      }
+                    }}
+                  />
                 </label>
+                {formData.images.length > 0 && (
+                  <p className="mt-2 text-xs text-blue-600 font-bold">{formData.images.length} images selected</p>
+                )}
               </div>
 
               {/* Brochure Upload Area */}
@@ -177,8 +376,20 @@ export default function ProjectsManagement() {
                     <p className="text-sm font-medium text-slate-700">Select PDF Brochure</p>
                     <p className="text-[10px] text-slate-400">Max size 10MB</p>
                   </div>
-                  <input type="file" className="hidden" accept=".pdf" />
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept=".pdf" 
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setFormData({...formData, brochure: e.target.files[0]});
+                      }
+                    }}
+                  />
                 </label>
+                {formData.brochure && (
+                  <p className="mt-2 text-xs text-red-600 font-bold">Brochure: {formData.brochure.name}</p>
+                )}
               </div>
 
               <div className="pt-4">
@@ -207,33 +418,80 @@ export default function ProjectsManagement() {
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start mb-1">
                 <h4 className="text-lg font-bold text-slate-800">{project.name}</h4>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
-                  project.status === 'Ongoing' ? 'text-blue-600 border-blue-200 bg-blue-50' :
-                  project.status === 'Upcoming' ? 'text-orange-600 border-orange-200 bg-orange-50' :
-                  'text-green-600 border-green-200 bg-green-50'
-                }`}>
-                  {project.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200">ID: {project.id}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
+                    project.status === 'Ongoing' ? 'text-blue-600 border-blue-200 bg-blue-50' :
+                    project.status === 'Upcoming' ? 'text-orange-600 border-orange-200 bg-orange-50' :
+                    'text-green-600 border-green-200 bg-green-50'
+                  }`}>
+                    {project.status}
+                  </span>
+                </div>
               </div>
               <p className="text-sm font-medium text-slate-600">{project.type}</p>
               <p className="text-xs text-slate-400 mt-1">{project.location}</p>
             </div>
 
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-              <button className="p-2 text-slate-500 hover:text-blue-600 hover:bg-white rounded-md transition-all">
-                <Edit size={18} />
+            <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
+              <button 
+                title="Edit Project"
+                className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95"
+              >
+                <Edit size={20} />
               </button>
-              <button className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white rounded-md transition-all">
-                <ExternalLink size={18} />
+              <button 
+                title="View Live"
+                className="p-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-all active:scale-95"
+              >
+                <ExternalLink size={20} />
               </button>
               <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
-              <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-md transition-all">
-                <Trash2 size={18} />
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDeleteModal(project.id);
+                }}
+                title="Delete Project"
+                className="relative z-50 p-2.5 text-red-500 hover:text-white hover:bg-red-600 rounded-md transition-all active:scale-90 border border-red-100 hover:border-red-600 shadow-sm"
+              >
+                <Trash2 size={20} />
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 text-center mb-2">Are you absolutely sure?</h3>
+            <p className="text-slate-500 text-center mb-8">
+              You are about to delete project <span className="font-bold text-slate-800">#{deleteConfirmId}</span>. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmDelete}
+                className="flex-1 py-3 px-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200 flex items-center justify-center gap-2"
+                disabled={loading}
+              >
+                {loading ? <Loader2 size={18} className="animate-spin" /> : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

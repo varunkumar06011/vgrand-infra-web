@@ -1,14 +1,29 @@
 'use client'
-import { useState } from 'react'
-import { projects } from '@/data/projects'
+import { useState, useEffect } from 'react'
 import ProjectCard from '@/components/ProjectCard'
 
 export default function ProjectsPage() {
+  const [projects, setProjects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [location, setLocation] = useState('all')
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
 
-  const filtered = projects.filter(p => {
+  useEffect(() => {
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(data => {
+        setProjects(data.map((p: any) => ({
+          ...p,
+          image: p.images?.[0] || '/images/elite-homes.jpg',
+          startingPrice: p.starting_price || 'Contact for details',
+          description: p.description || 'Premium residential project by V Grand Infra.'
+        })))
+        setLoading(false)
+      })
+  }, [])
+
+  const filtered = projects.filter((p: any) => {
     const locMatch = location === 'all' || p.location.toLowerCase().includes(location)
     const statusMatch = status === 'all' || p.status.toLowerCase() === status
     const typeMatch = type === 'all' || p.type.toLowerCase().includes(type)
@@ -93,11 +108,13 @@ export default function ProjectsPage() {
 
         {/* Cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>Loading projects...</p>
+          ) : filtered.length === 0 ? (
             <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>No projects match your filters.</p>
           ) : (
             filtered.map((project, index) => (
-              <ProjectCard key={project.slug} project={project} index={index} />
+              <ProjectCard key={project.id || project.slug} project={project} index={index} />
             ))
           )}
         </div>
