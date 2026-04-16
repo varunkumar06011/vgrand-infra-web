@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Phone, Mail, MapPin, Send } from 'lucide-react';
 
 const Contact = () => {
   const [loading, setLoading] = useState(false);
