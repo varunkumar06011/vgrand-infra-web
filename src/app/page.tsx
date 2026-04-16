@@ -23,12 +23,13 @@ export default function Home() {
       <Hero />
 
       {/* Marquee Scroller */}
-      <div style={{
+      <div className="marquee-mask" style={{
         background: '#C0392B',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         padding: '14px 0',
-        width: '100%'
+        width: '100%',
+        position: 'relative'
       }}>
         <div className="marquee-track" style={{
           display: 'inline-block',
@@ -55,13 +56,14 @@ export default function Home() {
       {/* Featured Projects Section */}
       <section style={{ padding: '100px 24px', background: '#fff5f5' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12">
             <div>
               <p style={labelStyle}>Latest Developments</p>
               <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px, 5vw, 48px)', color: '#1a1a1a', fontWeight: 700, margin: 0 }}>Featured Projects</h2>
             </div>
             <Link
               href="/projects"
+              className="w-fit self-center md:self-auto"
               style={{
                 color: '#C0392B',
                 fontWeight: 700,

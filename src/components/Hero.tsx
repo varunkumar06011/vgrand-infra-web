@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -71,7 +72,7 @@ export default function Hero() {
 
   return (
     <div
-      className="relative w-full h-[70vh] lg:h-[100vh] min-h-[550px] lg:min-h-[600px] overflow-hidden bg-black pt-[84px]"
+      className="relative w-full h-[55vh] md:h-[70vh] lg:h-[100vh] min-h-[420px] md:min-h-[550px] lg:min-h-[600px] overflow-hidden bg-[#0a0a0a] pt-[84px]"
       style={{ marginTop: 0 }}
     >
       {/* ── Slides Container ───────────────────────────────────────────────── */}
@@ -84,13 +85,17 @@ export default function Hero() {
       >
         {slides.map((slide, i) => (
           <div key={i} className="min-w-full h-full relative flex items-center justify-center bg-black">
-            <img
+            <Image
               src={slide.src}
               alt={slide.title}
-              className="w-full h-full object-contain"
+              fill
+              priority={i === 0}
+              quality={90}
+              className="object-cover"
+              sizes="100vw"
             />
-            {/* Subtle Overlay for Title Readability */}
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+            {/* Gradient Overlay for Text Readability & Professional Finish */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
           </div>
         ))}
       </div>
