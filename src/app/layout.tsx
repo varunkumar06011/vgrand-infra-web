@@ -62,16 +62,7 @@ export const metadata = {
   },
   other: {
     'preload': [
-      '/NEW%20FRAMES/ezgif-frame-001.png',
-      '/NEW%20FRAMES/ezgif-frame-002.png',
-      '/NEW%20FRAMES/ezgif-frame-003.png',
-      '/NEW%20FRAMES/ezgif-frame-004.png',
-      '/NEW%20FRAMES/ezgif-frame-005.png',
-      '/NEW%20FRAMES/ezgif-frame-006.png',
-      '/NEW%20FRAMES/ezgif-frame-007.png',
-      '/NEW%20FRAMES/ezgif-frame-008.png',
-      '/NEW%20FRAMES/ezgif-frame-009.png',
-      '/NEW%20FRAMES/ezgif-frame-010.png'
+      '/images/elite-homes.jpg'
     ]
   }
 }
@@ -89,14 +80,11 @@ export default async function RootLayout({
   const isAdmin = fullPath.includes('/admin');
 
   return (
-    <html lang="en" className={`${montserrat.variable} ${inter.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
-        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-001.png" as="image" fetchPriority="high" />
-        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-090.png" as="image" fetchPriority="high" />
-        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-180.png" as="image" fetchPriority="high" />
-        <link rel="preload" href="/NEW%20FRAMES/ezgif-frame-270.png" as="image" fetchPriority="high" />
+        <link rel="preload" href="/images/elite-homes.jpg" as="image" fetchPriority="high" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <RouteHandler />
         {!isAdmin && <Navbar />}
         <SmoothScroll>
