@@ -4,7 +4,7 @@
 
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const API_VERSION = 'v18.0';
+const API_VERSION = 'v19.0';
 
 export async function sendWhatsAppMessage(to: string, message: string) {
   if (!ACCESS_TOKEN || !PHONE_NUMBER_ID) {
