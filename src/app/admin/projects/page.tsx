@@ -39,7 +39,7 @@ const MOCK_PROJECTS: Project[] = [
     location: 'Koppolu, Ongole', 
     status: 'Ongoing',
     images: ['/images/elite-homes.jpg'],
-    brochure: 'link-to-pdf'
+    brochure_url: 'link-to-pdf'
   },
   { 
     id: '2', 
