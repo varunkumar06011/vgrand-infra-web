@@ -20,9 +20,22 @@ const Footer = () => {
             <div>
               <div className="text-white/40 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Follow Us</div>
               <div className="flex space-x-6 text-white/70">
-                <a href="#" className="hover:text-orange-500 transition-colors text-sm uppercase font-medium">Linkedin</a>
-                <a href="#" className="hover:text-orange-500 transition-colors text-sm uppercase font-medium">Instagram</a>
-                <a href="#" className="hover:text-orange-500 transition-colors text-sm uppercase font-medium">Behance</a>
+                <a 
+                  href="https://www.instagram.com/vgrandinfra?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-orange-500 transition-colors text-sm uppercase font-medium"
+                >
+                  Instagram
+                </a>
+                <a 
+                  href="https://www.facebook.com/VGrandInfra/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-orange-500 transition-colors text-sm uppercase font-medium"
+                >
+                  Facebook
+                </a>
               </div>
             </div>
           </div>
