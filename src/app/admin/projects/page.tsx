@@ -21,7 +21,14 @@ interface Project {
   location: string;
   status: 'Ongoing' | 'Upcoming' | 'Completed';
   images: string[];
-  brochure?: string;
+  description?: string;
+  area?: string;
+  handover?: string;
+  starting_price?: string;
+  rera?: string;
+  highlights?: string[] | string;
+  amenities?: string[] | string;
+  brochure_url?: string;
 }
 
 const MOCK_PROJECTS: Project[] = [
@@ -47,6 +54,7 @@ const MOCK_PROJECTS: Project[] = [
 export default function ProjectsManagement() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | number | null>(null);
 
@@ -90,6 +98,9 @@ export default function ProjectsManagement() {
 
     try {
       const payload = new FormData();
+      if (editingProject) {
+        payload.append('id', editingProject.id.toString());
+      }
       payload.append('name', formData.name);
       payload.append('type', formData.type);
       payload.append('location', formData.location);
@@ -100,37 +111,60 @@ export default function ProjectsManagement() {
       payload.append('starting_price', formData.starting_price);
       payload.append('rera', formData.rera);
       
-      // Process highlights and amenities into arrays
       const highlightsArray = formData.highlights.split(',').map(h => h.trim()).filter(h => h);
       const amenitiesArray = formData.amenities.split(',').map(a => a.trim()).filter(a => a);
       payload.append('highlights', JSON.stringify(highlightsArray));
       payload.append('amenities', JSON.stringify(amenitiesArray));
-      payload.append('specs', JSON.stringify({})); // Default empty for now
+      payload.append('specs', JSON.stringify({})); 
 
       formData.images.forEach(img => payload.append('images', img));
       if (formData.brochure) payload.append('brochure', formData.brochure);
 
       const res = await fetch('/api/projects', {
-        method: 'POST',
+        method: editingProject ? 'PUT' : 'POST',
         body: payload
       });
 
-      if (!res.ok) throw new Error('Failed to create project');
+      if (!res.ok) throw new Error(`Failed to ${editingProject ? 'update' : 'create'} project`);
 
       await fetchProjects();
       setIsAdding(false);
+      setEditingProject(null);
       setFormData({ 
         name: '', type: '', location: '', status: 'Ongoing', 
         description: '', area: '', handover: '', starting_price: '', rera: '',
         highlights: '', amenities: '',
         images: [], brochure: null 
       });
+      alert(`Project ${editingProject ? 'updated' : 'created'} successfully!`);
     } catch (error) {
-      console.error('Project creation failed', error);
+      console.error('Project operation failed', error);
       alert('Failed to save project. Check console for details.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditClick = (project: Project) => {
+    setEditingProject(project);
+    setFormData({
+      name: project.name || '',
+      type: project.type || '',
+      location: project.location || '',
+      status: project.status || 'Ongoing',
+      description: project.description || '',
+      area: project.area || '',
+      handover: project.handover || '',
+      starting_price: project.starting_price || '',
+      rera: project.rera || '',
+      highlights: Array.isArray(project.highlights) ? project.highlights.join(', ') : (project.highlights || ''),
+      amenities: Array.isArray(project.amenities) ? project.amenities.join(', ') : (project.amenities || ''),
+      images: [],
+      brochure: null
+    });
+    setIsAdding(true);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Step 1: Trigger the modal
@@ -197,7 +231,18 @@ export default function ProjectsManagement() {
           <p className="text-sm text-slate-500">Manage the projects displayed on the public website.</p>
         </div>
         <button 
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => {
+            if (isAdding) {
+              setEditingProject(null);
+              setFormData({ 
+                name: '', type: '', location: '', status: 'Ongoing', 
+                description: '', area: '', handover: '', starting_price: '', rera: '',
+                highlights: '', amenities: '',
+                images: [], brochure: null 
+              });
+            }
+            setIsAdding(!isAdding);
+          }}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all ${
             isAdding ? 'bg-slate-100 text-slate-600' : 'bg-blue-600 text-white shadow-lg shadow-blue-200 hover:bg-blue-700'
           }`}
@@ -399,7 +444,7 @@ export default function ProjectsManagement() {
                   className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-slate-200"
                 >
                   {loading ? <Loader2 size={24} className="animate-spin" /> : <Save size={20} />}
-                  <span>{loading ? 'Processing...' : 'Publish Project'}</span>
+                  <span>{loading ? 'Processing...' : (editingProject ? 'Update Project' : 'Publish Project')}</span>
                 </button>
               </div>
             </div>
@@ -435,16 +480,11 @@ export default function ProjectsManagement() {
 
             <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
               <button 
+                onClick={() => handleEditClick(project)}
                 title="Edit Project"
                 className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95"
               >
                 <Edit size={20} />
-              </button>
-              <button 
-                title="View Live"
-                className="p-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-all active:scale-95"
-              >
-                <ExternalLink size={20} />
               </button>
               <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
               <button 

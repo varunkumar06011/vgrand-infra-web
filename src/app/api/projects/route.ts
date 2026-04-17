@@ -110,6 +110,92 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    initCloudinary();
+    const supabase = getAdminClient();
+    const formData = await request.formData();
+    
+    const idStr = formData.get('id') as string;
+    if (!idStr) return NextResponse.json({ error: 'Project ID is required for update' }, { status: 400 });
+    const id = isNaN(Number(idStr)) ? idStr : Number(idStr);
+
+    // Extract metadata
+    const updateData: any = {};
+    
+    if (formData.has('name')) updateData.name = formData.get('name');
+    if (formData.has('type')) updateData.type = formData.get('type');
+    if (formData.has('location')) updateData.location = formData.get('location');
+    if (formData.has('status')) updateData.status = formData.get('status');
+    if (formData.has('description')) updateData.description = formData.get('description');
+    if (formData.has('area')) updateData.area = formData.get('area');
+    if (formData.has('handover')) updateData.handover = formData.get('handover');
+    if (formData.has('starting_price')) updateData.starting_price = formData.get('starting_price');
+    if (formData.has('rera')) updateData.rera = formData.get('rera');
+    
+    if (formData.has('highlights')) updateData.highlights = JSON.parse(formData.get('highlights') as string);
+    if (formData.has('amenities')) updateData.amenities = JSON.parse(formData.get('amenities') as string);
+    if (formData.has('specs')) updateData.specs = JSON.parse(formData.get('specs') as string);
+
+    // Handle slug
+    if (formData.has('name')) {
+      updateData.slug = formData.get('name')?.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+    }
+
+    // Handle Images - ONLY if new ones are uploaded
+    const images = formData.getAll('images') as (File | string)[];
+    const imageFiles = images.filter(img => img instanceof File) as File[];
+    
+    if (imageFiles.length > 0) {
+      const imageUrls = await Promise.all(
+        imageFiles.map(async (img) => {
+          const buffer = Buffer.from(await img.arrayBuffer());
+          return new Promise<string>((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              { folder: 'vgrand/projects' },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result!.secure_url);
+              }
+            ).end(buffer);
+          });
+        })
+      );
+      updateData.images = imageUrls;
+    }
+
+    // Handle Brochure - ONLY if a new one is uploaded
+    const brochure = formData.get('brochure');
+    if (brochure && brochure instanceof File) {
+      const buffer = Buffer.from(await brochure.arrayBuffer());
+      const brochureUrl = await new Promise<string>((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'vgrand/brochures', resource_type: 'raw' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result!.secure_url);
+          }
+        ).end(buffer);
+      });
+      updateData.brochure_url = brochureUrl;
+    }
+
+    // Update in Supabase
+    const { data, error } = await supabase
+      .from('projects')
+      .update(updateData)
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    console.error('Project Update Error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 export async function GET() {
   const supabase = getAdminClient();
   const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });

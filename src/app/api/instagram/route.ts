@@ -13,8 +13,8 @@ export async function GET() {
 
   try {
     // Fetch latest 12 media items
-    // fields: id, caption, media_type, media_url, permalink, thumbnail_url, timestamp
-    const url = `https://graph.facebook.com/v19.0/${businessId}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp&limit=12&access_token=${token}`;
+    // fields: id, caption, media_type, media_url, permalink, thumbnail_url, timestamp, username, children{media_url,media_type,thumbnail_url}
+    const url = `https://graph.facebook.com/v19.0/${businessId}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,username,children{media_url,media_type,thumbnail_url}&limit=12&access_token=${token}`;
     
     const response = await fetch(url, { next: { revalidate: 3600 } });
 
@@ -33,14 +33,22 @@ export async function GET() {
       return NextResponse.json([], { status: 200 });
     }
 
-    // Transform and truncate
+    // Transform and preserve full data
     const posts = data.data.map((post: any) => ({
       id: post.id,
+      username: post.username || 'vgrandinfra',
       image: (post.media_type === 'VIDEO' || post.media_type === 'REELS') ? post.thumbnail_url : post.media_url,
-      caption: post.caption ? (post.caption.length > 100 ? post.caption.substring(0, 100) + '...' : post.caption) : '',
+      media_url: post.media_url,
+      caption: post.caption || '', // No more truncation
       link: post.permalink,
       type: post.media_type,
-      timestamp: post.timestamp
+      timestamp: post.timestamp,
+      children: post.children?.data?.map((child: any) => ({
+        id: child.id,
+        media_url: child.media_url,
+        media_type: child.media_type,
+        thumbnail_url: child.thumbnail_url
+      })) || []
     }));
 
     return NextResponse.json(posts);
