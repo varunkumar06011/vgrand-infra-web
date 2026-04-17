@@ -32,13 +32,15 @@ export async function sendWhatsAppMessage(to: string, message: string) {
       }),
     });
 
+    console.log(`[WhatsApp] Sending message to ${to}...`);
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('WhatsApp API sending error:', data);
+      console.error('[WhatsApp] API error:', JSON.stringify(data, null, 2));
       return { success: false, error: data };
     }
 
+    console.log(`[WhatsApp] Message sent successfully to ${to}`);
     return { success: true, data };
   } catch (error) {
     console.error('WhatsApp network error:', error);

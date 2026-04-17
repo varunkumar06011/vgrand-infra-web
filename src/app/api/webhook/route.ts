@@ -40,6 +40,12 @@ export async function POST(request: NextRequest) {
       if (message) {
         const phone = message.from;
         const text = message.text?.body?.trim() || '';
+        console.log(`[Webhook] Message from ${phone}: "${text}"`);
+
+        // Check for config
+        if (!process.env.WHATSAPP_ACCESS_TOKEN || !process.env.WHATSAPP_PHONE_NUMBER_ID) {
+          console.error('[Webhook] CRITICAL: WhatsApp environment variables are missing in Vercel!');
+        }
 
         // 1. Get current session
         const { data: session, error: sessionError } = await supabase
@@ -128,8 +134,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Webhook processing error:', error);
-    // Always return 200 to WhatsApp to avoid retries, but log the error
+    console.error('[Webhook] Catch-all error:', error);
     return NextResponse.json({ success: false, error: error.message });
   }
 }
