@@ -1,5 +1,6 @@
 import { getAdminClient } from '@/lib/supabaseAdmin'
 import { notFound } from 'next/navigation'
+import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -124,16 +125,19 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         />
 
         {/* CTAs */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 80 }}>
-          <a href="https://wa.me/919030143333?text=Hi"
-            target="_blank"
-            style={{ background: '#C0392B', color: '#fff', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, display: 'inline-block' }}>
-            Book a Site Visit
-          </a>
-          <a href={uiProject.brochure} download
-            style={{ border: '2px solid #C0392B', color: '#C0392B', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, background: 'transparent', display: 'inline-block' }}>
-            Download Brochure
-          </a>
+        <div className="space-y-6">
+          <WhatsAppButton 
+            variant="banner" 
+            projectName={uiProject.name} 
+            phoneNumber="919030143333"
+          />
+          
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 80 }}>
+            <a href={uiProject.brochure} download
+              style={{ flex: 1, textAlign: 'center', border: '2px solid #C0392B', color: '#C0392B', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, background: 'transparent', display: 'inline-block' }}>
+              Download Brochure
+            </a>
+          </div>
         </div>
       </div>
     </main>

@@ -2,6 +2,7 @@ import Hero from '@/components/Hero';
 import ProjectCard from '@/components/ProjectCard';
 import { projects } from '@/data/projects';
 import Link from 'next/link';
+import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
 import Image from 'next/image';
 
@@ -117,7 +118,7 @@ export default function Home() {
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <p style={labelStyle}>What We Stand For</p>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,4vw,44px)', color: '#1a1a1a', fontWeight: 700, marginBottom: 48 }}>Our Core Values</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 64 }}>
             {[
               ['Quality', 'We use only the finest materials and employ stringent quality control so every project we deliver is built to last.'],
               ['Transparency', 'Honest pricing, clear documentation, and open communication at every stage — no surprises.'],
@@ -130,6 +131,8 @@ export default function Home() {
               </div>
             ))}
           </div>
+          
+          <WhatsAppButton variant="banner" phoneNumber="919030143333" title="Ready to find your dream home?" />
         </div>
       </section>
 
@@ -143,11 +146,7 @@ export default function Home() {
               style={{ background: '#fff', color: '#C0392B', padding: '16px 36px', borderRadius: 6, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
               Contact Us Today
             </a>
-            <a href="https://wa.me/919030143333?text=Hi"
-              target="_blank"
-              style={{ background: 'rgba(0,0,0,0.25)', color: '#fff', padding: '16px 36px', borderRadius: 6, fontWeight: 700, fontSize: 15, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.3)' }}>
-              Chat on WhatsApp
-            </a>
+            <WhatsAppButton variant="pill" phoneNumber="919030143333" showText={true} />
           </div>
         </div>
       </section>
