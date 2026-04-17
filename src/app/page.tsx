@@ -143,7 +143,7 @@ export default function Home() {
               style={{ background: '#fff', color: '#C0392B', padding: '16px 36px', borderRadius: 6, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
               Contact Us Today
             </a>
-            <a href="https://wa.me/919030143333?text=Hi%2C%20I%20am%20interested%20in%20V%20Grand%20Infra%20projects"
+            <a href="https://wa.me/919030143333?text=Hi"
               target="_blank"
               style={{ background: 'rgba(0,0,0,0.25)', color: '#fff', padding: '16px 36px', borderRadius: 6, fontWeight: 700, fontSize: 15, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.3)' }}>
               Chat on WhatsApp

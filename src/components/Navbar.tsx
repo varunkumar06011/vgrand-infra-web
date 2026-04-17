@@ -97,7 +97,7 @@ const Navbar = () => {
 
           {/* Book Site Visit */}
           <a
-            href="https://wa.me/919030143333?text=Hi, I want to book a site visit"
+            href="https://wa.me/919030143333?text=Hi"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-semibold uppercase tracking-wider px-4 py-2 rounded transition-colors"
@@ -167,7 +167,7 @@ const Navbar = () => {
               ))}
 
               <a
-                href="https://wa.me/919030143333?text=Hi, I want to book a site visit"
+                href="https://wa.me/919030143333?text=Hi"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsMobileMenuOpen(false)}

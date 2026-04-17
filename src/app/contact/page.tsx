@@ -43,9 +43,7 @@ export default function ContactPage() {
               <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Message</label>
               <textarea placeholder="Tell us what you are looking for..." rows={4} style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
             </div>
-            <a href="https://wa.me/919030143333?text=Hi%2C%20I%20have%20an%20enquiry%20about%20V%20Grand%20Infra"
-              target="_blank"
-              style={{ display: 'block', width: '100%', background: '#C0392B', color: '#fff', padding: '14px', borderRadius: 6, textAlign: 'center', fontWeight: 700, fontSize: 15, textDecoration: 'none', boxSizing: 'border-box' }}>
+            <a href={`https://wa.me/919030143333?text=Hi`} style={{ display: 'block', width: '100%', background: '#C0392B', color: '#fff', padding: '14px', borderRadius: 6, textAlign: 'center', fontWeight: 700, fontSize: 15, textDecoration: 'none', boxSizing: 'border-box' }}>
               Send via WhatsApp
             </a>
           </div>

@@ -125,7 +125,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
         {/* CTAs */}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 80 }}>
-          <a href={`https://wa.me/919030143333?text=Hi%2C%20I%20want%20to%20book%20a%20site%20visit%20for%20${encodeURIComponent(uiProject.name)}`}
+          <a href="https://wa.me/919030143333?text=Hi"
             target="_blank"
             style={{ background: '#C0392B', color: '#fff', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, display: 'inline-block' }}>
             Book a Site Visit
