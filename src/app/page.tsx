@@ -90,11 +90,12 @@ export default function Home() {
         <div className="about-grid" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 60, alignItems: 'center' }}>
           <div>
             <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 16 }}>Who We Are</p>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,4vw,44px)', color: '#fff', fontWeight: 700, marginBottom: 20, lineHeight: 1.2 }}>Building Communities Since 2017</h2>
-            <p style={{ color: '#bbb', fontSize: 16, lineHeight: 1.85, marginBottom: 20 }}>V Grand Infra was founded by Vinod Kumar Talasila with one goal — to build quality homes for every family in Ongole. Starting with V Grand Restaurant in 2017, we expanded into real estate with Elite Homes, the first gated community in Koppolu.</p>
-            <p style={{ color: '#bbb', fontSize: 16, lineHeight: 1.85, marginBottom: 32 }}>Every project we build is near NH-16 highway — ensuring your investment grows in value every year.</p>
-            <div style={{ display: 'flex', gap: 32 }}>
-              {[['60+', 'Apartments'], ['2', 'Active Projects'], ['2017', 'Established']].map(([num, label]) => (
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,4vw,44px)', color: '#fff', fontWeight: 700, marginBottom: 20, lineHeight: 1.2 }}>Building Communities Since 2025</h2>
+            <p style={{ color: '#bbb', fontSize: 16, lineHeight: 1.85, marginBottom: 32 }}>
+              V Grand Infra was founded by T. Vinod Kumar — an entrepreneur with 20+ years of experience across granite mining, hospitality, and business. Built on the same values he was raised with — hard work, zero compromise, and genuine care for families — V Grand Infra launched in 2025 with one mission: quality homes at honest prices for every family in Ongole. Our first project, Elite Homes, is the first gated community in Koppolu — built near NH-16 highway, ensuring lasting value for every investment.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px 32px' }}>
+              {[['20+', 'Years Experience'], ['2', 'Active Projects'], ['2025', 'Established'], ['60+', 'Apartments']].map(([num, label]) => (
                 <div key={label}>
                   <p style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 800, color: '#C0392B', margin: 0 }}>{num}</p>
                   <p style={{ color: '#888', fontSize: 13, margin: 0 }}>{label}</p>
