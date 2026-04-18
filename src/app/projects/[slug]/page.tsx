@@ -1,5 +1,6 @@
 import { getAdminClient } from '@/lib/supabaseAdmin'
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -37,14 +38,27 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     <main style={{ background: '#fff5f5', minHeight: '100vh', paddingTop: 80 }}>
 
       {/* Hero */}
-      <div style={{ width: '100%', height: '60vh', position: 'relative', overflow: 'hidden' }}>
-        <img src={uiProject.image} alt={uiProject.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 60%)' }} />
-        <div style={{ position: 'absolute', bottom: 40, left: 40 }}>
-          <p style={{ color: '#C0392B', letterSpacing: 3, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>V Grand Infra</p>
-          <h1 style={{ color: '#fff', fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px, 5vw, 52px)', margin: 0, fontWeight: 700 }}>{uiProject.name}</h1>
-          <p style={{ color: '#ddd', marginTop: 8, fontSize: 15 }}>{uiProject.location}</p>
+      <div className="relative w-full h-[55vh] md:h-[70vh] lg:h-[85vh] min-h-[400px] overflow-hidden">
+        <Image 
+          src={uiProject.image} 
+          alt={uiProject.name}
+          fill
+          priority
+          className="object-cover object-top"
+          quality={90}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-[1]" />
+        
+        <div className="absolute bottom-8 left-6 md:bottom-16 md:left-16 z-[2]">
+          <p className="text-[#C0392B] tracking-[4px] text-[10px] md:text-[12px] font-bold uppercase mb-2">
+            V Grand Infra
+          </p>
+          <h1 className="text-white font-bold leading-tight text-3xl md:text-5xl lg:text-7xl mb-2 drop-shadow-lg">
+            {uiProject.name}
+          </h1>
+          <p className="text-gray-200 text-sm md:text-lg font-medium drop-shadow-md">
+            {uiProject.location}
+          </p>
         </div>
       </div>
 

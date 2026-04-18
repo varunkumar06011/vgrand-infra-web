@@ -212,10 +212,10 @@ function InstagramModal({ post, onClose }: { post: InstagramPost, onClose: () =>
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative bg-white w-full max-w-[1000px] h-full max-h-[85vh] rounded-lg overflow-hidden flex flex-col md:flex-row shadow-2xl"
+        className="relative bg-white w-full max-w-[1000px] h-full max-h-[90vh] md:max-h-[85vh] rounded-xl overflow-hidden flex flex-col md:flex-row shadow-2xl"
       >
         {/* Media Side */}
-        <div className="flex-1 bg-black flex items-center justify-center relative group min-h-[50%] md:min-h-0">
+        <div className="w-full h-[50%] md:h-full md:flex-1 bg-black flex items-center justify-center relative group overflow-hidden">
           <MediaViewer post={post} />
         </div>
 

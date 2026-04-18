@@ -1,12 +1,27 @@
 import Hero from '@/components/Hero';
 import ProjectCard from '@/components/ProjectCard';
-import { projects } from '@/data/projects';
+import { getAdminClient } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
 import Image from 'next/image';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const supabase = getAdminClient();
+  const { data: dbProjects } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const projects = (dbProjects || []).map((p: any) => ({
+    ...p,
+    image: p.images?.[0] || '/images/elite-homes.jpg',
+    startingPrice: p.starting_price || 'Contact for details',
+    description: p.description || 'Premium residential project by V Grand Infra.'
+  }));
+
   const featuredProjects = projects.slice(0, 3);
 
   const labelStyle = {

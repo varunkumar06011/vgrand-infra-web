@@ -1,0 +1,206 @@
+========================================================================
+V GRAND GROUP — MASTER BUILD PROMPT
+For use with: Lovable.dev / Cursor / Windsurf / any AI coding tool
+========================================================================
+Paste this entire prompt. The AI will build the complete website.
+========================================================================
+
+Build a complete real estate website for "V Grand Group" (vgrandgroup.com),
+a property developer in Ongole, Andhra Pradesh with 40+ projects.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECH STACK (mandatory)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Next.js 14 (App Router)
+- Tailwind CSS
+- Supabase (database + auth)
+- Cloudinary (image hosting)
+- Deploy to Vercel
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PAGES TO BUILD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. HOME PAGE (/)
+   - Hero: Full-width banner with headline, subheadline, WhatsApp CTA
+   - Stats bar: 40+ Projects | 10+ Years | 500+ Families
+   - Featured projects grid (6 cards, fetched from Supabase)
+   - Why V Grand section: 4 USP cards
+   - WhatsApp floating button (bottom-right, always visible)
+   - Footer: logo, links, WhatsApp, phone, address
+
+2. PROJECTS PAGE (/projects)
+   - Filter bar: All | Upcoming | Ongoing | Completed
+   - Grid of all 40 project cards
+   - Each card: photo, name, location, price, status badge, "View Details" button
+
+3. PROJECT DETAIL PAGE (/projects/[slug])
+   - Hero image + project name + status
+   - Price, location, RERA number
+   - Amenities list
+   - Image gallery (Cloudinary photos)
+   - Floor plans tab
+   - WhatsApp enquiry banner (variant="banner")
+   - Enquiry form (name, phone, email, message → saves to Supabase leads)
+   - Google Maps embed
+
+4. ABOUT PAGE (/about)
+   - Founder story section
+   - Company timeline / journey
+   - Team section
+
+5. GALLERY PAGE (/gallery)
+   - Masonry grid of project photos from Cloudinary
+
+6. CONTACT PAGE (/contact)
+   - Phone numbers
+   - WhatsApp button (variant="inline")
+   - Email
+   - Office address
+   - Google Maps embed
+
+7. ADMIN PANEL (/admin) — Password protected
+   - Login with Supabase Auth
+   - Dashboard: visitor stats + lead counts
+   - Leads page (use the LeadsDashboard component provided)
+   - Projects CRUD: add/edit/delete projects
+   - Status management: Upcoming → Ongoing → Completed
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHATSAPP BOT INTEGRATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create file: app/api/whatsapp-webhook/route.js
+
+This is the Meta WhatsApp Cloud API webhook. It handles a 5-step
+conversation flow to collect leads:
+
+GET handler: Verify webhook (check hub.verify_token matches env var)
+
+POST handler — conversation state machine using in-memory Map:
+
+Step 1 (START → LOCATION):
+  Bot sends: "Welcome to V Grand Infra! Which location interests you?"
+  Interactive buttons: [Ongole] [Koppolu] [Other Location]
+
+Step 2 (LOCATION → BUDGET):
+  Bot sends: "What is your budget?"
+  Interactive buttons: [Under ₹40 Lakhs] [₹40L–₹80L] [₹80 Lakhs+]
+
+Step 3 (BUDGET → TYPE):
+  Bot sends: "What type of property?"
+  Interactive buttons: [2 BHK] [3 BHK] [Villa / Plot]
+
+Step 4 (TYPE → CONTACT):
+  Bot sends: "Please reply with your name and phone number.
+  Example: Ravi Kumar, 9876543210"
+
+Step 5 (CONTACT → DONE):
+  Parse name + phone from free text
+  Save lead to Supabase leads table (source='whatsapp')
+  Send confirmation: "Thank you! Our team will call within 2 hours."
+  Send agent notification to AGENT_WHATSAPP_NUMBER
+
+Handle these message types from Meta:
+- type='text' → message.text.body
+- type='interactive' → message.interactive.button_reply.id
+
+Ignore status update webhooks (no message field).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SUPABASE SCHEMA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Table: leads
+  id uuid primary key
+  name text
+  phone text
+  whatsapp text
+  email text
+  location text
+  budget text
+  property_type text
+  message text
+  source text (whatsapp | form | website)
+  status text (new | contacted | converted | lost)
+  project_id uuid (nullable)
+  created_at timestamptz default now()
+  updated_at timestamptz default now()
+
+Table: projects
+  id uuid primary key
+  name text
+  location text
+  maps_url text
+  type text (2BHK | 3BHK | Villa | Plot)
+  status text (upcoming | ongoing | completed)
+  price_start bigint
+  price_display text
+  rera_number text
+  amenities text[]
+  images text[]
+  floor_plans text[]
+  description text
+  slug text unique
+  featured boolean default false
+  created_at timestamptz
+  updated_at timestamptz
+
+RLS policies:
+- leads: public INSERT, authenticated SELECT/UPDATE
+- projects: public SELECT, authenticated all operations
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ENVIRONMENT VARIABLES (add to .env.local)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+WHATSAPP_PHONE_NUMBER_ID=1082284371633102
+WHATSAPP_BUSINESS_ACCOUNT_ID=1525717845806487
+WHATSAPP_ACCESS_TOKEN=       ← get new permanent token from Meta Business Suite
+WHATSAPP_VERIFY_TOKEN=vgrand_webhook_secret_2024
+AGENT_WHATSAPP_NUMBER=       ← agent's number e.g. 919876543210
+NEXT_PUBLIC_SITE_URL=https://vgrandgroup.com
+NEXT_PUBLIC_WHATSAPP_NUMBER= ← business WhatsApp number
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DESIGN DIRECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Brand colors: Deep green (#1a5c3a) + Gold accent (#d4a843) + White
+- Font: Playfair Display for headings, Inter for body
+- Feel: Premium, trustworthy, South Indian real estate brand
+- Mobile-first — most users will be on phone
+- WhatsApp green (#25D366) for all WhatsApp elements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHATSAPP BUTTON COMPONENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create components/WhatsAppButton.jsx with 3 variants:
+
+variant="floating"  → Fixed bottom-right, pulse animation, always visible
+variant="inline"    → Green button for hero/contact sections
+variant="banner"    → Wide banner for project detail page
+
+All variants open: https://wa.me/{phoneNumber}?text={encodedMessage}
+On project pages, message should include the project name.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AFTER BUILDING — DO THESE 4 STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Run Supabase schema SQL in Supabase SQL Editor
+2. Deploy to Vercel, get live URL
+3. In Meta Developer Console:
+   - Go to WhatsApp → Configuration → Webhooks
+   - Callback URL: https://vgrandgroup.com/api/whatsapp-webhook
+   - Verify Token: vgrand_webhook_secret_2024
+   - Subscribe to: messages
+4. Test: send "Hi" to your WhatsApp Business number → bot should reply
+
+========================================================================
+END OF PROMPT — Estimated build time: 1–2 hours with AI assistance
+========================================================================

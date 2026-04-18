@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import EnquireModal from './EnquireModal';
 
 const InstagramIcon = ({ size = 24 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
@@ -24,6 +25,7 @@ const navLinks = [
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isEnquireModalOpen, setIsEnquireModalOpen] = useState(false);
 
   return (
     <nav
@@ -62,7 +64,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6 desktop-nav">
+        <div className="hidden lg:flex items-center gap-6 desktop-nav">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -95,48 +97,26 @@ const Navbar = () => {
             </a>
           </div>
 
-          {/* Book Site Visit */}
-          <a
-            href="https://wa.me/919030143333?text=Hi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-semibold uppercase tracking-wider px-4 py-2 rounded transition-colors"
-            style={{
-              border: '1.5px solid #C0392B',
-              color: '#C0392B',
-              background: 'transparent',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.background = '#C0392B';
-              (e.currentTarget as HTMLAnchorElement).style.color = '#fff';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
-              (e.currentTarget as HTMLAnchorElement).style.color = '#C0392B';
-            }}
-          >
-            Book Site Visit
-          </a>
 
           {/* Enquire Now */}
-          <Link
-            href="/contact"
+          <button
+            onClick={() => setIsEnquireModalOpen(true)}
             className="text-sm font-semibold uppercase tracking-wider px-4 py-2 rounded text-white transition-colors"
             style={{ background: '#C0392B' }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.background = '#a93226';
+              (e.currentTarget as HTMLButtonElement).style.background = '#a93226';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.background = '#C0392B';
+              (e.currentTarget as HTMLButtonElement).style.background = '#C0392B';
             }}
           >
             Enquire Now
-          </Link>
+          </button>
         </div>
 
         {/* Mobile Hamburger */}
         <button
-          className="md:hidden text-[#1a1a1a] hover:text-[#C0392B] transition-colors mobile-menu-btn"
+          className="lg:hidden text-[#1a1a1a] hover:text-[#C0392B] transition-colors mobile-menu-btn"
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
           aria-label="Toggle menu"
         >
@@ -152,7 +132,7 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden absolute top-full left-0 right-0 overflow-hidden bg-white border-t border-[#f0e0e0] shadow-xl"
+            className="lg:hidden absolute top-full left-0 right-0 overflow-hidden bg-white border-t border-[#f0e0e0] shadow-xl"
           >
             <div className="flex flex-col px-6 py-6 gap-5">
               {navLinks.map((link) => (
@@ -166,25 +146,16 @@ const Navbar = () => {
                 </Link>
               ))}
 
-              <a
-                href="https://wa.me/919030143333?text=Hi"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-sm font-semibold uppercase tracking-wider px-4 py-3 rounded text-center transition-colors"
-                style={{ border: '1.5px solid #C0392B', color: '#C0392B', background: 'transparent' }}
-              >
-                Book Site Visit
-              </a>
-
-              <Link
-                href="/contact"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsEnquireModalOpen(true);
+                }}
                 className="text-sm font-semibold uppercase tracking-wider px-4 py-3 rounded text-center text-white"
                 style={{ background: '#C0392B' }}
               >
                 Enquire Now
-              </Link>
+              </button>
 
               {/* Mobile Social Links */}
               <div className="flex justify-center gap-8 pt-6 mt-2 border-t border-slate-100">
@@ -211,6 +182,11 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <EnquireModal 
+        isOpen={isEnquireModalOpen} 
+        onClose={() => setIsEnquireModalOpen(false)} 
+      />
     </nav>
   );
 };

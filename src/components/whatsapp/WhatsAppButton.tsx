@@ -5,19 +5,23 @@ import React from 'react';
 interface WhatsAppButtonProps {
   phoneNumber?: string;
   message?: string;
-  variant?: 'floating' | 'inline' | 'banner';
+  variant?: 'floating' | 'inline' | 'banner' | 'pill';
   projectName?: string | null;
+  title?: string;
+  showText?: boolean;
 }
 
 const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
   phoneNumber = '919010363636', // Default V Grand Number
-  message = 'Hi! I am interested in your residential projects.',
-  variant = 'floating',
+  message = "hi i want flat in your project can u please call me",
+  variant = "floating",
   projectName = null,
+  title,
+  showText = true,
 }) => {
   const encodedMsg = encodeURIComponent(
     projectName
-      ? `Hi! I am interested in *${projectName}*. Can you share more details?`
+      ? `hi i want flat in *${projectName}* project can u please call me`
       : message
   );
 
@@ -57,7 +61,8 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
   const buttonClasses = {
     floating: "fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-4 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-green-300/50 group cursor-pointer border-none",
     inline: "inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 shadow-md cursor-pointer border-none",
-    banner: "flex w-full items-center justify-between bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white px-6 py-4 rounded-2xl hover:opacity-95 transition-opacity shadow-lg cursor-pointer border-none"
+    banner: "flex w-full items-center justify-between bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white px-6 py-4 rounded-2xl hover:opacity-95 transition-opacity shadow-lg cursor-pointer border-none",
+    pill: "inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-6 py-2.5 rounded-full font-semibold transition-all duration-200 hover:scale-105 shadow-md cursor-pointer border-none"
   };
 
   if (variant === 'floating') {
@@ -74,7 +79,16 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
     return (
       <button onClick={handleCapture} className={buttonClasses.inline}>
         <WhatsAppIcon size={20} />
-        WhatsApp Us
+        {showText && "WhatsApp Us"}
+      </button>
+    );
+  }
+
+  if (variant === 'pill') {
+    return (
+      <button onClick={handleCapture} className={buttonClasses.pill}>
+        <WhatsAppIcon size={18} />
+        {showText && (title || "WhatsApp Us")}
       </button>
     );
   }
@@ -83,7 +97,7 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
   return (
     <button onClick={handleCapture} className={buttonClasses.banner}>
       <div className="text-left">
-        <p className="font-bold text-lg">Enquire on WhatsApp</p>
+        <p className="font-bold text-lg">{title || "Enquire on WhatsApp"}</p>
         <p className="text-green-100 text-sm mt-0.5">Our team responds within 2 hours</p>
       </div>
       <WhatsAppIcon size={32} />

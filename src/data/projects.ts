@@ -35,7 +35,7 @@ export const projects = [
       'Plastering': 'Sponge finish in cement mortar'
     },
     image: '/images/elite-homes.jpg',
-    brochure: '/brochures/elite-homes.pdf'
+    brochure: '/brochures/elite-homes-brochure.pdf'
   },
   {
     slug: 'tripura',
@@ -63,7 +63,7 @@ export const projects = [
       'Electrical': 'Concealed copper wiring'
     },
     image: '/images/tripura.jpg',
-    brochure: '/brochures/V grand tripura brocher.pdf'
+    brochure: '/brochures/v-grand-tripura-brochure.pdf'
   },
   {
     slug: 'green-valley',
@@ -79,6 +79,6 @@ export const projects = [
     amenities: ['24x7 Security','Parking','Children Play Area'],
     specs: {},
     image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&auto=format',
-    brochure: '/brochures/elite-homes.pdf'
+    brochure: '/brochures/elite-homes-brochure.pdf'
   }
 ]

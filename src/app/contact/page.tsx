@@ -21,7 +21,7 @@ export default function ContactPage() {
           {/* Form */}
           <div style={{ background: '#fff', borderRadius: 8, padding: 32, border: '1px solid #e8d5d5' }}>
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, color: '#1a1a1a', marginBottom: 24, fontWeight: 700 }}>Send us a Message</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Full Name</label>
                 <input placeholder="Your name" style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />

@@ -48,3 +48,27 @@ export async function GET() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = getAdminClient();
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id || !status) {
+      return NextResponse.json({ success: false, error: 'ID and status are required' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('leads')
+      .update({ status: status.toLowerCase() })
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    console.error('Lead Update Error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

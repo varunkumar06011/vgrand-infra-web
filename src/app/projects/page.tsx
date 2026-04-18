@@ -62,37 +62,27 @@ export default function ProjectsPage() {
         <p style={{ color: '#555', fontSize: 16, marginBottom: 48, lineHeight: 1.7 }}>Building communities where families thrive. Explore our ongoing and upcoming residential projects in Ongole.</p>
 
         {/* Filter bar */}
-        <div style={{
-          background: '#fff5f5',
-          border: '1px solid #e8d5d5',
-          borderRadius: 10,
-          padding: '24px 28px',
-          marginBottom: 48,
-          display: 'flex',
-          gap: 24,
-          flexWrap: 'wrap',
-          alignItems: 'flex-end'
-        }}>
-          <div>
+        <div className="bg-white border border-[#e8d5d5] rounded-xl p-6 md:p-8 mb-12 flex flex-col sm:flex-row gap-6 items-start sm:items-end flex-wrap shadow-sm">
+          <div className="w-full sm:w-auto">
             <label style={labelStyle}>Location</label>
-            <select style={selectStyle} value={location} onChange={e => setLocation(e.target.value)}>
+            <select style={{ ...selectStyle, width: '100%', minWidth: 'unset' }} value={location} onChange={e => setLocation(e.target.value)}>
               <option value="all">All Locations</option>
               <option value="koppolu">Koppolu</option>
               <option value="ongole">Ongole</option>
             </select>
           </div>
-          <div>
+          <div className="w-full sm:w-auto">
             <label style={labelStyle}>Status</label>
-            <select style={selectStyle} value={status} onChange={e => setStatus(e.target.value)}>
+            <select style={{ ...selectStyle, width: '100%', minWidth: 'unset' }} value={status} onChange={e => setStatus(e.target.value)}>
               <option value="all">All Status</option>
               <option value="ongoing">Ongoing</option>
               <option value="upcoming">Upcoming</option>
               <option value="completed">Completed</option>
             </select>
           </div>
-          <div>
+          <div className="w-full sm:w-auto">
             <label style={labelStyle}>Type</label>
-            <select style={selectStyle} value={type} onChange={e => setType(e.target.value)}>
+            <select style={{ ...selectStyle, width: '100%', minWidth: 'unset' }} value={type} onChange={e => setType(e.target.value)}>
               <option value="all">All Types</option>
               <option value="3 bhk">3 BHK</option>
               <option value="2 bhk">2 BHK</option>
@@ -101,7 +91,8 @@ export default function ProjectsPage() {
           </div>
           <button
             onClick={() => { setLocation('all'); setStatus('all'); setType('all') }}
-            style={{ background: 'none', border: 'none', color: '#C0392B', fontSize: 14, fontWeight: 700, cursor: 'pointer', paddingBottom: 2, borderBottom: '1px solid #C0392B' }}>
+            className="text-[#C0392B] text-sm font-bold border-b border-[#C0392B] pb-1 hover:text-[#a93226] hover:border-[#a93226] transition-all cursor-pointer whitespace-nowrap mt-2 sm:mt-0"
+          >
             Clear Filters
           </button>
         </div>

@@ -22,30 +22,9 @@ import {
   Cell
 } from 'recharts';
 
-// Mock data for demo
-const visitData = [
-  { day: 'Mon', visits: 120 },
-  { day: 'Tue', visits: 190 },
-  { day: 'Wed', visits: 250 },
-  { day: 'Thu', visits: 160 },
-  { day: 'Fri', visits: 210 },
-  { day: 'Sat', visits: 340 },
-  { day: 'Sun', visits: 280 },
-];
-
-const recentLeads = [
-  { id: 1, name: 'Rahul Sharma', budget: '35L', type: '3BHK', source: 'WhatsApp', date: '2h ago' },
-  { id: 2, name: 'Suresh Babu', budget: '29L', type: '2BHK', source: 'Form', date: '5h ago' },
-  { id: 3, name: 'Priya Reddy', budget: '1.2Cr', type: 'Villa', source: 'WhatsApp', date: 'Yesterday' },
-  { id: 4, name: 'Anil Kumar', budget: '45L', type: 'Plot', source: 'Form', date: '2 days ago' },
-  { id: 5, name: 'Meena P', budget: '32L', type: '3BHK', source: 'WhatsApp', date: '2 days ago' },
-];
-
-const materialsSummary = [
-  { id: 1, name: 'Cement (Ultratech)', stock: '12%', status: 'Critical' },
-  { id: 2, name: 'Steel Rods (Tata)', stock: '45%', status: 'Healthy' },
-  { id: 3, name: 'Bricks (Red)', stock: '18%', status: 'Low' },
-];
+// Initial states for real-time data
+const visitData: any[] = [];
+const materialsSummary: any[] = [];
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -241,26 +220,34 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {materialsSummary.map((item) => (
-                  <tr key={item.id} className="text-sm">
-                    <td className="px-6 py-4 font-semibold text-slate-700">{item.name}</td>
-                    <td className="px-6 py-4">
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full min-w-[100px]">
-                        <div 
-                          className={`h-full rounded-full ${item.status === 'Critical' ? 'bg-red-500' : item.status === 'Low' ? 'bg-orange-500' : 'bg-green-500'}`}
-                          style={{ width: item.stock }}
-                        ></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
-                          item.status === 'Critical' ? 'bg-red-50 text-red-600' : item.status === 'Low' ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'
-                      }`}>
-                        {item.status}
-                      </span>
+                {materialsSummary.length > 0 ? (
+                  materialsSummary.map((item) => (
+                    <tr key={item.id} className="text-sm">
+                      <td className="px-6 py-4 font-semibold text-slate-700">{item.name}</td>
+                      <td className="px-6 py-4">
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full min-w-[100px]">
+                          <div 
+                            className={`h-full rounded-full ${item.status === 'Critical' ? 'bg-red-500' : item.status === 'Low' ? 'bg-orange-500' : 'bg-green-500'}`}
+                            style={{ width: item.stock }}
+                          ></div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
+                            item.status === 'Critical' ? 'bg-red-50 text-red-600' : item.status === 'Low' ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-10 text-center text-slate-400 text-sm">
+                      No material alerts at this time.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

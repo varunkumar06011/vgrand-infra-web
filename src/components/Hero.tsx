@@ -91,7 +91,7 @@ export default function Hero() {
               fill
               priority={i === 0}
               quality={90}
-              className="object-cover"
+              className="object-cover object-top"
               sizes="100vw"
             />
             {/* Gradient Overlay for Text Readability & Professional Finish */}

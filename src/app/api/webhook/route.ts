@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. State Machine Logic
+        const currentStep = session?.step || 'START';
         switch (currentStep) {
           case 'START':
             await startFlow(phone, supabase);

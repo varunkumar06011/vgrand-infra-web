@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
-      { protocol: 'https', hostname: 'vgrand-infra-web.vercel.app' }
+      { protocol: 'https', hostname: 'vgrand-infra-web.vercel.app' },
+      { protocol: 'https', hostname: 'sqpnywqcmshkcrogurlw.supabase.co' }
     ],
   },
 };

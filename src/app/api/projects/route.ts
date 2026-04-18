@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
-import { v2 as cloudinary } from 'cloudinary';
+import { uploadToStorage } from '@/lib/storage';
 import fs from 'fs';
 
 export const dynamic = 'force-dynamic';
 
-// Helper to init Cloudinary
-const initCloudinary = () => {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-};
-
 export async function POST(request: NextRequest) {
   try {
-    initCloudinary();
     const supabase = getAdminClient();
+    
+    // Validate Environment
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Critical: Supabase environment variables are missing on the server.' 
+      }, { status: 500 });
+    }
+
     const formData = await request.formData();
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PROJECTS || 'projects';
 
     // Extract metadata
     const name = formData.get('name') as string;
@@ -42,19 +42,10 @@ export async function POST(request: NextRequest) {
     const images = formData.getAll('images') as File[];
     const brochure = formData.get('brochure') as File | null;
 
-    // 1. Upload Images to Cloudinary
+    // 1. Upload Images to Supabase Storage
     const imageUrls = await Promise.all(
       images.map(async (img) => {
-        const buffer = Buffer.from(await img.arrayBuffer());
-        return new Promise<string>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            { folder: 'vgrand/projects' },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result!.secure_url);
-            }
-          ).end(buffer);
-        });
+        return uploadToStorage(img, bucket, 'projects');
       })
     );
 
@@ -64,16 +55,7 @@ export async function POST(request: NextRequest) {
       if (typeof brochure === 'string') {
         brochureUrl = brochure;
       } else {
-        const buffer = Buffer.from(await brochure.arrayBuffer());
-        brochureUrl = await new Promise<string>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            { folder: 'vgrand/brochures', resource_type: 'raw' },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result!.secure_url);
-            }
-          ).end(buffer);
-        });
+        brochureUrl = await uploadToStorage(brochure, bucket, 'brochures');
       }
     }
 
@@ -110,12 +92,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
+
 export async function PUT(request: NextRequest) {
   try {
-    initCloudinary();
     const supabase = getAdminClient();
+
+    // Validate Environment
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Critical: Supabase environment variables are missing on the server.' 
+      }, { status: 500 });
+    }
+
     const formData = await request.formData();
     
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PROJECTS || 'projects';
+
     const idStr = formData.get('id') as string;
     if (!idStr) return NextResponse.json({ error: 'Project ID is required for update' }, { status: 400 });
     const id = isNaN(Number(idStr)) ? idStr : Number(idStr);
@@ -149,16 +142,7 @@ export async function PUT(request: NextRequest) {
     if (imageFiles.length > 0) {
       const imageUrls = await Promise.all(
         imageFiles.map(async (img) => {
-          const buffer = Buffer.from(await img.arrayBuffer());
-          return new Promise<string>((resolve, reject) => {
-            cloudinary.uploader.upload_stream(
-              { folder: 'vgrand/projects' },
-              (error, result) => {
-                if (error) reject(error);
-                else resolve(result!.secure_url);
-              }
-            ).end(buffer);
-          });
+          return uploadToStorage(img, bucket, 'projects');
         })
       );
       updateData.images = imageUrls;
@@ -167,16 +151,7 @@ export async function PUT(request: NextRequest) {
     // Handle Brochure - ONLY if a new one is uploaded
     const brochure = formData.get('brochure');
     if (brochure && brochure instanceof File) {
-      const buffer = Buffer.from(await brochure.arrayBuffer());
-      const brochureUrl = await new Promise<string>((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-          { folder: 'vgrand/brochures', resource_type: 'raw' },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result!.secure_url);
-          }
-        ).end(buffer);
-      });
+      const brochureUrl = await uploadToStorage(brochure, bucket, 'brochures');
       updateData.brochure_url = brochureUrl;
     }
 

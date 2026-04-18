@@ -2,17 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import {
-  Search,
-  Filter,
-  Download,
+import { 
+  Users, 
+  Search, 
+  Filter, 
+  Download, 
+  Phone, 
+  MessageSquare, 
   MoreVertical,
-  Phone,
-  MessageSquare,
-  Users,
-  MessageCircle,
+  Calendar,
+  X,
+  CreditCard,
+  Home,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  MessageCircle,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -22,42 +27,54 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
   // 1. Fetch leads and setup real-time listener
   useEffect(() => {
     fetchLeads();
-
-    const channel = supabase
+    
+    // We still keep the real-time for instant updates if RLS allows
+    const client = supabase();
+    const channel = client
       .channel('leads-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setLeads(prev => [payload.new, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          setLeads(prev => prev.map(l => l.id === payload.new.id ? payload.new : l));
-        } else if (payload.eventType === 'DELETE') {
-          setLeads(prev => prev.filter(l => l.id !== payload.old.id));
-        }
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload: any) => {
+        fetchLeads(); // Simplest way to keep sync
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, []);
 
   const fetchLeads = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (!error) setLeads(data || []);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const res = await fetch('/api/leads');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setLeads(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch leads:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('leads').update({ status }).eq('id', id);
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+      });
+      if (res.ok) {
+        fetchLeads();
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    }
   };
 
   // 2. Stats calculation
@@ -137,6 +154,7 @@ export default function LeadsPage() {
                 <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Source</th>
                 <th className="px-6 py-4">Requirements</th>
+                <th className="px-6 py-4">Flat Interest</th>
                 <th className="px-6 py-4">Date</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-center">Actions</th>
@@ -170,6 +188,9 @@ export default function LeadsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
+                    <span className="text-sm font-semibold text-slate-700">{lead.interested_flat || '—'}</span>
+                  </td>
+                  <td className="px-6 py-4">
                     <span className="text-sm text-slate-500">{new Date(lead.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
                   </td>
                   <td className="px-6 py-4">
@@ -191,15 +212,19 @@ export default function LeadsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => setSelectedLead(lead)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" 
+                        title="View Details"
+                      >
+                        <Eye size={16} />
+                      </button>
                       <a href={`tel:${lead.phone}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Call">
                         <Phone size={16} />
                       </a>
-                      <a href={`https://wa.me/${lead.whatsapp || lead.phone}`} target="_blank" className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="WhatsApp">
+                      <a href={`https://wa.me/${lead.phone}`} target="_blank" className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="WhatsApp">
                         <MessageSquare size={16} />
                       </a>
-                      <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
-                        <MoreVertical size={16} />
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -207,6 +232,73 @@ export default function LeadsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Lead Details Modal */}
+        {selectedLead && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedLead(null)} />
+            <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                  <Users size={20} className="text-blue-600" /> Lead Information
+                </h3>
+                <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-8 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-black">
+                    {selectedLead.name.split(' ').map((n: string) => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-900">{selectedLead.name}</h4>
+                    <p className="text-slate-500 font-medium">Customer ID: #{selectedLead.id.slice(0, 8)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <Phone size={10} /> Phone Number
+                    </p>
+                    <p className="text-sm font-bold text-slate-700">{selectedLead.phone}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <Calendar size={10} /> Submitted On
+                    </p>
+                    <p className="text-sm font-bold text-slate-700">
+                      {new Date(selectedLead.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <Home size={10} /> Interested In
+                    </p>
+                    <p className="text-sm font-bold text-slate-700">{selectedLead.interested_flat || 'General'}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <Filter size={10} /> Inquiry Source
+                    </p>
+                    <p className="text-sm font-bold text-slate-700 uppercase">{selectedLead.source || 'Website'}</p>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <a href={`tel:${selectedLead.phone}`} className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200">
+                    <Phone size={18} /> Call Client
+                  </a>
+                  <a href={`https://wa.me/${selectedLead.phone}`} target="_blank" className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-200">
+                    <MessageSquare size={18} /> WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {filteredLeads.length === 0 && (
           <div className="p-12 text-center">
@@ -234,6 +326,5 @@ function StatCard({ title, value, icon, color }: any) {
         </div>
       </div>
     </div>
-  );
   );
 }
