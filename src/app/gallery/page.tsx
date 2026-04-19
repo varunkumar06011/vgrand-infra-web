@@ -66,6 +66,11 @@ export default function GalleryPage() {
     async function fetchFeed() {
       try {
         const res = await fetch('/api/instagram');
+        
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
+
         const data = await res.json();
         
         if (data && Array.isArray(data) && data.length > 0) {

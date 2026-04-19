@@ -11,8 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!project) return {}
   return {
     title: `${project.name} | ${project.type} in ${project.location} | V Grand Infra`,
-    description: `${project.description?.substring(0, 160) || project.name}`,
-    keywords: `${project.name.toLowerCase()} ongole, ${project.type.toLowerCase()}, property in ${project.location.toLowerCase()}`
+    description: `Explore ${project.name}, a premium ${project.type} project in ${project.location} by V Grand Infra. Top quality construction, gated community amenities, and high land value.`,
+    keywords: `${project.name.toLowerCase()}, flats in ongole, apartments in ${project.location.toLowerCase()}, luxury flats in ongole, best real estate in prakasam, ready to move apartments`
   }
 }
 

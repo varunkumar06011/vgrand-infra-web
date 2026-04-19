@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const Footer = () => {
   return (
@@ -16,7 +17,17 @@ const Footer = () => {
             </p>
           </div>
           
-          <div className="flex space-x-12">
+          <div className="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-16">
+            <div>
+              <div className="text-white/40 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Popular Searches</div>
+              <div className="grid grid-cols-1 gap-2 text-white/50 text-[11px]">
+                <Link href="/projects" className="hover:text-white transition-colors">New Housing Projects in Ongole 2026</Link>
+                <Link href="/projects" className="hover:text-white transition-colors">Flats for Sale near Ongole Highway</Link>
+                <Link href="/projects" className="hover:text-white transition-colors">Villas in Prakasam District</Link>
+                <Link href="/projects" className="hover:text-white transition-colors">Gated Community in Ongole</Link>
+              </div>
+            </div>
+            
             <div>
               <div className="text-white/40 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Follow Us</div>
               <div className="flex space-x-6 text-white/70">
@@ -24,7 +35,7 @@ const Footer = () => {
                   href="https://www.instagram.com/vgrandinfra?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="hover:text-orange-500 transition-colors text-sm uppercase font-medium"
+                  className="hover:text-[#C0392B] transition-colors text-sm uppercase font-medium"
                 >
                   Instagram
                 </a>
@@ -32,7 +43,7 @@ const Footer = () => {
                   href="https://www.facebook.com/VGrandInfra/" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="hover:text-orange-500 transition-colors text-sm uppercase font-medium"
+                  className="hover:text-[#C0392B] transition-colors text-sm uppercase font-medium"
                 >
                   Facebook
                 </a>

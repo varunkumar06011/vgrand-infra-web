@@ -7,8 +7,11 @@ export async function GET() {
   const businessId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
 
   if (!token || !businessId) {
-    console.error('Instagram environment variables missing');
-    return NextResponse.json({ error: 'Instagram credentials not configured' }, { status: 500 });
+    console.error('[INSTAGRAM_API] ERROR: Environment variables missing (INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ACCOUNT_ID)');
+    return NextResponse.json(
+      { error: 'Instagram credentials not configured. Please add them to your .env file.' }, 
+      { status: 500 }
+    );
   }
 
   try {
