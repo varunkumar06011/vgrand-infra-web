@@ -72,8 +72,8 @@ export default function Hero() {
 
   return (
     <div
-      className="relative w-full h-[55vh] md:h-[70vh] lg:h-[100vh] min-h-[420px] md:min-h-[550px] lg:min-h-[600px] overflow-hidden bg-[#0a0a0a] pt-[84px]"
-      style={{ marginTop: 0 }}
+      className="relative w-full h-[35vh] md:h-[60vh] lg:h-[100vh] min-h-[280px] md:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-[#0a0a0a]"
+      style={{ marginTop: '84px' }}
     >
       {/* ── Slides Container ───────────────────────────────────────────────── */}
       <div 
@@ -91,7 +91,7 @@ export default function Hero() {
               fill
               priority={i === 0}
               quality={90}
-              className="object-cover object-top"
+              className="object-contain lg:object-cover object-center lg:object-top"
               sizes="100vw"
             />
             {/* Gradient Overlay for Text Readability & Professional Finish */}

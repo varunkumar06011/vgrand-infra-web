@@ -114,14 +114,41 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Mobile Hamburger */}
-        <button
-          className="lg:hidden text-[#1a1a1a] hover:text-[#C0392B] transition-colors mobile-menu-btn"
-          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-        </button>
+        {/* Mobile Header Items */}
+        <div className="lg:hidden flex items-center gap-3">
+          <div className="flex items-center gap-3 mr-1">
+            <a href="https://www.instagram.com/vgrandinfra?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors"
+               aria-label="Instagram">
+              <InstagramIcon size={19} />
+            </a>
+            <a href="https://www.facebook.com/VGrandInfra/" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors"
+               aria-label="Facebook">
+              <FacebookIcon size={19} />
+            </a>
+          </div>
+
+          <button
+            onClick={() => setIsEnquireModalOpen(true)}
+            className="text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded text-white transition-colors"
+            style={{ background: '#C0392B' }}
+          >
+            Enquire Now
+          </button>
+          
+          <button
+            className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Dropdown */}
@@ -146,16 +173,6 @@ const Navbar = () => {
                 </Link>
               ))}
 
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsEnquireModalOpen(true);
-                }}
-                className="text-sm font-semibold uppercase tracking-wider px-4 py-3 rounded text-center text-white"
-                style={{ background: '#C0392B' }}
-              >
-                Enquire Now
-              </button>
 
               {/* Mobile Social Links */}
               <div className="flex justify-center gap-8 pt-6 mt-2 border-t border-slate-100">

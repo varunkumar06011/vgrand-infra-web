@@ -50,20 +50,23 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
         variants={cardVariants}
         initial="initial"
         whileInView="animate"
-        viewport={{ once: true, amount: 0.2 }}
-        className="relative overflow-hidden rounded-2xl bg-[#fff5f5] border border-[#e8d5d5] aspect-[4/5] cursor-pointer"
+        viewport={{ once: true, amount: 0.1 }}
+        className="relative overflow-hidden rounded-2xl bg-white md:bg-[#fff5f5] border border-[#e8d5d5] flex flex-col md:aspect-[4/5] cursor-pointer shadow-sm md:shadow-none"
       >
-        <div className="absolute inset-0 z-0">
+        {/* Image Container */}
+        <div className="relative aspect-[16/10] md:absolute md:inset-0 z-0 overflow-hidden bg-white">
           <Image
             src={project.image}
             alt={project.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover object-top transition-transform duration-500 group-hover:scale-110"
+            className="object-contain md:object-cover object-top transition-transform duration-500 group-hover:scale-110"
             loading={index < 3 ? 'eager' : 'lazy'}
             priority={index < 2}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
+          
+          {/* Gradient overlay - Desktop only */}
+          <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
 
           <span style={{
             position: 'absolute',
@@ -87,41 +90,41 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           </span>
         </div>
 
-        <div className="absolute inset-0 z-10 p-8 flex flex-col justify-end">
+        {/* Content Details */}
+        <div className="relative md:absolute md:inset-0 z-10 p-6 md:p-8 flex flex-col justify-end">
           <motion.span
             variants={itemVariants}
-            className="text-xs font-bold uppercase tracking-widest mb-2"
-            style={{ color: '#fff' }}
+            className="text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1 md:mb-2 text-[#C0392B] md:text-white"
           >
             {project.type}
           </motion.span>
-          <h3 className="text-2xl font-bold text-white mb-1 transition-colors">
+          <h3 className="text-xl md:text-2xl font-bold text-[#1a1a1a] md:text-white mb-1 transition-colors">
             {project.name}
           </h3>
-          <p className="text-white/70 text-xs mb-3">{project.location}</p>
+          <p className="text-slate-500 md:text-white/70 text-[11px] md:text-xs mb-3">{project.location}</p>
+          
           <p style={{
             fontSize: 12,
-            color: '#fff',
             fontWeight: 600,
             letterSpacing: '0.5px',
-            marginTop: 8,
+            marginTop: 4,
             borderLeft: '2px solid #C0392B',
             paddingLeft: 8
-          }}>
+          }}
+          className="text-[#1a1a1a] md:text-white mb-2"
+          >
             Adjacent to NH-16 Highway — High Appreciation Value
           </p>
-          <p className="text-white/80 text-sm line-clamp-2 transition-all duration-300">
+          
+          <p className="text-slate-600 md:text-white/80 text-sm line-clamp-2 md:line-clamp-2 transition-all duration-300">
             {project.description}
           </p>
+          
           <div
-            className="mt-4 self-start text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300"
+            className="mt-4 self-start text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300"
             style={{ background: '#C0392B', color: '#fff' }}
           >
             View Project →
-          </div>
-          {/* Mobile indicator for interactivity */}
-          <div className="md:hidden mt-2 text-[10px] font-bold text-red-500/50 uppercase tracking-widest">
-            Tap to view Details
           </div>
         </div>
       </motion.div>
