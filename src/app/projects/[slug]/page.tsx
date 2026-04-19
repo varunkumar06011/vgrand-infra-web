@@ -37,30 +37,30 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   return (
     <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
       {/* Hero Section - Redesigned for 100% Visibility */}
-      <div className="relative w-full flex flex-col lg:block overflow-hidden bg-black">
+      <div className="relative w-full flex flex-col xl:block overflow-hidden bg-black">
         {/* Image Part */}
-        <div className="relative aspect-[16/10] lg:h-[70vh] min-h-[280px] lg:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
+        <div className="relative aspect-[16/10] xl:h-[70vh] min-h-[280px] xl:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
           <Image 
             src={uiProject.image} 
             alt={uiProject.name}
             fill
             priority
-            className="object-contain lg:object-cover object-top"
+            className="object-contain xl:object-cover object-top"
             quality={95}
           />
           {/* Gradient Overlay - Desktop Only */}
-          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-[1]" />
+          <div className="hidden xl:block absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-[1]" />
         </div>
         
         {/* Title & Location - Adaptive Layout */}
-        <div className="relative lg:absolute lg:bottom-16 lg:left-16 z-[2] p-8 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none">
-          <p className="text-[#C0392B] lg:text-white/80 tracking-[4px] text-[10px] lg:text-[12px] font-bold uppercase mb-2">
+        <div className="relative xl:absolute xl:bottom-16 xl:left-16 z-[2] p-8 xl:p-0 bg-white xl:bg-transparent shadow-sm xl:shadow-none xl:bg-gradient-to-t xl:from-black/40 xl:to-transparent xl:px-8 xl:py-4 xl:rounded-lg">
+          <p className="text-[#C0392B] xl:text-white/80 tracking-[4px] text-[10px] xl:text-[12px] font-bold uppercase mb-2">
             V Grand Infra
           </p>
-          <h1 className="text-[#1a1a1a] lg:text-white font-bold leading-tight text-3xl lg:text-5xl lg:text-7xl mb-2 drop-shadow-none lg:drop-shadow-lg">
+          <h1 className="text-[#1a1a1a] xl:text-white font-bold leading-tight text-3xl xl:text-5xl xl:text-7xl mb-2 drop-shadow-none xl:drop-shadow-lg">
             {uiProject.name}
           </h1>
-          <p className="text-slate-600 lg:text-gray-200 text-sm lg:text-lg font-medium drop-shadow-none lg:drop-shadow-md">
+          <p className="text-slate-600 xl:text-gray-200 text-sm xl:text-lg font-medium drop-shadow-none xl:drop-shadow-md">
             {uiProject.location}
           </p>
         </div>
