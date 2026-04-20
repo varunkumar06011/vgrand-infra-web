@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { 
   Plus, 
@@ -11,7 +11,10 @@ import {
   ExternalLink,
   Save,
   X,
-  Loader2
+  Loader2,
+  Camera,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface Project {
@@ -50,6 +53,153 @@ const MOCK_PROJECTS: Project[] = [
     images: ['/images/tripura.jpg']
   },
 ];
+
+interface ConstructionImage {
+  id: number;
+  image_url: string;
+  label?: string;
+}
+
+function ConstructionPanel({ projectId, projectName }: { projectId: string | number; projectName: string }) {
+  const [images, setImages] = useState<ConstructionImage[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [label, setLabel] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [open, setOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const fetchImages = async () => {
+    const res = await fetch(`/api/construction-updates?project_id=${projectId}`);
+    const data = await res.json();
+    if (Array.isArray(data)) setImages(data);
+  };
+
+  useEffect(() => {
+    if (open) fetchImages();
+  }, [open]);
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('project_id', String(projectId));
+      fd.append('label', label || `${projectName} Construction Update`);
+      fd.append('image', selectedFile);
+      const res = await fetch('/api/construction-updates', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      setSelectedFile(null);
+      setLabel('');
+      if (fileRef.current) fileRef.current.value = '';
+      await fetchImages();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this construction update image?')) return;
+    const res = await fetch(`/api/construction-updates?id=${id}`, { method: 'DELETE' });
+    if (res.ok) setImages((prev) => prev.filter((img) => img.id !== id));
+    else alert('Failed to delete image');
+  };
+
+  return (
+    <div style={{ borderTop: '1px solid #e8e8e8', marginTop: 12, paddingTop: 12 }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: '#C0392B', fontWeight: 700, fontSize: 13,
+        }}
+      >
+        <Camera size={16} />
+        Construction Updates
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 12 }}>
+          {/* Upload row */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14, alignItems: 'flex-end' }}>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Label (optional)</label>
+              <input
+                type="text"
+                placeholder={`${projectName} - Update`}
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }}
+              />
+            </div>
+            <div style={{ flex: 2, minWidth: 180 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Image File</label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                style={{ fontSize: 13 }}
+              />
+            </div>
+            <button
+              onClick={handleUpload}
+              disabled={!selectedFile || uploading}
+              style={{
+                padding: '8px 18px', background: '#C0392B', color: '#fff',
+                border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 13,
+                cursor: selectedFile && !uploading ? 'pointer' : 'not-allowed',
+                opacity: !selectedFile || uploading ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+              {uploading ? 'Uploading...' : 'Upload'}
+            </button>
+          </div>
+
+          {/* Existing images */}
+          {images.length === 0 ? (
+            <p style={{ fontSize: 12, color: '#999', fontStyle: 'italic' }}>No construction update images yet.</p>
+          ) : (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {images.map((img) => (
+                <div key={img.id} style={{ position: 'relative', width: 90, height: 68, borderRadius: 6, overflow: 'hidden', border: '1.5px solid #e8d5d5' }}>
+                  <img src={img.image_url} alt={img.label || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    onClick={() => handleDelete(img.id)}
+                    title="Delete image"
+                    style={{
+                      position: 'absolute', top: 3, right: 3,
+                      background: 'rgba(192,57,43,0.85)', border: 'none', borderRadius: '50%',
+                      width: 20, height: 20, display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', cursor: 'pointer', color: '#fff',
+                    }}
+                  >
+                    <X size={11} />
+                  </button>
+                  {img.label && (
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'rgba(0,0,0,0.55)', color: '#fff',
+                      fontSize: 9, padding: '2px 4px', whiteSpace: 'nowrap',
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {img.label}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProjectsManagement() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -455,49 +605,54 @@ export default function ProjectsManagement() {
       {/* Projects List */}
       <div className="grid grid-cols-1 gap-6">
         {projects.map((project) => (
-          <div key={project.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
-            <div className="w-full sm:w-48 h-32 rounded-lg overflow-hidden bg-slate-100">
-              <img src={project.images[0]} alt={project.name} className="w-full h-full object-cover" />
-            </div>
-            
-            <div className="flex-1 text-center sm:text-left">
-              <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start mb-1">
-                <h4 className="text-lg font-bold text-slate-800">{project.name}</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200">ID: {project.id}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
-                    project.status === 'Ongoing' ? 'text-blue-600 border-blue-200 bg-blue-50' :
-                    project.status === 'Upcoming' ? 'text-orange-600 border-orange-200 bg-orange-50' :
-                    'text-green-600 border-green-200 bg-green-50'
-                  }`}>
-                    {project.status}
-                  </span>
-                </div>
+          <div key={project.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-6 items-center">
+              <div className="w-full sm:w-48 h-32 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                <img src={project.images[0]} alt={project.name} className="w-full h-full object-cover" />
               </div>
-              <p className="text-sm font-medium text-slate-600">{project.type}</p>
-              <p className="text-xs text-slate-400 mt-1">{project.location}</p>
+              
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start mb-1">
+                  <h4 className="text-lg font-bold text-slate-800">{project.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200">ID: {project.id}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
+                      project.status === 'Ongoing' ? 'text-blue-600 border-blue-200 bg-blue-50' :
+                      project.status === 'Upcoming' ? 'text-orange-600 border-orange-200 bg-orange-50' :
+                      'text-green-600 border-green-200 bg-green-50'
+                    }`}>
+                      {project.status}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-slate-600">{project.type}</p>
+                <p className="text-xs text-slate-400 mt-1">{project.location}</p>
+              </div>
+
+              <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm flex-shrink-0">
+                <button 
+                  onClick={() => handleEditClick(project)}
+                  title="Edit Project"
+                  className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95"
+                >
+                  <Edit size={20} />
+                </button>
+                <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDeleteModal(project.id);
+                  }}
+                  title="Delete Project"
+                  className="relative z-50 p-2.5 text-red-500 hover:text-white hover:bg-red-600 rounded-md transition-all active:scale-90 border border-red-100 hover:border-red-600 shadow-sm"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-              <button 
-                onClick={() => handleEditClick(project)}
-                title="Edit Project"
-                className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95"
-              >
-                <Edit size={20} />
-              </button>
-              <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openDeleteModal(project.id);
-                }}
-                title="Delete Project"
-                className="relative z-50 p-2.5 text-red-500 hover:text-white hover:bg-red-600 rounded-md transition-all active:scale-90 border border-red-100 hover:border-red-600 shadow-sm"
-              >
-                <Trash2 size={20} />
-              </button>
-            </div>
+            {/* Construction Updates Panel */}
+            <ConstructionPanel projectId={project.id} projectName={project.name} />
           </div>
         ))}
       </div>

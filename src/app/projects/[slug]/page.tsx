@@ -2,6 +2,7 @@ import { getAdminClient } from '@/lib/supabaseAdmin'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -23,6 +24,40 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   
   if (!project || error) return notFound()
 
+  // Static local construction update images (already in /public/images)
+  // Mapped by slug keyword — no database needed for these
+  const staticImageMap: Record<string, { id: number; image_url: string; label: string; created_at: string }[]> = {
+    elite: [
+      { id: -1, image_url: '/images/elite%20construction%20update%201%20.jpeg', label: 'Elite Homes – Construction Update 1', created_at: '' },
+      { id: -2, image_url: '/images/elite%20construction%20update%202%20%20copy.jpeg', label: 'Elite Homes – Construction Update 2', created_at: '' },
+    ],
+    tripura: [
+      { id: -1, image_url: '/images/tripura%20construction%20update%201.jpeg', label: 'Tripura – Construction Update 1', created_at: '' },
+      { id: -2, image_url: '/images/tripura%20construction%20update%202.jpeg', label: 'Tripura – Construction Update 2', created_at: '' },
+    ],
+  };
+
+  // Find which static set matches by checking if slug contains the keyword
+  const matchedKey = Object.keys(staticImageMap).find((key) => slug.toLowerCase().includes(key));
+  const staticImages = matchedKey ? staticImageMap[matchedKey] : [];
+
+  // Also try to fetch any admin-uploaded images from Supabase (optional — gracefully skipped if table doesn't exist)
+  let dbImages: { id: number; image_url: string; label?: string; created_at: string }[] = [];
+  try {
+    const { data } = await supabase
+      .from('construction_updates')
+      .select('*')
+      .eq('project_id', project.id)
+      .order('created_at', { ascending: true });
+    if (Array.isArray(data)) dbImages = data;
+  } catch {
+    // Table may not exist yet — that's fine
+  }
+
+  // Merge: static images first, then any admin-uploaded ones
+  const constructionImages = [...staticImages, ...dbImages];
+
+
   // Map database fields to UI keys (handling snake_case conversion if needed)
   const uiProject = {
     ...project,
@@ -37,30 +72,31 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   return (
     <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
       {/* Hero Section - Redesigned for 100% Visibility */}
-      <div className="relative w-full flex flex-col xl:block overflow-hidden bg-black">
+      <div className="relative w-full flex flex-col lg:block overflow-hidden bg-black">
         {/* Image Part */}
-        <div className="relative aspect-[16/10] xl:h-[70vh] min-h-[280px] xl:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
+        <div className="relative w-full aspect-[16/10] lg:aspect-auto lg:h-[70vh] min-h-[280px] lg:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
           <Image 
             src={uiProject.image} 
             alt={uiProject.name}
             fill
             priority
-            className="object-contain xl:object-cover object-top"
+            sizes="100vw"
+            className="object-contain lg:object-cover object-top"
             quality={95}
           />
           {/* Gradient Overlay - Desktop Only */}
-          <div className="hidden xl:block absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-[1]" />
+          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-[1]" />
         </div>
         
         {/* Title & Location - Adaptive Layout */}
-        <div className="relative xl:absolute xl:bottom-16 xl:left-16 z-[2] p-8 xl:p-0 bg-white xl:bg-transparent shadow-sm xl:shadow-none xl:bg-gradient-to-t xl:from-black/40 xl:to-transparent xl:px-8 xl:py-4 xl:rounded-lg">
-          <p className="text-[#C0392B] xl:text-white/80 tracking-[4px] text-[10px] xl:text-[12px] font-bold uppercase mb-2">
+        <div className="relative lg:absolute lg:bottom-16 lg:left-16 z-[2] p-8 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none lg:bg-gradient-to-t lg:from-black/40 lg:to-transparent lg:px-8 lg:py-4 lg:rounded-lg">
+          <p className="text-[#C0392B] lg:text-white/80 tracking-[4px] text-[10px] lg:text-[12px] font-bold uppercase mb-2">
             V Grand Infra
           </p>
-          <h1 className="text-[#1a1a1a] xl:text-white font-bold leading-tight text-3xl xl:text-5xl xl:text-7xl mb-2 drop-shadow-none xl:drop-shadow-lg">
+          <h1 className="text-[#1a1a1a] lg:text-white font-bold leading-tight text-3xl lg:text-5xl lg:text-7xl mb-2 drop-shadow-none lg:drop-shadow-lg">
             {uiProject.name}
           </h1>
-          <p className="text-slate-600 xl:text-gray-200 text-sm xl:text-lg font-medium drop-shadow-none xl:drop-shadow-md">
+          <p className="text-slate-600 lg:text-gray-200 text-sm lg:text-lg font-medium drop-shadow-none lg:drop-shadow-md">
             {uiProject.location}
           </p>
         </div>
@@ -132,6 +168,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </table>
           </>
         )}
+
+        {/* Construction Update Slideshow */}
+        <ConstructionUpdateSlideshow
+          projectId={project.id}
+          initialImages={constructionImages || []}
+        />
 
         {/* Location */}
         <h2 style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Location</h2>
