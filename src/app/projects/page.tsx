@@ -97,6 +97,22 @@ export default function ProjectsPage() {
           </button>
         </div>
 
+        {/* Honest intro */}
+        <div className="bg-white border border-[#e8d5d5] rounded-xl p-6 md:p-8 mb-12 shadow-sm">
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(24px, 4vw, 32px)', color: '#1a1a1a', fontWeight: 700, marginBottom: 16 }}>Building with Honesty, Delivering with Pride</h2>
+          <p style={{ color: '#555', fontSize: 16, lineHeight: 1.75, marginBottom: 24 }}>Buying a home is not just a financial transaction; it is the culmination of years of hard work, sacrifices, and a lifelong dream for your family. At V Grand Infra, we understand the value of every single rupee you invest with us. We do not believe in flashy promises or unreachable luxuries. Our foundation is built on ground reality, transparent conversations, and a straightforward commitment to quality.</p>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: '#1a1a1a', fontWeight: 700, marginBottom: 12 }}>Why Ongole Trusts Us:</h3>
+          <ul style={{ color: '#555', fontSize: 15, lineHeight: 1.8, marginBottom: 20, paddingLeft: 20 }}>
+            <li style={{ marginBottom: 8 }}><strong style={{ color: '#1a1a1a' }}>Uncompromised Material Quality:</strong> We build your homes using the same premium standards and materials we would choose for our own families. No shortcuts, no compromises.</li>
+            <li style={{ marginBottom: 8 }}><strong style={{ color: '#1a1a1a' }}>Transparency Over Everything:</strong> From clear titles and legal approvals to the actual progress on the ground, what you see is exactly what you get. No hidden charges, no sudden surprises.</li>
+            <li style={{ marginBottom: 8 }}><strong style={{ color: '#1a1a1a' }}>Prime, Purposeful Locations:</strong> We select locations like Koppolu that offer seamless connectivity — like direct access to the NH-16 Highway — so your family stays connected and your investment grows in value.</li>
+            <li style={{ marginBottom: 8 }}><strong style={{ color: '#1a1a1a' }}>Homes, Not Just Buildings:</strong> We focus on creating practical, well-ventilated, and thriving residential spaces where everyday communities can grow, celebrate, and live securely.</li>
+          </ul>
+          <div style={{ borderLeft: '3px solid #C0392B', paddingLeft: 20 }}>
+            <p style={{ color: '#1a1a1a', fontSize: 16, fontWeight: 500, lineHeight: 1.7, margin: 0 }}><strong>Our Promise:</strong> We do not just deliver keys; we deliver peace of mind. Walk into any of our ongoing or upcoming projects in Ongole, look at the construction quality yourself, and talk to our team. We are here to build a relationship rooted in trust and honesty.</p>
+          </div>
+        </div>
+
         {/* Cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
           {loading ? (

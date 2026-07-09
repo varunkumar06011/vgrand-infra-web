@@ -26,9 +26,6 @@ body {
 
 /* Rendering performance optimizations */
 section {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 500px;
-  contain: paint;
   will-change: transform;
 }
 

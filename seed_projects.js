@@ -25,7 +25,7 @@ const projects = [
     starting_price: '₹76 Lakhs*',
     area: '1771 - 1800 sq.ft',
     handover: 'December 2026',
-    rera: 'P08440065656',
+    rera: 'Applied',
     images: ['/images/ban a.png'],
     highlights: [
       'Gated Community with 24/7 Security',

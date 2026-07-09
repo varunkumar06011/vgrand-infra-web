@@ -6,54 +6,96 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const NAVBAR_H = 84          // fixed navbar height in px
-const SLIDE_DURATION = 3500   // 3.5 seconds
-const TRANSITION_DURATION = 700 // 700ms
+const SLIDE_DURATION = 2500   // 2.5 seconds
+const TRANSITION_DURATION = 500 // 500ms
 
 const slides = [
   { 
+    src: '/images/ban c (1).png', 
+    title: 'V Grand Gateway',
+    description: ''
+  },
+  { 
     src: '/images/ban a.png', 
-    title: 'Banner 1',
+    title: 'Elite Homes',
     description: ''
   },
   { 
     src: '/images/ban b.png', 
-    title: 'Banner 2',
-    description: ''
-  },
-  { 
-    src: '/images/ban c (1).png', 
-    title: 'Banner 3',
+    title: 'V Grand Tripura',
     description: ''
   }
 ]
 
+// Extended slides: [clone-of-last, ...real, clone-of-first] for infinite loop
+const extendedSlides = [
+  { ...slides[slides.length - 1] },
+  ...slides,
+  { ...slides[0] }
+]
+
 // ─── Hero Component ──────────────────────────────────────────────────────────
 export default function Hero() {
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentIndex, setCurrentIndex] = useState(1) // start at first real slide
+  const [disableTransition, setDisableTransition] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
+
+  // Snap back from clone to real slide after transition completes
+  useEffect(() => {
+    if (currentIndex === 0) {
+      const t = setTimeout(() => {
+        setDisableTransition(true)
+        setCurrentIndex(slides.length)
+      }, TRANSITION_DURATION)
+      return () => clearTimeout(t)
+    }
+    if (currentIndex === extendedSlides.length - 1) {
+      const t = setTimeout(() => {
+        setDisableTransition(true)
+        setCurrentIndex(1)
+      }, TRANSITION_DURATION)
+      return () => clearTimeout(t)
+    }
+  }, [currentIndex])
+
+  // Re-enable transition after snap (double rAF ensures DOM painted first)
+  useEffect(() => {
+    if (disableTransition) {
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setDisableTransition(false)
+        })
+      })
+      return () => cancelAnimationFrame(raf)
+    }
+  }, [disableTransition])
 
   // Reset timer for auto-play
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length)
+      setDisableTransition(false)
+      setCurrentIndex((prev) => prev + 1)
     }, SLIDE_DURATION)
   }, [])
 
   // Navigation handlers
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % slides.length)
+    setDisableTransition(false)
+    setCurrentIndex((prev) => prev + 1)
     resetTimer()
   }, [resetTimer])
 
   const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)
+    setDisableTransition(false)
+    setCurrentIndex((prev) => prev - 1)
     resetTimer()
   }, [resetTimer])
 
   const goToSlide = useCallback((index: number) => {
-    setCurrentIndex(index)
+    setDisableTransition(false)
+    setCurrentIndex(index + 1)
     resetTimer()
   }, [resetTimer])
 
@@ -70,26 +112,32 @@ export default function Hero() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [pathname])
 
+  // Map extended index to real slide index for dot indicators
+  const activeDotIndex =
+    currentIndex === 0 ? slides.length - 1
+    : currentIndex === extendedSlides.length - 1 ? 0
+    : currentIndex - 1
+
   return (
     <div
       className="relative w-full h-[45vh] sm:h-[50vh] md:h-[60vh] lg:h-[100vh] min-h-[320px] sm:min-h-[380px] md:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-[#0a0a0a]"
       style={{ marginTop: '84px' }}
     >
       {/* ── Slides Container ───────────────────────────────────────────────── */}
-      <div 
-        className="flex h-full w-full transition-transform ease-in-out"
-        style={{ 
+      <div
+        className="flex h-full w-full ease-in-out"
+        style={{
           transform: `translateX(-${currentIndex * 100}%)`,
-          transitionDuration: `${TRANSITION_DURATION}ms`
+          transitionDuration: disableTransition ? '0ms' : `${TRANSITION_DURATION}ms`
         }}
       >
-        {slides.map((slide, i) => (
+        {extendedSlides.map((slide, i) => (
           <div key={i} className="min-w-full h-full relative flex items-center justify-center bg-black">
             <Image
               src={slide.src}
               alt={slide.title}
               fill
-              priority={i === 0}
+              priority={i === 1}
               quality={90}
               className="object-contain lg:object-cover object-center lg:object-top"
               sizes="100vw"
@@ -131,9 +179,9 @@ export default function Hero() {
             key={i}
             onClick={() => goToSlide(i)}
             className={`transition-all duration-300 rounded-full border border-white/50 ${
-              currentIndex === i ? 'w-8 md:w-10 bg-white border-white' : 'w-2.5 h-2.5 md:w-3 md:h-3 bg-transparent hover:bg-white/20'
+              activeDotIndex === i ? 'w-8 md:w-10 bg-white border-white' : 'w-2.5 h-2.5 md:w-3 md:h-3 bg-transparent hover:bg-white/20'
             }`}
-            style={{ height: currentIndex === i ? '6px' : '10px', borderRadius: '999px' }}
+            style={{ height: activeDotIndex === i ? '6px' : '10px', borderRadius: '999px' }}
             aria-label={`Go to slide ${i + 1}`}
           />
         ))}

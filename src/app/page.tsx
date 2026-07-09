@@ -109,10 +109,10 @@ export default async function Home() {
             <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 16 }}>Trusted Builders in Ongole</p>
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,4vw,44px)', color: '#fff', fontWeight: 700, marginBottom: 20, lineHeight: 1.2 }}>Infrastructure Company in Prakasam District</h2>
             <p style={{ color: '#bbb', fontSize: 16, lineHeight: 1.85, marginBottom: 32 }}>
-              V Grand Infra, led by T. Vinod Kumar, has emerged as one of the <strong>top real estate developers in Ongole</strong>. With a foundation built on 20+ years of cross-industry expertise, we are the preferred choice for families seeking <strong>high quality construction in Ongole</strong>. Our mission is to deliver premium <strong>residential projects in Ongole</strong> at honest prices, starting with Elite Homes—the first gated community in Koppolu near the NH-16 highway. As <strong>trusted builders in Ongole</strong>, we prioritize structural integrity and long-term value in every home.
+              V Grand Infra, led by T. Vinod Kumar, has emerged as one of the <strong>top real estate developers in Ongole</strong>. With a foundation built on 25+ years of cross-industry expertise, we are the preferred choice for families seeking <strong>high quality construction in Ongole</strong>. Our mission is to deliver premium <strong>residential projects in Ongole</strong> at honest prices, starting with Elite Homes—the first gated community in Koppolu near the NH-16 highway. As <strong>trusted builders in Ongole</strong>, we prioritize structural integrity and long-term value in every home.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px 32px' }}>
-              {[['20+', 'Years Experience'], ['2', 'Active Projects'], ['Best', 'Infra Projects'], ['RERA', 'Approved']].map(([num, label]) => (
+              {[['25+', 'Years Experience'], ['2', 'Active Projects'], ['Best', 'Infra Projects'], ['RERA', 'Approved']].map(([num, label]) => (
                 <div key={label}>
                   <p style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 800, color: '#C0392B', margin: 0 }}>{num}</p>
                   <p style={{ color: '#888', fontSize: 13, margin: 0 }}>{label}</p>
