@@ -74,14 +74,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       {/* Hero Section - Redesigned for 100% Visibility */}
       <div className="relative w-full flex flex-col lg:block overflow-hidden bg-black">
         {/* Image Part */}
-        <div className="relative w-full aspect-[16/10] lg:aspect-auto lg:h-[70vh] min-h-[280px] lg:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
+        <div className="relative w-full aspect-[2/1] md:aspect-[16/10] lg:aspect-auto lg:h-[70vh] min-h-[240px] md:min-h-[420px] lg:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
           <Image 
             src={uiProject.image} 
             alt={uiProject.name}
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center"
+            className="object-contain md:object-cover object-center"
             quality={95}
           />
           {/* Gradient Overlay - Desktop Only */}

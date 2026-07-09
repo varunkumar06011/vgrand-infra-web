@@ -72,7 +72,7 @@ export default function Hero() {
 
   return (
     <div
-      className="relative w-full h-[35vh] md:h-[60vh] lg:h-[100vh] min-h-[280px] md:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-[#0a0a0a]"
+      className="relative w-full h-[45vh] sm:h-[50vh] md:h-[60vh] lg:h-[100vh] min-h-[320px] sm:min-h-[380px] md:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-[#0a0a0a]"
       style={{ marginTop: '84px' }}
     >
       {/* ── Slides Container ───────────────────────────────────────────────── */}
@@ -103,18 +103,18 @@ export default function Hero() {
       {/* ── Navigation Arrows ─────────────────────────────────────────────── */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors group"
+        className="absolute left-1 md:left-4 top-1/2 -translate-y-1/2 z-20 p-1.5 md:p-3 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors group"
         aria-label="Previous slide"
       >
-        <ChevronLeft size={32} className="group-active:scale-90 transition-transform" />
+        <ChevronLeft size={20} className="md:w-8 md:h-8 group-active:scale-90 transition-transform" />
       </button>
 
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors group"
+        className="absolute right-1 md:right-4 top-1/2 -translate-y-1/2 z-20 p-1.5 md:p-3 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors group"
         aria-label="Next slide"
       >
-        <ChevronRight size={32} className="group-active:scale-90 transition-transform" />
+        <ChevronRight size={20} className="md:w-8 md:h-8 group-active:scale-90 transition-transform" />
       </button>
 
       {/* ── Welcome Text Overlay ─────────────────────────────────────────── */}
@@ -125,15 +125,15 @@ export default function Hero() {
       </div>
 
       {/* ── Dot Indicators ────────────────────────────────────────────────── */}
-      <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-4 z-20">
+      <div className="absolute bottom-6 md:bottom-10 left-0 right-0 flex justify-center gap-3 md:gap-4 z-20">
         {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => goToSlide(i)}
             className={`transition-all duration-300 rounded-full border border-white/50 ${
-              currentIndex === i ? 'w-10 bg-white border-white' : 'w-3 h-3 bg-transparent hover:bg-white/20'
+              currentIndex === i ? 'w-8 md:w-10 bg-white border-white' : 'w-2.5 h-2.5 md:w-3 md:h-3 bg-transparent hover:bg-white/20'
             }`}
-            style={{ height: currentIndex === i ? '8px' : '12px', borderRadius: '999px' }}
+            style={{ height: currentIndex === i ? '6px' : '10px', borderRadius: '999px' }}
             aria-label={`Go to slide ${i + 1}`}
           />
         ))}
