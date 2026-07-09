@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabaseAdmin';
 import { uploadToStorage } from '@/lib/storage';
 import fs from 'fs';
@@ -99,6 +100,9 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    revalidatePath('/projects');
+    revalidatePath('/');
+
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     console.error('Project Creation Error:', error);
@@ -187,6 +191,9 @@ export async function PUT(request: NextRequest) {
 
     if (error) throw error;
 
+    revalidatePath('/projects');
+    revalidatePath('/');
+
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     console.error('Project Update Error:', error);
@@ -247,6 +254,9 @@ export async function DELETE(request: NextRequest) {
         error: `No project found with ID: ${id}.` 
       }, { status: 404 });
     }
+
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     fs.appendFileSync(logFile, `[${timestamp}] DELETE SUCCESS: id=${id}\n`);
     return NextResponse.json({ success: true, deleted: data[0] });

@@ -60,6 +60,53 @@ interface ConstructionImage {
   label?: string;
 }
 
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB raw file limit
+
+const validateFileSize = (file: File | null): string | null => {
+  if (!file) return null;
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max allowed: 20 MB.`;
+  }
+  return null;
+};
+
+// Compress images in the browser to avoid Vercel's ~4.5MB API payload limit.
+// Targets final size well under 1 MB for banner images.
+const compressImage = async (file: File, maxWidth = 1920, quality = 0.82): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Canvas context not available'));
+      ctx.drawImage(img, 0, 0, width, height);
+      // Convert PNG to JPEG for much smaller file size (banners don't need transparency)
+      const outputType = file.type === 'image/png' ? 'image/jpeg' : file.type;
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error('Image compression failed'));
+          const name = outputType === 'image/jpeg' ? file.name.replace(/\.png$/i, '.jpg') : file.name;
+          resolve(new File([blob], name, { type: outputType, lastModified: Date.now() }));
+        },
+        outputType,
+        quality
+      );
+    };
+    img.onerror = () => reject(new Error('Failed to load image for compression'));
+    img.src = url;
+  });
+};
+
 function ConstructionPanel({ projectId, projectName }: { projectId: string | number; projectName: string }) {
   const [images, setImages] = useState<ConstructionImage[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -80,14 +127,23 @@ function ConstructionPanel({ projectId, projectName }: { projectId: string | num
 
   const handleUpload = async () => {
     if (!selectedFile) return;
+    const sizeError = validateFileSize(selectedFile);
+    if (sizeError) {
+      alert(sizeError);
+      return;
+    }
     setUploading(true);
     try {
+      const compressedFile = selectedFile.type.startsWith('image/')
+        ? await compressImage(selectedFile, 1920, 0.82)
+        : selectedFile;
       const fd = new FormData();
       fd.append('project_id', String(projectId));
       fd.append('label', label || `${projectName} Construction Update`);
-      fd.append('image', selectedFile);
+      fd.append('image', compressedFile);
       const res = await fetch('/api/construction-updates', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('Upload failed');
+      const result = await res.json().catch(() => ({ error: 'Upload failed' }));
+      if (!res.ok) throw new Error(result.error || 'Upload failed');
       setSelectedFile(null);
       setLabel('');
       if (fileRef.current) fileRef.current.value = '';
@@ -247,6 +303,22 @@ export default function ProjectsManagement() {
     setLoading(true);
 
     try {
+      // Validate raw file sizes (20 MB cap)
+      for (const img of formData.images) {
+        const err = validateFileSize(img);
+        if (err) throw new Error(`Image: ${err}`);
+      }
+      const brochureErr = validateFileSize(formData.brochure);
+      if (brochureErr) throw new Error(`Brochure: ${brochureErr}`);
+
+      // Compress images before upload to avoid Vercel payload limit
+      const compressedImages = await Promise.all(
+        formData.images.map(img => img.type.startsWith('image/') ? compressImage(img, 1920, 0.82) : img)
+      );
+      const compressedBrochure = formData.brochure && formData.brochure.type.startsWith('image/')
+        ? await compressImage(formData.brochure, 1920, 0.82)
+        : formData.brochure;
+
       const payload = new FormData();
       if (editingProject) {
         payload.append('id', editingProject.id.toString());
@@ -267,15 +339,18 @@ export default function ProjectsManagement() {
       payload.append('amenities', JSON.stringify(amenitiesArray));
       payload.append('specs', JSON.stringify({})); 
 
-      formData.images.forEach(img => payload.append('images', img));
-      if (formData.brochure) payload.append('brochure', formData.brochure);
+      compressedImages.forEach(img => payload.append('images', img));
+      if (compressedBrochure) payload.append('brochure', compressedBrochure);
 
       const res = await fetch('/api/projects', {
         method: editingProject ? 'PUT' : 'POST',
         body: payload
       });
 
-      if (!res.ok) throw new Error(`Failed to ${editingProject ? 'update' : 'create'} project`);
+      if (!res.ok) {
+        const result = await res.json().catch(() => ({ error: `Failed to ${editingProject ? 'update' : 'create'} project` }));
+        throw new Error(result.error || `Failed to ${editingProject ? 'update' : 'create'} project`);
+      }
 
       await fetchProjects();
       setIsAdding(false);

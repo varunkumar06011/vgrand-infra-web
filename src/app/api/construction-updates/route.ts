@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabaseAdmin';
 import { uploadToStorage } from '@/lib/storage';
 
@@ -21,7 +22,15 @@ export async function GET(request: NextRequest) {
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      if (error.message?.includes('column') && error.message?.includes('project_id')) {
+        return NextResponse.json(
+          { error: 'Database column construction_updates.project_id is missing. Run: ALTER TABLE construction_updates ADD COLUMN project_id BIGINT; ALTER TABLE construction_updates ADD CONSTRAINT construction_updates_project_id_fkey FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE;' },
+          { status: 500 }
+        );
+      }
+      throw error;
+    }
 
     return NextResponse.json(data || []);
   } catch (error: any) {
@@ -56,7 +65,18 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.message?.includes('column') && error.message?.includes('project_id')) {
+        return NextResponse.json(
+          { error: 'Database column construction_updates.project_id is missing. Run: ALTER TABLE construction_updates ADD COLUMN project_id BIGINT; ALTER TABLE construction_updates ADD CONSTRAINT construction_updates_project_id_fkey FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE;' },
+          { status: 500 }
+        );
+      }
+      throw error;
+    }
+
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
@@ -87,6 +107,9 @@ export async function DELETE(request: NextRequest) {
     if (!data || data.length === 0) {
       return NextResponse.json({ error: `No record found with id: ${idStr}` }, { status: 404 });
     }
+
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return NextResponse.json({ success: true, deleted: data[0] });
   } catch (error: any) {
