@@ -32,8 +32,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       { id: -2, image_url: '/images/elite%20construction%20update%202%20%20copy.jpeg', label: 'Elite Homes – Construction Update 2', created_at: '' },
     ],
     tripura: [
-      { id: -1, image_url: '/images/tripura%20construction%20update%201.jpeg', label: 'Tripura – Construction Update 1', created_at: '' },
-      { id: -2, image_url: '/images/tripura%20construction%20update%202.jpeg', label: 'Tripura – Construction Update 2', created_at: '' },
+      { id: -1, image_url: '/images/tripura%20construction%20update.png', label: 'Tripura – Construction Update', created_at: '' },
+      { id: -2, image_url: '/images/WhatsApp%20Video%202026-07-09%20at%2011.45.24.mp4', label: 'Tripura – Construction Update Video', created_at: '' },
     ],
   };
 
@@ -61,7 +61,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   // Map database fields to UI keys (handling snake_case conversion if needed)
   const uiProject = {
     ...project,
-    image: project.images?.[0] || '/images/elite-homes.jpg',
+    image: project.images?.[0] || '/images/ban a.png',
     startingPrice: project.starting_price || 'Contact for details',
     brochure: project.brochure_url || '#',
     highlights: project.highlights || [],
@@ -81,7 +81,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             fill
             priority
             sizes="100vw"
-            className="object-contain lg:object-cover object-top"
+            className="object-cover object-center"
             quality={95}
           />
           {/* Gradient Overlay - Desktop Only */}

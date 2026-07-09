@@ -147,6 +147,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
                     <option value="" disabled>Select a property</option>
                     <option value="Elite">Elite</option>
                     <option value="Tripura">Tripura</option>
+                    <option value="Gateway">V Grand Gateway</option>
                     <option value="Landmark">Landmark</option>
                   </select>
                 </div>

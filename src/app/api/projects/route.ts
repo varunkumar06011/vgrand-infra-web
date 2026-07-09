@@ -39,17 +39,31 @@ export async function POST(request: NextRequest) {
     // Auto-generate slug if missing
     const slug = (formData.get('slug') as string) || name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
-    const images = formData.getAll('images') as File[];
-    const brochure = formData.get('brochure') as File | null;
+    const images = formData.getAll('images') as (File | string)[];
+    const brochure = formData.get('brochure') as File | string | null;
 
-    // 1. Upload Images to Supabase Storage
-    const imageUrls = await Promise.all(
-      images.map(async (img) => {
-        return uploadToStorage(img, bucket, 'projects');
-      })
-    );
+    // Separate uploaded files from existing URL strings
+    const imageFiles = images.filter(img => img instanceof File) as File[];
+    let imageUrls: string[] = [];
+    images.filter(img => typeof img === 'string').forEach((str) => {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) imageUrls.push(...parsed);
+        else imageUrls.push(str);
+      } catch {
+        imageUrls.push(str);
+      }
+    });
 
-    // 2. Upload Brochure if exists
+    // 1. Upload new Images to Supabase Storage
+    if (imageFiles.length > 0) {
+      const uploadedUrls = await Promise.all(
+        imageFiles.map(async (img) => uploadToStorage(img, bucket, 'projects'))
+      );
+      imageUrls.push(...uploadedUrls);
+    }
+
+    // 2. Upload Brochure if new file provided, otherwise accept string URL
     let brochureUrl = '';
     if (brochure) {
       if (typeof brochure === 'string') {
@@ -135,17 +149,26 @@ export async function PUT(request: NextRequest) {
       updateData.slug = formData.get('name')?.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
     }
 
-    // Handle Images - ONLY if new ones are uploaded
+    // Handle Images - accept both File uploads and JSON string arrays of existing URLs
     const images = formData.getAll('images') as (File | string)[];
     const imageFiles = images.filter(img => img instanceof File) as File[];
-    
-    if (imageFiles.length > 0) {
-      const imageUrls = await Promise.all(
-        imageFiles.map(async (img) => {
-          return uploadToStorage(img, bucket, 'projects');
-        })
-      );
-      updateData.images = imageUrls;
+    let existingUrls: string[] = [];
+
+    images.filter(img => typeof img === 'string').forEach((str) => {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) existingUrls.push(...parsed);
+        else existingUrls.push(str);
+      } catch {
+        existingUrls.push(str);
+      }
+    });
+
+    if (imageFiles.length > 0 || existingUrls.length > 0) {
+      const uploadedUrls = imageFiles.length > 0
+        ? await Promise.all(imageFiles.map(async (img) => uploadToStorage(img, bucket, 'projects')))
+        : [];
+      updateData.images = [...existingUrls, ...uploadedUrls];
     }
 
     // Handle Brochure - ONLY if a new one is uploaded

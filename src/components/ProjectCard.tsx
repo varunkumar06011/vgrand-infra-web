@@ -54,13 +54,13 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
         className="relative overflow-hidden rounded-2xl bg-white lg:bg-[#fff5f5] border border-[#e8d5d5] flex flex-col lg:aspect-[4/5] cursor-pointer shadow-sm lg:shadow-none"
       >
         {/* Image Container */}
-        <div className="relative aspect-[16/10] lg:absolute lg:inset-0 z-0 overflow-hidden bg-white">
+        <div className="relative aspect-[16/10] lg:absolute lg:inset-0 z-0 overflow-hidden bg-[#0a0a0a]">
           <Image
             src={project.image}
             alt={project.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            className="object-contain lg:object-cover object-top transition-transform duration-500 group-hover:scale-110"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-110"
             loading={index < 3 ? 'eager' : 'lazy'}
             priority={index < 2}
           />

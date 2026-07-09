@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, ZoomIn } from 'lucide-react';
+import { X, ZoomIn, Play } from 'lucide-react';
 
 interface UpdateImage {
   id: number;
@@ -14,6 +14,8 @@ interface Props {
   projectId: number | string;
   initialImages?: UpdateImage[];
 }
+
+const isVideo = (url: string) => /\.(mp4|webm|mov|mkv|avi)(\?.*)?$/i.test(url);
 
 export default function ConstructionUpdateSlideshow({ projectId, initialImages }: Props) {
   const [images, setImages] = useState<UpdateImage[]>(initialImages || []);
@@ -98,12 +100,22 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
               title={img.label || `Construction update ${idx + 1}`}
               aria-label={`View construction update image ${idx + 1}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.image_url}
-                alt={img.label || `Construction update ${idx + 1}`}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
+              {isVideo(img.image_url) ? (
+                <video
+                  src={img.image_url}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={img.image_url}
+                  alt={img.label || `Construction update ${idx + 1}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              )}
               <div
                 className="thumb-overlay"
                 style={{
@@ -113,7 +125,11 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
                   transition: 'background 0.18s',
                 }}
               >
-                <ZoomIn size={22} color="white" className="thumb-zoom-icon" style={{ opacity: 0, transition: 'opacity 0.18s' }} />
+                {isVideo(img.image_url) ? (
+                  <Play size={22} color="white" className="thumb-zoom-icon" fill="white" style={{ opacity: 1, transition: 'opacity 0.18s' }} />
+                ) : (
+                  <ZoomIn size={22} color="white" className="thumb-zoom-icon" style={{ opacity: 0, transition: 'opacity 0.18s' }} />
+                )}
               </div>
             </button>
           ))}
@@ -121,10 +137,14 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
 
         {/* Hidden preload: caches full-size images so lightbox opens instantly */}
         <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
-          {images.map((img, idx) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={`preload-${img.id}-${idx}`} src={img.image_url} alt="" fetchPriority="low" />
-          ))}
+          {images.map((img, idx) =>
+            isVideo(img.image_url) ? (
+              <video key={`preload-${img.id}-${idx}`} src={img.image_url} preload="metadata" muted style={{ display: 'none' }} />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={`preload-${img.id}-${idx}`} src={img.image_url} alt="" fetchPriority="low" />
+            )
+          )}
         </div>
       </section>
 
@@ -182,17 +202,28 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
               flexShrink: 0,
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={images[lightboxIdx].image_url}
-              alt={images[lightboxIdx].label || `Construction update ${lightboxIdx + 1}`}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                display: 'block',
-              }}
-            />
+            {isVideo(images[lightboxIdx].image_url) ? (
+              <video
+                src={images[lightboxIdx].image_url}
+                controls
+                autoPlay
+                muted
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={images[lightboxIdx].image_url}
+                alt={images[lightboxIdx].label || `Construction update ${lightboxIdx + 1}`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+              />
+            )}
           </div>
 
           {/* Label */}

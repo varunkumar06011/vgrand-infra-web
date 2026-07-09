@@ -15,7 +15,7 @@ export default function ProjectsPage() {
       .then(data => {
         setProjects(data.map((p: any) => ({
           ...p,
-          image: p.images?.[0] || '/images/elite-homes.jpg',
+          image: p.images?.[0] || '/images/ban a.png',
           startingPrice: p.starting_price || 'Contact for details',
           description: p.description || 'Premium residential project by V Grand Infra.'
         })))

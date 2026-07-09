@@ -41,7 +41,7 @@ const MOCK_PROJECTS: Project[] = [
     type: '3BHK Apartments', 
     location: 'Koppolu, Ongole', 
     status: 'Ongoing',
-    images: ['/images/elite-homes.jpg'],
+    images: ['/images/ban a.png'],
     brochure_url: 'link-to-pdf'
   },
   { 
@@ -50,7 +50,7 @@ const MOCK_PROJECTS: Project[] = [
     type: 'Luxury Villa Plots', 
     location: 'Surareddypalem, Ongole', 
     status: 'Upcoming',
-    images: ['/images/tripura.jpg']
+    images: ['/images/ban b.png']
   },
 ];
 

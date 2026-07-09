@@ -3,7 +3,7 @@ import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
 export const metadata = {
   title: 'Contact V Grand Infra | Book Site Visit | Ongole',
-  description: 'Contact V Grand Infra to book a free site visit for Elite Homes or Tripura in Koppolu, Ongole. Call +91 90301 43333 or WhatsApp us.',
+  description: 'Contact V Grand Infra to book a free site visit for Elite Homes, Tripura, or V Grand Gateway in Koppolu, Ongole. Call +91 90301 43333 or WhatsApp us.',
   keywords: 'contact v grand infra, book site visit ongole, flat enquiry ongole, apartment booking ongole, v grand infra phone number'
 }
 
@@ -36,6 +36,7 @@ export default function ContactPage() {
               <select style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
                 <option>Elite Homes — Koppolu, Ongole</option>
                 <option>Tripura — Koppolu, Ongole</option>
+                <option>V Grand Gateway — Koppolu, Ongole</option>
                 <option>Green Valley — Ongole</option>
                 <option>General Enquiry</option>
               </select>

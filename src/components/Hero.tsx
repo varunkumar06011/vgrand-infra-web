@@ -11,19 +11,19 @@ const TRANSITION_DURATION = 700 // 700ms
 
 const slides = [
   { 
-    src: '/images/elite-homes.jpg', 
-    title: 'Elite Homes',
-    description: 'Premium Luxury Apartments'
+    src: '/images/ban a.png', 
+    title: 'Banner 1',
+    description: ''
   },
   { 
-    src: '/images/swimming pool elite .png', 
-    title: 'Swimming Pool',
-    description: 'Serene & Refreshing Amenities'
+    src: '/images/ban b.png', 
+    title: 'Banner 2',
+    description: ''
   },
   { 
-    src: '/images/tripura.jpg', 
-    title: 'Tripura',
-    description: 'Modern Living Reimagined'
+    src: '/images/ban c (1).png', 
+    title: 'Banner 3',
+    description: ''
   }
 ]
 
