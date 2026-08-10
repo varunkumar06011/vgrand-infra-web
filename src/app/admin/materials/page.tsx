@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { 
   Plus, 
@@ -9,7 +9,9 @@ import {
   TrendingDown,
   ArrowRight,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  X
 } from 'lucide-react';
 
 interface Material {
@@ -19,44 +21,88 @@ interface Material {
   current_qty: number;
   total_qty: number;
   unit: string;
-  last_updated: string;
+  created_at?: string;
 }
 
-const MOCK_MATERIALS: Material[] = [
-  { id: '1', name: 'Cement (OPC 53)', category: 'Binding', current_qty: 45, total_qty: 500, unit: 'Bags', last_updated: '2025-05-15' }, // 9% - CRITICAL
-  { id: '2', name: 'Steel Rods (12mm)', category: 'Structure', current_qty: 120, total_qty: 250, unit: 'Rods', last_updated: '2025-05-14' }, // 48%
-  { id: '3', name: 'Bricks (First Class)', category: 'Masonry', current_qty: 1500, total_qty: 10000, unit: 'Units', last_updated: '2025-05-15' }, // 15% - LOW
-  { id: '4', name: 'Sand (VSI)', category: 'Structure', current_qty: 400, total_qty: 1000, unit: 'Units', last_updated: '2025-05-12' }, // 40%
-  { id: '5', name: 'Plumbing Pipes (PVC)', category: 'Services', current_qty: 85, total_qty: 100, unit: 'Pipes', last_updated: '2025-05-10' }, // 85%
-];
-
 export default function MaterialsPage() {
-  const [materials, setMaterials] = useState(MOCK_MATERIALS);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', category: '', current_qty: '', total_qty: '', unit: '' });
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/materials');
+      const data = await res.json();
+      if (Array.isArray(data)) setMaterials(data);
+    } catch (error) {
+      console.error('Failed to fetch materials:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdding(true);
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addForm.name,
+          category: addForm.category,
+          current_qty: Number(addForm.current_qty),
+          total_qty: Number(addForm.total_qty),
+          unit: addForm.unit,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setShowAddForm(false);
+        setAddForm({ name: '', category: '', current_qty: '', total_qty: '', unit: '' });
+        fetchMaterials();
+      } else {
+        alert(result.error || 'Failed to add material');
+      }
+    } catch {
+      alert('Failed to add material');
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const filteredMaterials = materials.filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const lowStockCount = materials.filter(m => m.total_qty > 0 && (m.current_qty / m.total_qty) * 100 < 20).length;
+
   return (
     <AdminLayout title="Materials Inventory">
       {/* Alert Banner for Low Stock */}
-      <div className="mb-8 flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-xl">
-        <div className="flex items-center gap-3">
-          <div className="bg-orange-100 p-2 rounded-lg">
-            <TrendingDown className="text-orange-600" size={20} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-orange-800">Low Stock Alert</p>
-            <p className="text-xs text-orange-600 font-medium">
-              3 items are below the 20% critical threshold. Restock recommended.
-            </p>
+      {lowStockCount > 0 && (
+        <div className="mb-8 flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="bg-orange-100 p-2 rounded-lg">
+              <TrendingDown className="text-orange-600" size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-orange-800">Low Stock Alert</p>
+              <p className="text-xs text-orange-600 font-medium">
+                {lowStockCount} {lowStockCount === 1 ? 'item is' : 'items are'} below the 20% critical threshold. Restock recommended.
+              </p>
+            </div>
           </div>
         </div>
-        <button className="text-xs font-bold text-orange-800 bg-white px-4 py-2 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-all">
-          Generate Order
-        </button>
-      </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex flex-col lg:flex-row gap-8">
@@ -73,7 +119,10 @@ export default function MaterialsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-black transition-all text-sm font-bold shadow-lg shadow-slate-200">
+            <button 
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-black transition-all text-sm font-bold shadow-lg shadow-slate-200"
+            >
               <Plus size={18} /> Add Stock
             </button>
           </div>
@@ -89,8 +138,21 @@ export default function MaterialsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredMaterials.map((item) => {
-                  const percentage = (item.current_qty / item.total_qty) * 100;
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-10 text-center">
+                      <Loader2 className="animate-spin inline text-slate-400" size={20} />
+                    </td>
+                  </tr>
+                ) : filteredMaterials.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-10 text-center text-slate-400 text-sm">
+                      No materials found. Click "Add Stock" to add your first item.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredMaterials.map((item) => {
+                    const percentage = item.total_qty > 0 ? (item.current_qty / item.total_qty) * 100 : 0;
                   const isLow = percentage < 20;
                   const isCritical = percentage < 10;
 
@@ -147,7 +209,8 @@ export default function MaterialsPage() {
                       </td>
                     </tr>
                   );
-                })}
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -159,17 +222,17 @@ export default function MaterialsPage() {
             <h4 className="font-bold text-slate-800 mb-4">Stock Insights</h4>
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                <p className="text-xs font-bold text-slate-400 uppercase mb-1">Top Consumers</p>
+                <p className="text-xs font-bold text-slate-400 uppercase mb-1">Total Items</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-700">Elite Homes</span>
-                  <span className="text-xs text-blue-600 font-bold">12 Orders</span>
+                  <span className="text-sm font-bold text-slate-700">{materials.length}</span>
+                  <span className="text-xs text-blue-600 font-bold">Tracked</span>
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                <p className="text-xs font-bold text-slate-400 uppercase mb-1">Monthly Spend</p>
+                <p className="text-xs font-bold text-slate-400 uppercase mb-1">Low Stock</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-700">₹4.2 Lakhs</span>
-                  <span className="text-xs text-green-600 font-bold">+18% Exp.</span>
+                  <span className="text-sm font-bold text-slate-700">{lowStockCount}</span>
+                  <span className="text-xs text-orange-600 font-bold">Items</span>
                 </div>
               </div>
             </div>
@@ -184,6 +247,89 @@ export default function MaterialsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Material Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !adding && setShowAddForm(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-lg text-slate-800">Add Material</h3>
+              <button onClick={() => !adding && setShowAddForm(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAdd} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Material Name *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  placeholder="e.g. Cement (OPC 53)"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Category *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  placeholder="e.g. Binding, Structure, Masonry"
+                  value={addForm.category}
+                  onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Current Qty *</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    placeholder="0"
+                    value={addForm.current_qty}
+                    onChange={(e) => setAddForm({ ...addForm, current_qty: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Total Qty *</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    placeholder="0"
+                    value={addForm.total_qty}
+                    onChange={(e) => setAddForm({ ...addForm, total_qty: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Unit *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  placeholder="e.g. Bags, Rods, Units"
+                  value={addForm.unit}
+                  onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={adding}
+                className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm"
+              >
+                {adding ? <Loader2 className="animate-spin" size={18} /> : 'Add Material'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

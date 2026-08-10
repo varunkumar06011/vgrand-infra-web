@@ -34,26 +34,6 @@ interface Project {
   brochure_url?: string;
 }
 
-const MOCK_PROJECTS: Project[] = [
-  { 
-    id: '1', 
-    name: 'Elite Homes', 
-    type: '3BHK Apartments', 
-    location: 'Koppolu, Ongole', 
-    status: 'Ongoing',
-    images: ['/images/ban a.png'],
-    brochure_url: 'link-to-pdf'
-  },
-  { 
-    id: '2', 
-    name: 'V Grand Paradise', 
-    type: 'Luxury Villa Plots', 
-    location: 'Surareddypalem, Ongole', 
-    status: 'Upcoming',
-    images: ['/images/ban b.png']
-  },
-];
-
 interface ConstructionImage {
   id: number;
   image_url: string;

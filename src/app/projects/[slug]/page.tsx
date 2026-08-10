@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
+import BrochureDownload from '@/components/BrochureDownload';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -193,10 +194,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           />
           
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 80 }}>
-            <a href={uiProject.brochure} download
-              style={{ flex: 1, textAlign: 'center', border: '2px solid #C0392B', color: '#C0392B', padding: '14px 32px', borderRadius: 6, textDecoration: 'none', fontWeight: 700, fontSize: 15, background: 'transparent', display: 'inline-block' }}>
-              Download Brochure
-            </a>
+            <BrochureDownload brochureUrl={uiProject.brochure} projectName={uiProject.name} />
           </div>
         </div>
       </div>

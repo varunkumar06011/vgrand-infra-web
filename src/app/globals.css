@@ -188,6 +188,10 @@ img {
   h1 {
     font-size: 26px !important;
   }
+
+  .consent-popup-card {
+    max-width: calc(100vw - 16px) !important;
+  }
 }
 
 /* Performance Optimization: GPU Layer Promotion */

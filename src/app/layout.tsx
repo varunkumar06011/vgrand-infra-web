@@ -6,6 +6,7 @@ import RouteHandler from '@/components/RouteHandler';
 import SmoothScroll from '@/components/SmoothScroll';
 import "./globals.css";
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -104,6 +105,7 @@ export const metadata = {
 
 import { headers } from 'next/headers';
 import VisitTracker from '@/components/VisitTracker';
+import ConsentPopup from '@/components/ConsentPopup';
 
 export default async function RootLayout({
   children,
@@ -118,7 +120,9 @@ export default async function RootLayout({
     <html lang="en" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
       <head />
       <body className={`${inter.className} ${montserrat.className}`} suppressHydrationWarning>
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
         <VisitTracker />
+        {!isAdmin && <ConsentPopup />}
         <RouteHandler />
         {!isAdmin && <Navbar />}
         <SmoothScroll>
@@ -126,6 +130,7 @@ export default async function RootLayout({
         </SmoothScroll>
         {!isAdmin && <Footer />}
         {!isAdmin && <WhatsAppButton variant="floating" phoneNumber="919030143333" />}
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

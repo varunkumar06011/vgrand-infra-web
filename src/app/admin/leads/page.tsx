@@ -8,6 +8,7 @@ import {
   Filter, 
   Download, 
   Phone, 
+  Mail, 
   MessageSquare, 
   MoreVertical,
   Calendar,
@@ -82,6 +83,7 @@ export default function LeadsPage() {
     total: leads.length,
     new: leads.filter(l => l.status?.toLowerCase() === 'new' || !l.status).length,
     whatsapp: leads.filter(l => l.source?.toLowerCase() === 'whatsapp').length,
+    brochure: leads.filter(l => l.source?.toLowerCase() === 'brochure_download').length,
     contacted: leads.filter(l => l.status?.toLowerCase() === 'contacted').length
   };
 
@@ -98,10 +100,11 @@ export default function LeadsPage() {
   return (
     <AdminLayout title="Lead Management">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <StatCard title="Total Leads" value={stats.total} icon={<Users className="text-blue-500" />} color="bg-blue-50" />
         <StatCard title="New" value={stats.new} icon={<Clock className="text-amber-500" />} color="bg-amber-50" />
         <StatCard title="WhatsApp" value={stats.whatsapp} icon={<MessageCircle className="text-green-500" />} color="bg-green-50" />
+        <StatCard title="Brochure Downloads" value={stats.brochure} icon={<Download className="text-amber-500" />} color="bg-amber-50" />
         <StatCard title="Contacted" value={stats.contacted} icon={<CheckCircle2 className="text-purple-500" />} color="bg-purple-50" />
       </div>
 
@@ -126,6 +129,8 @@ export default function LeadsPage() {
             <option value="All">All Sources</option>
             <option value="WhatsApp">WhatsApp</option>
             <option value="Form">Form Submission</option>
+            <option value="brochure_download">Brochure Download</option>
+            <option value="enquire_now">Enquire Now</option>
           </select>
           <select
             className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-medium"
@@ -169,13 +174,20 @@ export default function LeadsPage() {
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                         <span className="flex items-center gap-1"><Phone size={12} /> {lead.phone}</span>
                       </div>
+                      {lead.email && (
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                          <span className="flex items-center gap-1"><Mail size={12} /> {lead.email}</span>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      lead.source?.toLowerCase() === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      lead.source?.toLowerCase() === 'whatsapp' ? 'bg-green-100 text-green-700' :
+                      lead.source?.toLowerCase() === 'brochure_download' ? 'bg-amber-100 text-amber-700' :
+                      'bg-blue-100 text-blue-700'
                     }`}>
-                      {lead.source?.toLowerCase() === 'whatsapp' ? <MessageSquare size={10} /> : <Filter size={10} />}
+                      {lead.source?.toLowerCase() === 'whatsapp' ? <MessageSquare size={10} /> : lead.source?.toLowerCase() === 'brochure_download' ? <Download size={10} /> : <Filter size={10} />}
                       {lead.source || 'Form'}
                     </span>
                   </td>
@@ -222,6 +234,11 @@ export default function LeadsPage() {
                       <a href={`tel:${lead.phone}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Call">
                         <Phone size={16} />
                       </a>
+                      {lead.email && (
+                        <a href={`mailto:${lead.email}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Email">
+                          <Mail size={16} />
+                        </a>
+                      )}
                       <a href={`https://wa.me/${lead.phone}`} target="_blank" className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="WhatsApp">
                         <MessageSquare size={16} />
                       </a>
@@ -273,6 +290,14 @@ export default function LeadsPage() {
                       {new Date(selectedLead.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
                     </p>
                   </div>
+                  {selectedLead.email && (
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <Mail size={10} /> Email
+                      </p>
+                      <p className="text-sm font-bold text-slate-700 break-all">{selectedLead.email}</p>
+                    </div>
+                  )}
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                       <Home size={10} /> Interested In
@@ -289,8 +314,13 @@ export default function LeadsPage() {
 
                 <div className="pt-4 flex gap-3">
                   <a href={`tel:${selectedLead.phone}`} className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200">
-                    <Phone size={18} /> Call Client
+                    <Phone size={18} /> Call
                   </a>
+                  {selectedLead.email && (
+                    <a href={`mailto:${selectedLead.email}`} className="flex-1 bg-slate-600 text-white font-bold py-3 rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200">
+                      <Mail size={18} /> Email
+                    </a>
+                  )}
                   <a href={`https://wa.me/${selectedLead.phone}`} target="_blank" className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-200">
                     <MessageSquare size={18} /> WhatsApp
                   </a>

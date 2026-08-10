@@ -15,15 +15,19 @@ const Footer = () => {
             <p className="text-white/30 text-xs uppercase tracking-widest">
               © 2025 V Grand Infra. All rights reserved.
             </p>
+            <div className="flex space-x-4 mt-3">
+              <Link href="/terms-and-conditions" className="text-white/40 text-[11px] hover:text-white transition-colors">Terms &amp; Conditions</Link>
+              <Link href="/privacy-policy" className="text-white/40 text-[11px] hover:text-white transition-colors">Privacy Policy</Link>
+            </div>
           </div>
           
           <div className="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-16">
             <div>
               <div className="text-white/40 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Popular Searches</div>
               <div className="grid grid-cols-1 gap-2 text-white/50 text-[11px]">
-                <Link href="/projects" className="hover:text-white transition-colors">New Housing Projects in Ongole 2026</Link>
-                <Link href="/projects" className="hover:text-white transition-colors">Flats for Sale near Ongole Highway</Link>
-                <Link href="/projects" className="hover:text-white transition-colors">Villas in Prakasam District</Link>
+                <Link href="/projects/elite-homes" className="hover:text-white transition-colors"><span style={{ color: '#FFD700' }}>★</span> Elite Homes — Flagship Project</Link>
+                <Link href="/projects/v-grand-gateway" className="hover:text-white transition-colors">V Grand Gateway — Premium Flats</Link>
+                <Link href="/projects/tripura" className="hover:text-white transition-colors">Tripura — Affordable 2BHK</Link>
                 <Link href="/projects" className="hover:text-white transition-colors">Gated Community in Ongole</Link>
               </div>
             </div>

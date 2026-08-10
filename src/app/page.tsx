@@ -15,12 +15,18 @@ export default async function Home() {
     .select('*')
     .order('created_at', { ascending: false });
 
+  const projectPriority: Record<string, number> = { 'elite-homes': 0, 'v-grand-gateway': 1, 'tripura': 2 };
   const projects = (dbProjects || []).map((p: any) => ({
     ...p,
     image: p.images?.[0] || '/images/ban a.png',
     startingPrice: p.starting_price || 'Contact for details',
     description: p.description || 'Premium residential project by V Grand Infra.'
-  }));
+  })).sort((a: any, b: any) => {
+    const pa = projectPriority[a.slug] ?? 99;
+    const pb = projectPriority[b.slug] ?? 99;
+    if (pa !== pb) return pa - pb;
+    return 0;
+  });
 
   const featuredProjects = projects.slice(0, 3);
 
@@ -54,6 +60,12 @@ export default async function Home() {
         }}>
           {[1, 2].map(n => (
             <span key={n} style={{ display: 'inline-block' }}>
+              <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginRight: 48 }}>★ Elite Homes — First Gated Community in Koppolu</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', marginRight: 48 }}>+</span>
+              <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginRight: 48 }}>V Grand Gateway — Premium 2 &amp; 3 BHK Flats</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', marginRight: 48 }}>+</span>
+              <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginRight: 48 }}>Tripura — Affordable 2BHK Homes in Ongole</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', marginRight: 48 }}>+</span>
               <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginRight: 48 }}>Best Construction Company in Ongole</span>
               <span style={{ color: 'rgba(255,255,255,0.5)', marginRight: 48 }}>+</span>
               <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginRight: 48 }}>Top Real Estate Developers in Ongole</span>
@@ -109,7 +121,7 @@ export default async function Home() {
             <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 16 }}>Trusted Builders in Ongole</p>
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,4vw,44px)', color: '#fff', fontWeight: 700, marginBottom: 20, lineHeight: 1.2 }}>Infrastructure Company in Prakasam District</h2>
             <p style={{ color: '#bbb', fontSize: 16, lineHeight: 1.85, marginBottom: 32 }}>
-              V Grand Infra, led by T. Vinod Kumar, has emerged as one of the <strong>top real estate developers in Ongole</strong>. With a foundation built on 25+ years of cross-industry expertise, we are the preferred choice for families seeking <strong>high quality construction in Ongole</strong>. Our mission is to deliver premium <strong>residential projects in Ongole</strong> at honest prices, starting with Elite Homes—the first gated community in Koppolu near the NH-16 highway. As <strong>trusted builders in Ongole</strong>, we prioritize structural integrity and long-term value in every home.
+              V Grand Infra, led by T. Vinod Kumar, has emerged as one of the <strong>top real estate developers in Ongole</strong>. With a foundation built on 25+ years of cross-industry expertise, we are the preferred choice for families seeking <strong>high quality construction in Ongole</strong>. Our mission is to deliver premium <strong>residential projects in Ongole</strong> at honest prices, starting with <strong>Elite Homes</strong>—the first gated community in Koppolu near the NH-16 highway. As <strong>trusted builders in Ongole</strong>, we prioritize structural integrity and long-term value in every home.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px 32px' }}>
               {[['25+', 'Years Experience'], ['2', 'Active Projects'], ['Best', 'Infra Projects'], ['RERA', 'Approved']].map(([num, label]) => (

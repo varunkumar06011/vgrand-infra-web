@@ -145,9 +145,9 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
                     onChange={(e) => setFormData({ ...formData, interested_flat: e.target.value })}
                   >
                     <option value="" disabled>Select a property</option>
-                    <option value="Elite">Elite</option>
-                    <option value="Tripura">Tripura</option>
+                    <option value="Elite">★ Elite Homes — Flagship</option>
                     <option value="Gateway">V Grand Gateway</option>
+                    <option value="Tripura">Tripura</option>
                     <option value="Landmark">Landmark</option>
                   </select>
                 </div>

@@ -32,6 +32,7 @@ export default function AdminDashboard() {
     leads: 0,
     visits: 0,
     projects: 0,
+    lowStock: 0,
     recentLeads: [] as any[]
   });
   const [loading, setLoading] = useState(true);
@@ -43,20 +44,27 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [leadsRes, visitsRes, projectsRes] = await Promise.all([
+      const [leadsRes, visitsRes, projectsRes, materialsRes] = await Promise.all([
         fetch('/api/leads'),
         fetch('/api/visits/track'),
-        fetch('/api/projects')
+        fetch('/api/projects'),
+        fetch('/api/materials')
       ]);
 
       const leadsData = await leadsRes.json();
       const visitsData = await visitsRes.json();
       const projectsData = await projectsRes.json();
+      const materialsData = await materialsRes.json();
+
+      const lowStockCount = Array.isArray(materialsData)
+        ? materialsData.filter((m: any) => m.total_qty > 0 && (m.current_qty / m.total_qty) * 100 < 20).length
+        : 0;
 
       setStats({
         leads: Array.isArray(leadsData) ? leadsData.length : 0,
         visits: visitsData.total_visits_today || 0,
         projects: Array.isArray(projectsData) ? projectsData.length : 0,
+        lowStock: lowStockCount,
         recentLeads: Array.isArray(leadsData) ? leadsData.slice(0, 5) : []
       });
     } catch (error) {
@@ -94,7 +102,7 @@ export default function AdminDashboard() {
         />
         <MetricCard 
           title="Low Stock Items" 
-          value="12" 
+          value={loading ? '...' : stats.lowStock.toString()} 
           icon={AlertTriangle} 
           trend={{ value: 2, isUp: false }}
           color="orange"

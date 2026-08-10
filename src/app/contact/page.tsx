@@ -34,9 +34,9 @@ export default function ContactPage() {
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Project of Interest</label>
               <select style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
-                <option>Elite Homes — Koppolu, Ongole</option>
-                <option>Tripura — Koppolu, Ongole</option>
+                <option>★ Elite Homes — Koppolu, Ongole</option>
                 <option>V Grand Gateway — Koppolu, Ongole</option>
+                <option>Tripura — Koppolu, Ongole</option>
                 <option>Green Valley — Ongole</option>
                 <option>General Enquiry</option>
               </select>

@@ -11,13 +11,13 @@ const TRANSITION_DURATION = 500 // 500ms
 
 const slides = [
   { 
-    src: '/images/ban c (1).png', 
-    title: 'V Grand Gateway',
+    src: '/images/ban a.png', 
+    title: 'Elite Homes',
     description: ''
   },
   { 
-    src: '/images/ban a.png', 
-    title: 'Elite Homes',
+    src: '/images/ban c (1).png', 
+    title: 'V Grand Gateway',
     description: ''
   },
   { 

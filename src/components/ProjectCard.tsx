@@ -88,6 +88,26 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           }}>
             {project.status}
           </span>
+
+          {project.slug === 'elite-homes' && (
+            <span style={{
+              position: 'absolute',
+              top: 14,
+              left: 14,
+              background: '#FFD700',
+              color: '#1a1a1a',
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+              padding: '5px 12px',
+              borderRadius: 4,
+              zIndex: 5,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            }}>
+              ★ Flagship
+            </span>
+          )}
         </div>
 
         {/* Content Details - Forced High Contrast for Laptops/Tablets */}
