@@ -9,16 +9,27 @@ export default function ProjectsPage() {
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
 
+  const [error, setError] = useState(false)
+
   useEffect(() => {
     fetch('/api/projects')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load projects')
+        return res.json()
+      })
       .then(data => {
+        if (!Array.isArray(data)) throw new Error('Invalid response from server')
         setProjects(data.map((p: any) => ({
           ...p,
           image: p.images?.[0] || '/images/ban a.png',
           startingPrice: p.starting_price || 'Contact for details',
           description: p.description || 'Premium residential project by V Grand Infra.'
         })))
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Failed to load projects:', err)
+        setError(true)
         setLoading(false)
       })
   }, [])
@@ -113,10 +124,20 @@ export default function ProjectsPage() {
           </div>
         </div>
 
+        {/* Error state */}
+        {error && (
+          <div className="bg-white border border-[#e8d5d5] rounded-xl p-6 md:p-8 mb-12 shadow-sm text-center">
+            <p style={{ color: '#C0392B', fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Unable to load projects</p>
+            <p style={{ color: '#555', fontSize: 14 }}>There was a problem fetching our projects. Please try again later.</p>
+          </div>
+        )}
+
         {/* Cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
           {loading ? (
             <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>Loading projects...</p>
+          ) : error ? (
+            <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>Failed to load projects. Please refresh the page.</p>
           ) : filtered.length === 0 ? (
             <p style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>No projects match your filters.</p>
           ) : (

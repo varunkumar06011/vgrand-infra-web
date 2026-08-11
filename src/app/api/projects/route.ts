@@ -202,11 +202,16 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function GET() {
-  const supabase = getAdminClient();
-  const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error('Project Fetch Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {
