@@ -116,21 +116,32 @@ export default async function RootLayout({
   const fullPath = headersList.get('x-url') || '';
   const isAdmin = fullPath.includes('/admin');
 
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const content = (
+    <>
+      <VisitTracker />
+      {!isAdmin && <ConsentPopup />}
+      <RouteHandler />
+      {!isAdmin && <Navbar />}
+      <SmoothScroll>
+        <main>{children}</main>
+      </SmoothScroll>
+      {!isAdmin && <Footer />}
+      {!isAdmin && <WhatsAppButton variant="floating" phoneNumber="919030143333" />}
+    </>
+  );
+
   return (
     <html lang="en" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
       <head />
       <body className={`${inter.className} ${montserrat.className}`} suppressHydrationWarning>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-        <VisitTracker />
-        {!isAdmin && <ConsentPopup />}
-        <RouteHandler />
-        {!isAdmin && <Navbar />}
-        <SmoothScroll>
-          <main>{children}</main>
-        </SmoothScroll>
-        {!isAdmin && <Footer />}
-        {!isAdmin && <WhatsAppButton variant="floating" phoneNumber="919030143333" />}
-        </GoogleOAuthProvider>
+        {googleClientId ? (
+          <GoogleOAuthProvider clientId={googleClientId}>
+            {content}
+          </GoogleOAuthProvider>
+        ) : (
+          content
+        )}
       </body>
     </html>
   );

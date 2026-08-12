@@ -27,6 +27,9 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
   const [googleUser, setGoogleUser] = useState<{ name: string; email: string } | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const googleEnabled = !!googleClientId;
+
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -49,6 +52,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
   });
 
   const handleGoogleSignIn = () => {
+    if (!googleEnabled) return;
     setGoogleLoading(true);
     setError(null);
     googleLogin();
@@ -174,7 +178,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
                     </p>
                   </div>
 
-                  {!googleUser && (
+                  {!googleUser && googleEnabled && (
                     <>
                       <button
                         onClick={handleGoogleSignIn}

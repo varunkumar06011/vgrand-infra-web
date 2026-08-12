@@ -72,3 +72,32 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = getAdminClient();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Lead ID is required' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, deleted: data[0] });
+  } catch (error: any) {
+    console.error('Lead Deletion Error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

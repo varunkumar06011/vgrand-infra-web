@@ -18,7 +18,8 @@ import {
   Clock,
   CheckCircle2,
   MessageCircle,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -29,6 +30,7 @@ export default function LeadsPage() {
   const [sourceFilter, setSourceFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
 
   // 1. Fetch leads and setup real-time listener
   useEffect(() => {
@@ -78,6 +80,19 @@ export default function LeadsPage() {
     }
   };
 
+  const deleteLead = async (id: string) => {
+    try {
+      const res = await fetch(`/api/leads?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDeleteConfirm(null);
+        setSelectedLead(null);
+        fetchLeads();
+      }
+    } catch (error) {
+      console.error('Failed to delete lead:', error);
+    }
+  };
+
   // 2. Stats calculation
   const stats = {
     total: leads.length,
@@ -96,6 +111,37 @@ export default function LeadsPage() {
     const matchesStatus = statusFilter === 'All' || lead.status?.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesSource && matchesStatus;
   });
+
+  const exportToCSV = () => {
+    const headers = ['Name', 'Phone', 'Email', 'Source', 'Status', 'Location', 'Budget', 'Property Type', 'Interested Flat', 'Date'];
+    const rows = filteredLeads.map(lead => [
+      lead.name || '',
+      lead.phone || '',
+      lead.email || '',
+      lead.source || '',
+      lead.status || 'new',
+      lead.location || '',
+      lead.budget || '',
+      lead.property_type || '',
+      lead.interested_flat || '',
+      new Date(lead.created_at).toLocaleDateString('en-IN')
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leads-export-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <AdminLayout title="Lead Management">
@@ -145,7 +191,11 @@ export default function LeadsPage() {
           </select>
         </div>
 
-        <button className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm font-semibold">
+        <button
+          onClick={exportToCSV}
+          disabled={filteredLeads.length === 0}
+          className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Download size={18} /> Export
         </button>
       </div>
@@ -242,6 +292,13 @@ export default function LeadsPage() {
                       <a href={`https://wa.me/${lead.phone}`} target="_blank" className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="WhatsApp">
                         <MessageSquare size={16} />
                       </a>
+                      <button 
+                        onClick={() => setDeleteConfirm(lead)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" 
+                        title="Delete Lead"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -324,6 +381,45 @@ export default function LeadsPage() {
                   <a href={`https://wa.me/${selectedLead.phone}`} target="_blank" className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-200">
                     <MessageSquare size={18} /> WhatsApp
                   </a>
+                </div>
+
+                <button
+                  onClick={() => setDeleteConfirm(selectedLead)}
+                  className="w-full text-red-500 hover:text-red-700 hover:bg-red-50 font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm border border-red-100"
+                >
+                  <Trash2 size={16} /> Delete Lead
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+            <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6 text-center">
+                <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Lead?</h3>
+                <p className="text-sm text-slate-500 mb-6">
+                  Are you sure you want to delete <strong className="text-slate-700">{deleteConfirm.name}</strong>'s lead? This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-all text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => deleteLead(deleteConfirm.id)}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all text-sm"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
