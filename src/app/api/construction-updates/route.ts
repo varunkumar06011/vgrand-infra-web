@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'image file is required' }, { status: 400 });
     }
 
-    const bucket = 'construction-updates';
-    const imageUrl = await uploadToStorage(imageFile, bucket, `project-${projectId}`);
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PROJECTS || 'projects';
+    const imageUrl = await uploadToStorage(imageFile, bucket, `construction-updates/project-${projectId}`);
 
     const { data, error } = await supabase
       .from('construction_updates')
@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
 
     revalidatePath('/projects');
     revalidatePath('/');
+    revalidatePath('/projects/[slug]', 'page');
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
@@ -110,6 +111,7 @@ export async function DELETE(request: NextRequest) {
 
     revalidatePath('/projects');
     revalidatePath('/');
+    revalidatePath('/projects/[slug]', 'page');
 
     return NextResponse.json({ success: true, deleted: data[0] });
   } catch (error: any) {

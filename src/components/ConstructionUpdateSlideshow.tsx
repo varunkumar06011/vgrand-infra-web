@@ -23,10 +23,15 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
   const [loading, setLoading] = useState(!initialImages);
 
   useEffect(() => {
-    if (initialImages) return;
     fetch(`/api/construction-updates?project_id=${projectId}`)
       .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setImages(data); })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const apiIds = new Set(data.map((d: UpdateImage) => d.id));
+          const staticOnly = (initialImages || []).filter((img) => !apiIds.has(img.id));
+          setImages([...staticOnly, ...data]);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [projectId, initialImages]);
