@@ -35,9 +35,9 @@ export default function ProjectsPage() {
   }, [])
 
   const filtered = projects.filter((p: any) => {
-    const locMatch = location === 'all' || p.location.toLowerCase().includes(location)
-    const statusMatch = status === 'all' || p.status.toLowerCase() === status
-    const typeMatch = type === 'all' || p.type.toLowerCase().includes(type)
+    const locMatch = location === 'all' || (p.location || '').toLowerCase().includes(location)
+    const statusMatch = status === 'all' || (p.status || '').toLowerCase() === status
+    const typeMatch = type === 'all' || (p.type || '').toLowerCase().includes(type)
     return locMatch && statusMatch && typeMatch
   })
 
