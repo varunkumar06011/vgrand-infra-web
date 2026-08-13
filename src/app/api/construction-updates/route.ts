@@ -59,9 +59,16 @@ export async function POST(request: NextRequest) {
     const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PROJECTS || 'projects';
     const imageUrl = await uploadToStorage(imageFile, bucket, `construction-updates/project-${projectId}`);
 
+    // Fetch project slug for the insert (construction_updates.project_slug is NOT NULL)
+    const { data: project } = await supabase
+      .from('projects')
+      .select('slug')
+      .eq('id', Number(projectId))
+      .single();
+
     const { data, error } = await supabase
       .from('construction_updates')
-      .insert([{ project_id: Number(projectId), image_url: imageUrl, label }])
+      .insert([{ project_id: Number(projectId), project_slug: project?.slug || '', image_url: imageUrl, label }])
       .select()
       .single();
 
