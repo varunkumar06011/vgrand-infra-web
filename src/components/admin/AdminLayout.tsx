@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -34,6 +35,31 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { user } } = await supabase().auth.getUser();
+        if (!user) {
+          router.replace('/admin');
+          return;
+        }
+        setAuthChecked(true);
+      } catch {
+        router.replace('/admin');
+      }
+    };
+    checkAuth();
+  }, [router]);
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-slate-400" size={32} />
+      </div>
+    );
+  }
 
   const handleSignOut = async () => {
     await supabase().auth.signOut();

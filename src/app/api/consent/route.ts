@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
+import { rateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  if (!rateLimit(request, 10, 60_000)) {
+    return rateLimitedResponse();
+  }
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
@@ -44,15 +50,18 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Consent Log Error:', error);
+    console.error('Consent Log Error:', error.message);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to log consent' },
+      { success: false, error: 'Failed to log consent.' },
       { status: 500 }
     );
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const { data, error } = await supabase
@@ -64,9 +73,9 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Consent Log Fetch Error:', error);
+    console.error('Consent Log Fetch Error:', error.message);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch consent logs' },
+      { error: 'Failed to fetch consent logs.' },
       { status: 500 }
     );
   }

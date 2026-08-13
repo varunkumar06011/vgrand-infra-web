@@ -27,10 +27,10 @@ export default function ProjectsPage() {
         })))
         setLoading(false)
       })
-      .catch(err => {
-        console.error('Failed to load projects:', err)
-        setError(true)
-        setLoading(false)
+      .catch(() => {
+        console.error('Failed to load projects');
+        setError(true);
+        setLoading(false);
       })
   }, [])
 

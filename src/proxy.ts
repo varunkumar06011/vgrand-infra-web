@@ -79,7 +79,7 @@ export async function proxy(request: NextRequest) {
     response.headers.set('x-url', request.url)
     
   } catch (error) {
-    console.error('Middleware Processing Error:', error)
+    console.error('Middleware processing error')
     // Return base response on error to avoid crashing the whole path
   }
 

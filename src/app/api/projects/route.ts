@@ -2,21 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabaseAdmin';
 import { uploadToStorage } from '@/lib/storage';
-import fs from 'fs';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
-    
-    // Validate Environment
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Critical: Supabase environment variables are missing on the server.' 
-      }, { status: 500 });
-    }
 
     const formData = await request.formData();
     const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PROJECTS || 'projects';
@@ -105,23 +100,21 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Project Creation Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Project Creation Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to create project. Please try again.' },
+      { status: 500 }
+    );
   }
 }
 
 
 export async function PUT(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
-
-    // Validate Environment
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Critical: Supabase environment variables are missing on the server.' 
-      }, { status: 500 });
-    }
 
     const formData = await request.formData();
     
@@ -196,44 +189,38 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Project Update Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Project Update Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update project. Please try again.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = getAdminClient();
     const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) throw error;
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Project Fetch Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Project Fetch Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to fetch projects.' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const logFile = 'scratch/api_logs.txt';
-  const timestamp = new Date().toISOString();
-  
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !key) {
-      fs.appendFileSync(logFile, `[${timestamp}] DELETE ERROR: Missing env vars\n`);
-      return NextResponse.json({ 
-        error: 'Critical: Supabase environment variables are missing on the server.' 
-      }, { status: 500 });
-    }
-
     const supabase = getAdminClient();
     const { searchParams } = new URL(request.url);
     const idStr = searchParams.get('id');
-
-    fs.appendFileSync(logFile, `[${timestamp}] DELETE REQUEST: id=${idStr}\n`);
 
     if (!idStr) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
@@ -247,27 +234,24 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .select();
 
-    if (error) {
-      fs.appendFileSync(logFile, `[${timestamp}] DELETE DB ERROR: ${error.message}\n`);
-      throw error;
-    }
+    if (error) throw error;
 
     if (!data || data.length === 0) {
-      fs.appendFileSync(logFile, `[${timestamp}] DELETE NOT FOUND: id=${id}\n`);
       return NextResponse.json({ 
         success: false, 
-        error: `No project found with ID: ${id}.` 
+        error: 'Project not found.' 
       }, { status: 404 });
     }
 
     revalidatePath('/projects');
     revalidatePath('/');
 
-    fs.appendFileSync(logFile, `[${timestamp}] DELETE SUCCESS: id=${id}\n`);
     return NextResponse.json({ success: true, deleted: data[0] });
   } catch (error: any) {
-    fs.appendFileSync(logFile, `[${timestamp}] DELETE EXCEPTION: ${error.message}\n`);
-    console.error('Project Deletion Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Project Deletion Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete project.' },
+      { status: 500 }
+    );
   }
 }

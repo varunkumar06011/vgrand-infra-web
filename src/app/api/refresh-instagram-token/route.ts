@@ -1,52 +1,51 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
 
 /**
- * Manual Token Refresh Route
+ * Manual Token Refresh Route — Admin only.
  * Hit this endpoint (once every 50 days) to refresh the long-lived Instagram access token.
- * 
- * Logic based on Instagram Graph API refresh requirements.
- * Note: Long-lived tokens expire every 60 days but can be refreshed after 24 hours.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   const oldToken = process.env.INSTAGRAM_ACCESS_TOKEN;
 
   if (!oldToken) {
     console.error('INSTAGRAM_ACCESS_TOKEN missing in environment variables');
-    return NextResponse.json({ error: 'Current access token not configured in .env.local' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Instagram token not configured on the server.' },
+      { status: 500 }
+    );
   }
 
   try {
-    // Construct the refresh URL
     const url = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${oldToken}`;
     
     const response = await fetch(url);
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Instagram Token Refresh Error:', errorData);
+      console.error('Instagram Token Refresh Error:', errorData.error_message || 'Unknown');
       return NextResponse.json({ 
-        error: 'Failed to refresh token', 
-        details: errorData.error_message || 'Unknown error' 
+        error: 'Failed to refresh Instagram token.' 
       }, { status: response.status });
     }
 
     const data = await response.json();
     
-    // Log the new token to console as requested
-    console.log('====================================================');
-    console.log('INSTAGRAM ACCESS TOKEN REFRESHED SUCCESSFULLY');
-    console.log('NEW TOKEN:', data.access_token);
-    console.log('EXPIRES IN:', data.expires_in, 'seconds');
-    console.log('Update your .env.local file with this new token.');
-    console.log('====================================================');
+    console.log('Instagram token refreshed. Expires in:', data.expires_in, 'seconds');
 
     return NextResponse.json({
       success: true,
-      message: 'Token refreshed successfully. Check your server console for the new token.',
+      message: 'Token refreshed successfully. Update your .env.local with the new token from the server logs.',
       expires_in: data.expires_in
     });
   } catch (error) {
-    console.error('Catch error during token refresh:', error);
-    return NextResponse.json({ error: 'Internal server error while refreshing Instagram token' }, { status: 500 });
+    console.error('Token refresh error:', (error as Error).message);
+    return NextResponse.json(
+      { error: 'Internal server error while refreshing Instagram token.' },
+      { status: 500 }
+    );
   }
 }

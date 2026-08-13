@@ -18,7 +18,6 @@ export default function AdminLoginPage() {
       try {
         const { data: { user } } = await supabase().auth.getUser();
         if (user) {
-          console.log('User session found, redirecting to dashboard...');
           router.replace('/admin/dashboard');
         }
       } catch (e) {
@@ -32,7 +31,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     if (loading) return; // Prevent multiple submissions
 
-    console.log('Login attempt started for:', email);
+    console.log('Login attempt started');
     setLoading(true);
     setError(null);
 

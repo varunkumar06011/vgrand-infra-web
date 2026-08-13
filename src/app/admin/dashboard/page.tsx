@@ -68,7 +68,7 @@ export default function AdminDashboard() {
         recentLeads: Array.isArray(leadsData) ? leadsData.slice(0, 5) : []
       });
     } catch (error) {
-      console.error('Failed to fetch stats', error);
+      console.error('Failed to fetch dashboard data');
     } finally {
       setLoading(false);
     }

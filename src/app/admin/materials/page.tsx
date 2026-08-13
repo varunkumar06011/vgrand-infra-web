@@ -43,7 +43,7 @@ export default function MaterialsPage() {
       const data = await res.json();
       if (Array.isArray(data)) setMaterials(data);
     } catch (error) {
-      console.error('Failed to fetch materials:', error);
+      console.error('Failed to fetch materials');
     } finally {
       setLoading(false);
     }

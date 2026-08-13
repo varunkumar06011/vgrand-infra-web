@@ -59,7 +59,7 @@ export default function LeadsPage() {
         setLeads(data);
       }
     } catch (error) {
-      console.error('Failed to fetch leads:', error);
+      console.error('Failed to fetch leads');
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export default function LeadsPage() {
         fetchLeads();
       }
     } catch (error) {
-      console.error('Failed to update status:', error);
+      console.error('Failed to update status');
     }
   };
 
@@ -89,7 +89,7 @@ export default function LeadsPage() {
         fetchLeads();
       }
     } catch (error) {
-      console.error('Failed to delete lead:', error);
+      console.error('Failed to delete lead');
     }
   };
 

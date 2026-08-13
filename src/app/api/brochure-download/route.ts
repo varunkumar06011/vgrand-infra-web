@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { rateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  if (!rateLimit(request, 5, 60_000)) {
+    return rateLimitedResponse();
+  }
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
@@ -13,6 +18,13 @@ export async function POST(request: NextRequest) {
     if (!name || !phone) {
       return NextResponse.json(
         { success: false, error: 'Name and phone are required' },
+        { status: 400 }
+      );
+    }
+
+    if (name.length > 200 || email?.length > 200 || phone.length > 20) {
+      return NextResponse.json(
+        { success: false, error: 'Input too long.' },
         { status: 400 }
       );
     }
@@ -39,16 +51,13 @@ export async function POST(request: NextRequest) {
       ])
       .select();
 
-    if (error) {
-      console.error('Supabase Error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Brochure Download Lead Error:', error);
+    console.error('Brochure Download Lead Error:', error.message);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to save lead' },
+      { success: false, error: 'Failed to save lead. Please try again.' },
       { status: 500 }
     );
   }

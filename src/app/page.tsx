@@ -3,6 +3,7 @@ import ProjectCard from '@/components/ProjectCard';
 import { getAdminClient } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import { renderSafeHtml } from '@/lib/safeHtml';
 
 import Image from 'next/image';
 
@@ -168,7 +169,7 @@ export default async function Home() {
             ].map((faq, i) => (
               <div key={i} style={{ borderBottom: '1px solid #e8d5d5', paddingBottom: 24 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>{faq.q}</h3>
-                <p style={{ color: '#555', lineHeight: 1.7, fontSize: 15 }} dangerouslySetInnerHTML={{ __html: faq.a }} />
+                <p style={{ color: '#555', lineHeight: 1.7, fontSize: 15 }}>{renderSafeHtml(faq.a)}</p>
               </div>
             ))}
           </div>
@@ -189,7 +190,7 @@ export default async function Home() {
             ].map(([title, desc]) => (
               <div key={title} style={{ background: '#fff5f5', border: '1px solid #e8d5d5', borderRadius: 8, padding: '32px 28px', borderLeft: '4px solid #C0392B' }}>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, color: '#1a1a1a', fontWeight: 700, marginBottom: 12 }}>{title}</h3>
-                <p style={{ color: '#555', fontSize: 15, lineHeight: 1.75, margin: 0 }} dangerouslySetInnerHTML={{ __html: desc }} />
+                <p style={{ color: '#555', fontSize: 15, lineHeight: 1.75, margin: 0 }}>{renderSafeHtml(desc)}</p>
               </div>
             ))}
           </div>

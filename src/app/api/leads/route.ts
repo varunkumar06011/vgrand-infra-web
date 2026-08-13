@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
+import { rateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  if (!rateLimit(request, 5, 60_000)) {
+    return rateLimitedResponse();
+  }
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
@@ -12,6 +18,10 @@ export async function POST(request: NextRequest) {
 
     if (!name) {
       return NextResponse.json({ success: false, error: 'Name is required' }, { status: 400 });
+    }
+
+    if (name.length > 200 || email?.length > 200 || phone?.length > 20 || message?.length > 5000) {
+      return NextResponse.json({ success: false, error: 'Input too long.' }, { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -33,22 +43,40 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Lead Submission Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Lead Submission Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to submit lead. Please try again.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET() {
-  const supabase = getAdminClient();
-  const { data, error } = await supabase
-    .from('leads')
-    .select('*')
-    .order('created_at', { ascending: false });
+export async function GET(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error('Lead Fetch Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to fetch leads.' },
+      { status: 500 }
+    );
+  }
 }
+
 export async function PATCH(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
@@ -68,12 +96,18 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Lead Update Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Lead Update Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update lead.' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const { searchParams } = new URL(request.url);
@@ -97,7 +131,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, deleted: data[0] });
   } catch (error: any) {
-    console.error('Lead Deletion Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Lead Deletion Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete lead.' },
+      { status: 500 }
+    );
   }
 }

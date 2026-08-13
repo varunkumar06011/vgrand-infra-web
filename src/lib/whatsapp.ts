@@ -58,13 +58,13 @@ async function callWhatsAppAPI(payload: any) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('[WhatsApp] API error:', JSON.stringify(data, null, 2));
-      return { success: false, error: data };
+      console.error('[WhatsApp] API error:', data?.error?.code || 'Unknown');
+      return { success: false, error: 'WhatsApp API request failed' };
     }
 
     return { success: true, data };
   } catch (error) {
-    console.error('WhatsApp network error:', error);
-    return { success: false, error };
+    console.error('WhatsApp network error:', (error as Error).message);
+    return { success: false, error: 'Network error' };
   }
 }

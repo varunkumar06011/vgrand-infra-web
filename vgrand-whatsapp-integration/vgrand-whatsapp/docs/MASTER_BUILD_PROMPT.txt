@@ -157,10 +157,10 @@ ENVIRONMENT VARIABLES (add to .env.local)
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-WHATSAPP_PHONE_NUMBER_ID=1082284371633102
-WHATSAPP_BUSINESS_ACCOUNT_ID=1525717845806487
-WHATSAPP_ACCESS_TOKEN=       ← get new permanent token from Meta Business Suite
-WHATSAPP_VERIFY_TOKEN=vgrand_webhook_secret_2024
+WHATSAPP_PHONE_NUMBER_ID=       ← from Meta Business Suite
+WHATSAPP_BUSINESS_ACCOUNT_ID=   ← from Meta Business Suite
+WHATSAPP_ACCESS_TOKEN=          ← get new permanent token from Meta Business Suite
+WHATSAPP_VERIFY_TOKEN=          ← set your own strong secret token
 AGENT_WHATSAPP_NUMBER=       ← agent's number e.g. 919876543210
 NEXT_PUBLIC_SITE_URL=https://vgrandgroup.com
 NEXT_PUBLIC_WHATSAPP_NUMBER= ← business WhatsApp number

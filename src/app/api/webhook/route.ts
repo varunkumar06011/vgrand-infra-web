@@ -8,10 +8,14 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get('hub.verify_token');
   const challenge = searchParams.get('hub.challenge');
 
-  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'vgrand_bot_verify_2024';
+  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+
+  if (!VERIFY_TOKEN) {
+    console.error('[Webhook] WHATSAPP_VERIFY_TOKEN env var is not set');
+    return new Response('Internal Server Error', { status: 500 });
+  }
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('Webhook Verified Successfully');
     return new Response(challenge, { 
       status: 200, 
       headers: { 'Content-Type': 'text/plain' } 
@@ -25,9 +29,6 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getAdminClient();
     const body = await request.json();
-
-    // DIAGNOSTIC LOG: See exactly what Meta is sending
-    console.log('[Webhook] Raw Payload:', JSON.stringify(body, null, 2));
 
     if (body.object === 'whatsapp_business_account') {
       const entry = body.entry?.[0];
@@ -46,13 +47,9 @@ export async function POST(request: NextRequest) {
         }
 
         const lowerText = text.toLowerCase();
-        console.log(`[Webhook] Message from ${phone}: "${text}"`);
 
-        // 0. DIAGNOSTIC ECHO: Send "Check" to see if sending works at all
         if (lowerText === 'check') {
-          console.log('[Webhook] Diagnostic check triggered');
           const result = await sendWhatsAppMessage(phone, "🚀 *Bot response test successful!*\n\nI am connected to Meta and can send messages. If the regular 'Hi' flow isn't working, the issue is likely with the Supabase database connection.");
-          console.log('[Webhook] Send result:', JSON.stringify(result, null, 2));
           return NextResponse.json({ success: true, diagnostic: 'echo_sent' });
         }
 
@@ -64,7 +61,7 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (sessError && sessError.code !== 'PGRST116') {
-          console.error('[Webhook] Supabase Session Error:', sessError);
+          console.error('[Webhook] Session error:', sessError.code);
         }
 
         // Allow restart
@@ -118,7 +115,6 @@ export async function POST(request: NextRequest) {
 
             const { data: newLead } = await supabase.from('leads').insert([leadData]).select().single();
             
-            // Notify Agent if configured
             const agentPhone = process.env.AGENT_WHATSAPP_NUMBER;
             if (agentPhone) {
               const agentMsg = `🔔 *New WhatsApp Lead!*\n\n👤 Name: ${text}\n📞 Phone: ${phone}\n📍 Location: ${session.location}\n💰 Budget: ${session.budget}\n🏠 Type: ${session.property_type}\n\n📊 View: ${process.env.NEXT_PUBLIC_SITE_URL}/admin/leads`;
@@ -140,8 +136,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('[Webhook] Error:', error);
-    return NextResponse.json({ success: false, error: error.message });
+    console.error('[Webhook] Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Webhook processing failed.' },
+      { status: 500 }
+    );
   }
 }
 

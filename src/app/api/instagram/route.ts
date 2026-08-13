@@ -7,9 +7,9 @@ export async function GET() {
   const businessId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
 
   if (!token || !businessId) {
-    console.error('[INSTAGRAM_API] ERROR: Environment variables missing (INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ACCOUNT_ID)');
+    console.error('[INSTAGRAM_API] Environment variables missing');
     return NextResponse.json(
-      { error: 'Instagram credentials not configured. Please add them to your .env file.' }, 
+      { error: 'Instagram feed temporarily unavailable.' }, 
       { status: 500 }
     );
   }
@@ -23,10 +23,9 @@ export async function GET() {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Instagram API Error:', errorData);
+      console.error('Instagram API Error:', errorData.error?.message || 'Unknown');
       return NextResponse.json({ 
-        error: 'Failed to fetch from Instagram', 
-        details: errorData.error?.message || 'Unknown error' 
+        error: 'Failed to fetch Instagram feed.' 
       }, { status: response.status });
     }
 
@@ -56,8 +55,11 @@ export async function GET() {
 
     return NextResponse.json(posts);
   } catch (error) {
-    console.error('Instagram fetch catch error:', error);
-    return NextResponse.json({ error: 'Internal server error while fetching Instagram feed' }, { status: 500 });
+    console.error('Instagram fetch error:', (error as Error).message);
+    return NextResponse.json(
+      { error: 'Failed to fetch Instagram feed.' },
+      { status: 500 }
+    );
   }
 }
 

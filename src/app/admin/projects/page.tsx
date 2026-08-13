@@ -255,7 +255,7 @@ export default function ProjectsManagement() {
       const data = await res.json();
       setProjects(data);
     } catch (error) {
-      console.error('Failed to fetch projects', error);
+      console.error('Failed to fetch projects');
     } finally {
       setLoading(false);
     }
@@ -396,8 +396,8 @@ export default function ProjectsManagement() {
       alert(`SUCCESS: Project ${id} deleted.`);
       await fetchProjects();
     } catch (error: any) {
-      console.error('[FRONTEND] Delete failed', error);
-      alert(`CRITICAL ERROR: ${error.message}`);
+      console.error('Failed to delete project');
+      alert('Failed to delete project. Please try again.');
     } finally {
       setLoading(false);
     }

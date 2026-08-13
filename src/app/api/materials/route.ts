@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const { data, error } = await supabase
@@ -20,12 +24,18 @@ export async function GET() {
 
     return NextResponse.json(data || []);
   } catch (error: any) {
-    console.error('Materials GET Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Materials GET Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to fetch materials.' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
@@ -48,12 +58,18 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Materials POST Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Materials POST Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to add material.' },
+      { status: 500 }
+    );
   }
 }
 
 export async function PATCH(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
@@ -80,12 +96,18 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error('Materials PATCH Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Materials PATCH Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to update material.' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   try {
     const supabase = getAdminClient();
     const { searchParams } = new URL(request.url);
@@ -107,7 +129,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Materials DELETE Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Materials DELETE Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to delete material.' },
+      { status: 500 }
+    );
   }
 }

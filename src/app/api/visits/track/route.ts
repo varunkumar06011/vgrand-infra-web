@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
+import { rateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  if (!rateLimit(request, 30, 60_000)) {
+    return rateLimitedResponse();
+  }
+
   try {
     const supabase = getAdminClient();
     const body = await request.json();
     const { page_path, session_id } = body;
 
-    // Simple insertion into site_visits table
     const { error } = await supabase
       .from('site_visits')
       .insert([
@@ -23,15 +28,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Visit Track Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Visit Track Error:', error.message);
+    return NextResponse.json(
+      { success: false, error: 'Failed to track visit.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) return unauthorizedResponse();
+
   const supabase = getAdminClient();
   
-  // Get count for today
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -40,6 +50,12 @@ export async function GET() {
     .select('*', { count: 'exact', head: true })
     .gte('created_at', today.toISOString());
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Visit Count Error:', error.message);
+    return NextResponse.json(
+      { error: 'Failed to fetch visit count.' },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ total_visits_today: count });
 }
