@@ -106,6 +106,7 @@ export const metadata = {
 import { headers } from 'next/headers';
 import VisitTracker from '@/components/VisitTracker';
 import ConsentPopup from '@/components/ConsentPopup';
+import Script from 'next/script';
 
 export default async function RootLayout({
   children,
@@ -131,9 +132,72 @@ export default async function RootLayout({
     </>
   );
 
+  const siteUrl = 'https://vgrandgroup.com';
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'V Grand Infra',
+    alternateName: 'VGrand Infra',
+    url: siteUrl,
+    logo: `${siteUrl}/images/logo.png`,
+    sameAs: [
+      'https://www.facebook.com/vgrandinfra',
+      'https://www.instagram.com/vgrandinfra',
+      'https://www.linkedin.com/company/v-grand-infra'
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+91-90301-43333',
+      contactType: 'Sales',
+      areaServed: 'IN',
+      availableLanguage: ['English', 'Telugu']
+    }
+  };
+
+  const localBusinessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateAgent',
+    name: 'V Grand Infra',
+    image: `${siteUrl}/images/logo.png`,
+    url: siteUrl,
+    telephone: '+91-90301-43333',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Koppolu, Ongole',
+      addressLocality: 'Ongole',
+      addressRegion: 'Andhra Pradesh',
+      postalCode: '523001',
+      addressCountry: 'IN'
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 15.5135,
+      longitude: 80.0537
+    },
+    priceRange: '₹29 Lakhs - ₹80 Lakhs',
+    areaServed: 'Ongole, Koppolu, Prakasam District, Andhra Pradesh'
+  };
+
   return (
     <html lang="en" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
-      <head />
+      <head>
+        {!isAdmin && (
+          <>
+            <Script
+              id="schema-organization"
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+              strategy="beforeInteractive"
+            />
+            <Script
+              id="schema-local-business"
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+              strategy="beforeInteractive"
+            />
+          </>
+        )}
+      </head>
       <body className={`${inter.className} ${montserrat.className}`} suppressHydrationWarning>
         {googleClientId ? (
           <GoogleOAuthProvider clientId={googleClientId}>

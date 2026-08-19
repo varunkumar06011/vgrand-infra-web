@@ -1,6 +1,7 @@
 import { getAdminClient } from '@/lib/supabaseAdmin'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import Script from 'next/script';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
 import BrochureDownload from '@/components/BrochureDownload';
@@ -70,8 +71,44 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     specs: project.specs || {},
   }
 
+  const siteUrl = 'https://vgrandgroup.com';
+  const projectUrl = `${siteUrl}/projects/${slug}`;
+
+  const realEstateSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: uiProject.name,
+    description: uiProject.description,
+    url: projectUrl,
+    image: uiProject.image?.startsWith('http') ? uiProject.image : `${siteUrl}${uiProject.image}`,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: uiProject.location,
+      addressLocality: 'Ongole',
+      addressRegion: 'Andhra Pradesh',
+      addressCountry: 'IN'
+    },
+    price: uiProject.startingPrice?.replace(/[^0-9]/g, '') || undefined,
+    priceCurrency: 'INR',
+    numberOfRooms: uiProject.type?.includes('2') ? '2' : uiProject.type?.includes('3') ? '3' : undefined,
+    accommodationCategory: uiProject.type,
+    offer: uiProject.startingPrice ? {
+      '@type': 'Offer',
+      price: uiProject.startingPrice.replace(/[^0-9]/g, '') || '0',
+      priceCurrency: 'INR',
+      availability: 'https://schema.org/InStock',
+      validFrom: new Date().toISOString().split('T')[0]
+    } : undefined,
+    status: uiProject.status === 'ongoing' ? 'https://schema.org/ActiveActionStatus' : 'https://schema.org/PotentialActionStatus'
+  };
+
   return (
     <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
+      <Script
+        id="schema-realestate"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(realEstateSchema) }}
+      />
       {/* Hero Section - Redesigned for 100% Visibility */}
       <div className="relative w-full flex flex-col lg:block overflow-hidden bg-black">
         {/* Image Part */}

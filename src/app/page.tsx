@@ -4,6 +4,7 @@ import { getAdminClient } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import { renderSafeHtml } from '@/lib/safeHtml';
+import Script from 'next/script';
 
 import Image from 'next/image';
 
@@ -31,6 +32,59 @@ export default async function Home() {
 
   const featuredProjects = projects.slice(0, 3);
 
+  const siteUrl = 'https://vgrandgroup.com';
+
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'V Grand Infra',
+    url: siteUrl,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${siteUrl}/projects?q={search_term_string}`,
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Is it safe to invest in Ongole real estate in 2026?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. With Ongole property price trends showing steady growth, especially near the NH-16 highway, investing in RERA approved projects in Ongole is a high-yield opportunity. The development of industrial corridors makes Prakasam district a prime location for long-term real estate investment.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'How to choose a builder in Ongole for premium flats?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Look for trusted builders in Ongole with a track record of high quality construction and transparent documentation. V Grand Infra stands out among real estate developers in Andhra Pradesh for our commitment to Zero Compromise quality and on-time delivery of ready to move apartments in Ongole.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'What are the best areas to buy flats in Ongole?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Koppolu and areas adjacent to the NH-16 highway are currently the best areas to buy flats in Ongole due to their connectivity and infrastructure growth. V Grand Infra offers premium lifestyle apartments and gated community flats in these high-appreciation zones.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Are there affordable apartments in Ongole for middle class families?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. V Grand Infra specializes in affordable housing in Ongole. From 2BHK flats near highway to budget housing projects, we offer ready to move flats in Ongole with amenities like security, parks, and 24/7 water supply, making luxury living accessible to everyone.'
+        }
+      }
+    ]
+  };
+
   const labelStyle = {
     display: 'block',
     fontSize: 11,
@@ -43,6 +97,16 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#fff5f5]">
+      <Script
+        id="schema-website"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <Script
+        id="schema-faq"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <Hero />
 
       {/* Marquee Scroller */}
