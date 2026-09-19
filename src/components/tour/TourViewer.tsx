@@ -265,9 +265,9 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
 
       {/* ======================= top bar ======================= */}
       <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-3 md:px-5 pt-3 pb-8 flex items-start justify-between gap-2">
-        <div className="min-w-0 pt-1">
+        <div className="min-w-0 pt-1 flex-1">
           <p
-            className="text-[10px] tracking-[0.22em] uppercase text-white/60 font-bold truncate"
+            className="hidden sm:block text-[10px] tracking-[0.22em] uppercase text-white/60 font-bold truncate"
             style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
           >
             {tour.projectName} · {tour.flatLabel}
@@ -279,13 +279,17 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             {isEnd ? 'Walkthrough complete' : scene.title}
           </h3>
           {/* vastu zone chip — neutral wording */}
-          <span className="inline-flex items-center gap-1.5 mt-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/85">
+          <span className="inline-flex items-center gap-1.5 mt-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/85 whitespace-nowrap">
             <CompassNeedle heading={isEnd ? 90 : scene.heading} />
-            {isEnd ? 'Exit' : `${scene.room} — ${scene.zone}`}
+            <span className="md:hidden">{isEnd ? 'Exit' : scene.zone}</span>
+            <span className="hidden md:inline">
+              {isEnd ? 'Exit' : `${scene.room} — ${scene.zone}`}
+            </span>
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+        {/* controls — desktop row */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
           <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label="Zoom out">
             <ZoomOut size={18} />
           </button>
@@ -319,6 +323,44 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             <X size={20} />
           </button>
         </div>
+
+        {/* mobile: just the close button */}
+        <button onClick={onClose} className={`${glassBtn} md:hidden shrink-0`} aria-label="Close tour">
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* mobile: floating vertical toolbar (zoom / tilt / map / fullscreen) */}
+      <div className="md:hidden absolute right-2.5 top-[104px] z-20 flex flex-col gap-1.5">
+        <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label="Zoom in">
+          <ZoomIn size={18} />
+        </button>
+        <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label="Zoom out">
+          <ZoomOut size={18} />
+        </button>
+        {tiltSupported && (
+          <button
+            onClick={enableTilt}
+            className={`${glassBtn} ${tiltOn ? '!bg-[#C0392B]/80' : ''}`}
+            aria-label={tiltOn ? 'Disable gyroscope look-around' : 'Enable gyroscope look-around'}
+            aria-pressed={tiltOn}
+          >
+            <Smartphone size={18} />
+          </button>
+        )}
+        <button
+          onClick={() => setMapOpen((m) => !m)}
+          className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
+          aria-label="Toggle floor plan"
+          aria-pressed={mapOpen}
+        >
+          <MapIcon size={18} />
+        </button>
+        {fsSupported && (
+          <button onClick={toggleFullscreen} className={glassBtn} aria-label="Toggle fullscreen">
+            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+          </button>
+        )}
       </div>
 
       {/* ======================= side arrows ======================= */}
@@ -348,7 +390,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className="absolute z-20 right-3 bottom-24 md:right-5 md:bottom-24 w-[104px] md:w-[168px] rounded-xl overflow-hidden bg-black/55 backdrop-blur-md border border-white/15 shadow-2xl"
+            className="absolute z-20 right-2.5 bottom-24 md:right-5 md:bottom-24 w-[92px] md:w-[168px] rounded-xl overflow-hidden bg-black/55 backdrop-blur-md border border-white/15 shadow-2xl"
           >
             <FloorplanMinimap tour={tour} scenes={scenes} current={index} onJump={goTo} />
             <p className="text-center text-[9px] tracking-[0.18em] uppercase text-white/50 pb-1.5 -mt-1">

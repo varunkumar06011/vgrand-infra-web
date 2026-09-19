@@ -23,6 +23,7 @@ import type { TourScene } from '@/data/tours';
  */
 
 const MAX_CROP = 0.35;
+const MAX_CROP_NARROW = 0.2; // tighter fit on portrait/phone viewers
 const OVERSCAN = 26; // px of extra pan slack, used for tilt parallax
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 2.5;
@@ -72,12 +73,14 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
   }, []);
 
   /* ---- base fit ---- */
+  // narrow/portrait viewers get a tighter crop so more of the room shows
+  const maxCrop = box.w < 768 ? MAX_CROP_NARROW : MAX_CROP;
   const contain = photo.w && box.w ? Math.min(box.w / photo.w, box.h / photo.h) : 0;
   const cover = photo.w && box.w ? Math.max(box.w / photo.w, box.h / photo.h) : 0;
-  // cover is allowed when it crops <= MAX_CROP, otherwise back off to
-  // 1/(1-MAX_CROP) x contain and fill the gaps with a blurred copy
-  const base = cover <= contain / (1 - MAX_CROP) ? cover : contain / (1 - MAX_CROP);
-  const blurFill = cover > contain / (1 - MAX_CROP);
+  // cover is allowed when it crops <= maxCrop, otherwise back off to
+  // 1/(1-maxCrop) x contain and fill the gaps with a blurred copy
+  const base = cover <= contain / (1 - maxCrop) ? cover : contain / (1 - maxCrop);
+  const blurFill = cover > contain / (1 - maxCrop);
 
   const photoW = photo.w * base * view.z;
   const photoH = photo.h * base * view.z;

@@ -55,7 +55,7 @@ const eliteHomesTour: TourConfig = {
       thumb: `${IMG}/entrance-thumb.webp`,
       focus: { x: 42, y: 50 },
       heading: 265,
-      links: [{ x: 13, y: 45, to: 'hall', label: 'Living room' }],
+      links: [{ x: 17, y: 45, to: 'hall', label: 'Living room' }],
       specHotspots: [
         {
           x: 55,
@@ -81,7 +81,7 @@ const eliteHomesTour: TourConfig = {
       thumb: `${IMG}/hall-thumb.webp`,
       focus: { x: 50, y: 48 },
       heading: 10,
-      links: [{ x: 85, y: 48, to: 'dining', label: 'Dining' }],
+      links: [{ x: 82, y: 48, to: 'dining', label: 'Dining' }],
       specHotspots: [
         {
           x: 50,
@@ -125,7 +125,7 @@ const eliteHomesTour: TourConfig = {
       heading: 175,
       links: [
         { x: 28, y: 55, to: 'balcony-view', label: 'Balcony' },
-        { x: 88, y: 62, to: 'kitchen-a', label: 'Kitchen' },
+        { x: 82, y: 62, to: 'kitchen-a', label: 'Kitchen' },
       ],
       specHotspots: [
         {
@@ -162,7 +162,7 @@ const eliteHomesTour: TourConfig = {
       heading: 140,
       links: [
         { x: 45, y: 62, to: 'kitchen-b', label: 'Take a closer look' },
-        { x: 94, y: 45, to: 'dining', label: 'Dining' },
+        { x: 86, y: 45, to: 'dining', label: 'Dining' },
       ],
       specHotspots: [
         {
@@ -197,7 +197,7 @@ const eliteHomesTour: TourConfig = {
       thumb: `${IMG}/kitchen-b-thumb.webp`,
       focus: { x: 50, y: 50 },
       heading: 155,
-      links: [{ x: 14, y: 45, to: 'kitchen-a', label: 'Back' }],
+      links: [{ x: 16, y: 45, to: 'kitchen-a', label: 'Back' }],
       specHotspots: [
         // DISABLED pending owner confirmation: brochure says "full body
         // quartz stone top with steel sink" but the photos show a dark
