@@ -5,6 +5,7 @@ import Script from 'next/script';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
 import BrochureDownload from '@/components/BrochureDownload';
+import ProjectTour from '@/components/tour/ProjectTour';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -173,6 +174,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
         {/* Description */}
         <p style={{ fontSize: 17, lineHeight: 1.9, color: '#444', marginBottom: 56 }}>{uiProject.description}</p>
+
+        {/* Virtual tour — renders only for slugs with a tour config */}
+        <ProjectTour slug={slug} />
 
         {/* Highlights */}
         <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Key Highlights</h2>
