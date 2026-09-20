@@ -1,8 +1,11 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { getTour } from '@/data/tours';
 
 interface Project {
   slug: string;
@@ -21,6 +24,15 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
+  const router = useRouter();
+  const hasTour = !!getTour(project.slug);
+
+  const openFlat = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/projects/${project.slug}?tour=open`);
+  };
+
   const cardVariants = {
     initial: { opacity: 0, y: 30 },
     animate: {
@@ -140,11 +152,27 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
             {project.description}
           </p>
           
-          <div
-            className="mt-4 self-start text-[10px] lg:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300"
-            style={{ background: '#C0392B', color: '#fff' }}
-          >
-            View Project →
+          <div className="mt-4 self-start flex items-center gap-2.5 flex-wrap">
+            <div
+              className="text-[10px] lg:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300"
+              style={{ background: '#C0392B', color: '#fff' }}
+            >
+              View Project →
+            </div>
+            {hasTour && (
+              <span
+                role="link"
+                tabIndex={0}
+                onClick={openFlat}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') openFlat(e);
+                }}
+                aria-label={`View the ${project.name} sample flat walkthrough`}
+                className="text-[10px] lg:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300 border border-[#C0392B] text-[#C0392B] hover:bg-[#C0392B] hover:text-white lg:border-white lg:text-white lg:hover:bg-white lg:hover:text-[#1a1a1a] cursor-pointer"
+              >
+                View Flat →
+              </span>
+            )}
           </div>
         </div>
       </motion.div>

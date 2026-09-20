@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, Minimize, Map as MapIcon,
-  Smartphone, RotateCcw, Info, ArrowRight, LayoutGrid, CalendarCheck,
+  Smartphone, RotateCcw, Info, ArrowRight, LayoutGrid, CalendarCheck, HelpCircle,
 } from 'lucide-react';
 import type { TourConfig, TourHotspot } from '@/data/tours';
 import PhotoStage from './PhotoStage';
@@ -34,6 +34,17 @@ const glassBtn =
   'flex items-center justify-center w-11 h-11 rounded-full text-white transition-colors ' +
   'bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 cursor-pointer';
 
+// step-by-step guide shown the first time the viewer opens each session;
+// each index highlights the matching UI zone via guideHl()
+const GUIDE_STEPS = [
+  'Welcome! Follow the red arrows on the photo to walk into the next room.',
+  'Or use the side arrows — or your ← → keys — to step back and forward.',
+  'Pulsing dots reveal brochure specs and notes about what you see.',
+  'The floor plan follows you — tap any room to jump straight to it.',
+  'Zoom in, tilt your phone to look around, or browse every room from here.',
+  'That\u2019s it — walk to the end for the brochure and a free site visit. Enjoy!',
+];
+
 export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
   const scenes = useMemo(() => tour.scenes.filter((s) => s.enabled), [tour]);
   const [index, setIndex] = useState(Math.min(initialIndex, scenes.length - 1));
@@ -55,6 +66,14 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
   const [reducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
+  // guide auto-starts the first time the viewer opens each session
+  const [guideStep, setGuideStep] = useState<number | null>(() => {
+    try {
+      return sessionStorage.getItem('eliteTourGuideSeen') ? null : 0;
+    } catch {
+      return 0;
+    }
+  });
 
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const tiltRaf = useRef(0);
@@ -73,12 +92,40 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     });
   }, []);
 
+  const markGuideSeen = () => {
+    try {
+      sessionStorage.setItem('eliteTourGuideSeen', '1');
+    } catch {
+      /* private mode */
+    }
+  };
+  const skipGuide = useCallback(() => {
+    markGuideSeen();
+    setGuideStep(null);
+  }, []);
+  const advanceGuide = () => {
+    if (guideStep === null) return;
+    const nextStep = guideStep + 1;
+    if (nextStep >= GUIDE_STEPS.length) {
+      markGuideSeen();
+      setGuideStep(null);
+      return;
+    }
+    if (nextStep === 3) setMapOpen(true); // the minimap step needs the plan visible
+    setGuideStep(nextStep);
+  };
+
   const goTo = useCallback(
     (i: number) => {
-      setIndex(Math.max(0, Math.min(scenes.length, i)));
+      const target = Math.max(0, Math.min(scenes.length, i));
+      setIndex(target);
       setHotspot(null);
+      if (guideStep !== null) {
+        if (target >= scenes.length) skipGuide();
+        else if (guideStep <= 1) setGuideStep(2);
+      }
     },
-    [scenes.length]
+    [scenes.length, guideStep, skipGuide]
   );
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
@@ -107,7 +154,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (enquireOpen) return;
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (guideStep !== null) skipGuide();
+        else onClose();
+      }
       else if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') prev();
       else if (e.key === '+' || e.key === '=') zoomApi.current?.(1.25);
@@ -115,7 +165,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, onClose, enquireOpen]);
+  }, [next, prev, onClose, enquireOpen, guideStep, skipGuide]);
 
   /* ---------- fullscreen (real API where supported, iOS just uses the overlay) ---------- */
   useEffect(() => {
@@ -180,6 +230,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
 
   const zoomBy = (f: number) => zoomApi.current?.(f);
 
+  // highlight ring for whichever control the guide is pointing at
+  const guideHl = (step: number) =>
+    guideStep === step ? 'ring-2 ring-[#FFB4AB] ring-offset-2 ring-offset-black/40' : '';
+
   const transition = reducedMotion
     ? { duration: 0.25 }
     : { duration: 0.55, ease: [0.32, 0.72, 0, 1] as const };
@@ -223,7 +277,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                     className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
                     style={{ left: `${l.x}%`, top: `${l.y}%` }}
                   >
-                    <span className="flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 pl-2.5 pr-1.5 py-1.5 text-white text-[11px] font-semibold tracking-wide shadow-lg animate-[tourFloat_2.6s_ease-in-out_infinite]">
+                    <span className={`flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 pl-2.5 pr-1.5 py-1.5 text-white text-[11px] font-semibold tracking-wide shadow-lg animate-[tourFloat_2.6s_ease-in-out_infinite] ${guideHl(0)}`}>
                       {l.label}
                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#C0392B]">
                         <ArrowRight size={13} />
@@ -241,6 +295,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                     onClick={(e) => {
                       e.stopPropagation();
                       setHotspot(hspot);
+                      if (guideStep === 2) {
+                        setGuideStep(3);
+                        setMapOpen(true);
+                      }
                     }}
                     aria-label={`${hspot.kind === 'spec' ? 'Specification' : 'Note'}: ${hspot.title}`}
                     className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
@@ -251,7 +309,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                         hspot.kind === 'spec'
                           ? 'bg-[#C0392B]/85 border-white/40'
                           : 'bg-black/55 border-white/30'
-                      }`}
+                      } ${guideHl(2)}`}
                     >
                       <span className="absolute inset-0 rounded-full bg-white/25 animate-ping [animation-duration:2.4s]" />
                       <Info size={13} className="relative text-white" />
@@ -289,7 +347,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         </div>
 
         {/* controls — desktop row */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
+        <div className={`hidden md:flex items-center gap-2 shrink-0 rounded-full ${guideHl(4)}`}>
           <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label="Zoom out">
             <ZoomOut size={18} />
           </button>
@@ -306,6 +364,14 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
               <Smartphone size={18} />
             </button>
           )}
+          <button
+            onClick={() => setGuideStep(0)}
+            className={`${glassBtn} ${guideStep !== null ? '!bg-[#C0392B]/80' : ''}`}
+            aria-label="Replay the tour guide"
+            aria-pressed={guideStep !== null}
+          >
+            <HelpCircle size={18} />
+          </button>
           <button
             onClick={() => setMapOpen((m) => !m)}
             className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
@@ -330,8 +396,8 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         </button>
       </div>
 
-      {/* mobile: floating vertical toolbar (zoom / tilt / map / fullscreen) */}
-      <div className="md:hidden absolute right-2.5 top-[104px] z-20 flex flex-col gap-1.5">
+      {/* mobile: floating vertical toolbar (zoom / tilt / guide / map / fullscreen) */}
+      <div className={`md:hidden absolute right-2.5 top-[104px] z-20 flex flex-col gap-1.5 rounded-full ${guideHl(4)}`}>
         <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label="Zoom in">
           <ZoomIn size={18} />
         </button>
@@ -348,6 +414,14 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             <Smartphone size={18} />
           </button>
         )}
+        <button
+          onClick={() => setGuideStep(0)}
+          className={`${glassBtn} ${guideStep !== null ? '!bg-[#C0392B]/80' : ''}`}
+          aria-label="Replay the tour guide"
+          aria-pressed={guideStep !== null}
+        >
+          <HelpCircle size={18} />
+        </button>
         <button
           onClick={() => setMapOpen((m) => !m)}
           className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
@@ -368,7 +442,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         <button
           onClick={prev}
           aria-label={`Previous: ${scenes[index - 1].room}`}
-          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-white cursor-pointer"
+          className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-white cursor-pointer ${guideHl(1)}`}
         >
           <ChevronLeft size={22} />
         </button>
@@ -377,7 +451,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         <button
           onClick={next}
           aria-label={index + 1 < scenes.length ? `Next: ${scenes[index + 1].room}` : 'Finish tour'}
-          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-white cursor-pointer"
+          className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-white cursor-pointer ${guideHl(1)}`}
         >
           <ChevronRight size={22} />
         </button>
@@ -390,12 +464,71 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className="absolute z-20 right-2.5 bottom-24 md:right-5 md:bottom-24 w-[92px] md:w-[168px] rounded-xl overflow-hidden bg-black/55 backdrop-blur-md border border-white/15 shadow-2xl"
+            className={`absolute z-20 right-2.5 bottom-24 md:right-5 md:bottom-24 w-[92px] md:w-[168px] rounded-xl overflow-hidden bg-black/55 backdrop-blur-md border border-white/15 shadow-2xl ${guideHl(3)}`}
           >
-            <FloorplanMinimap tour={tour} scenes={scenes} current={index} onJump={goTo} />
+            <FloorplanMinimap
+              tour={tour}
+              scenes={scenes}
+              current={index}
+              onJump={(i) => {
+                goTo(i);
+                if (guideStep === 3) setGuideStep(4);
+              }}
+            />
             <p className="text-center text-[9px] tracking-[0.18em] uppercase text-white/50 pb-1.5 -mt-1">
               East-facing plan
             </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ======================= guided steps ======================= */}
+      <AnimatePresence>
+        {guideStep !== null && !hotspot && !menuOpen && !isEnd && (
+          <motion.div
+            key="guide"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
+            role="status"
+            className="absolute z-[28] left-1/2 -translate-x-1/2 bottom-28 w-[calc(100%-32px)] max-w-sm rounded-xl bg-[#141416]/95 backdrop-blur-md border border-white/15 shadow-2xl p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p
+                className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#FFB4AB]"
+                style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
+              >
+                Tour guide · {guideStep + 1} of {GUIDE_STEPS.length}
+              </p>
+              <button
+                onClick={skipGuide}
+                className="text-[11px] font-semibold text-white/50 hover:text-white cursor-pointer"
+                aria-label="Skip the tour guide"
+              >
+                Skip
+              </button>
+            </div>
+            <p className="text-[13px] leading-relaxed text-white/90 mt-1.5">
+              {GUIDE_STEPS[guideStep]}
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                {GUIDE_STEPS.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1 rounded-full transition-all ${
+                      i === guideStep ? 'w-4 bg-[#C0392B]' : 'w-1.5 bg-white/25'
+                    }`}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={advanceGuide}
+                className="rounded-full bg-[#C0392B] hover:bg-[#a93226] text-white text-[11px] font-bold px-4 py-2 cursor-pointer"
+              >
+                {guideStep === GUIDE_STEPS.length - 1 ? 'Done' : 'Next'}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -572,7 +705,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             </div>
 
             {/* room chips — desktop */}
-            <div className="hidden md:flex flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className={`hidden md:flex flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-full ${guideHl(4)}`}>
               {scenes.map((s, i) => (
                 <button
                   key={s.id}
@@ -592,7 +725,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             {/* mobile: rooms sheet trigger */}
             <button
               onClick={() => setMenuOpen(true)}
-              className={`${glassBtn} md:hidden !w-auto px-3.5 gap-1.5 text-[11px] font-semibold`}
+              className={`${glassBtn} md:hidden !w-auto px-3.5 gap-1.5 text-[11px] font-semibold ${guideHl(4)}`}
               aria-label="Open room list"
             >
               <LayoutGrid size={15} /> Rooms

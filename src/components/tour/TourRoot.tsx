@@ -7,7 +7,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Play } from 'lucide-react';
 import type { TourConfig } from '@/data/tours';
-import TourScrollWalk from './TourScrollWalk';
 
 // next/dynamic with ssr:false must live inside a Client Component —
 // the heavy viewer (and, for pano scenes, three.js) never ships in the
@@ -39,6 +38,18 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
     return () => io.disconnect();
   }, []);
 
+  // /projects/<slug>?tour=open — launched from the "View Flat" card button:
+  // scroll the block into view, open the viewer, then clean the param out.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tour') !== 'open') return;
+    wrapRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    setOpen(true);
+    params.delete('tour');
+    const qs = params.toString();
+    window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
+  }, []);
+
   const openAt = (i: number) => {
     setStartAt(i);
     setOpen(true);
@@ -53,7 +64,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
         onClick={() => openAt(0)}
         role="button"
         tabIndex={0}
-        aria-label="Start the 3 BHK virtual walkthrough"
+        aria-label="View the 3 BHK flat — open the virtual walkthrough"
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -86,18 +97,13 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
               <Play size={15} className="ml-0.5" />
             </span>
-            Start the walkthrough
+            View Flat
           </span>
         </div>
 
         <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-white/70 px-4">
           Walk room to room with photos, a live floor plan and spec hotspots.
         </p>
-      </div>
-
-      {/* scroll-walk hero */}
-      <div className="mt-8">
-        <TourScrollWalk tour={tour} onStart={() => openAt(0)} />
       </div>
 
       {/* room list — real crawlable markup, each thumb opens that scene */}

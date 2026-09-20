@@ -17,7 +17,6 @@ project slug that has a config). Everything visible comes from
 | `PhotoStage.tsx` | Flat-photo renderer: pan/zoom/drag/pinch, blur-fill letterboxing |
 | `PanoStage.tsx` | 360° via Photo Sphere Viewer — dynamic-imported, only loaded on first pano scene |
 | `FloorplanMinimap.tsx` | Custom SVG plan with dots + radar cone |
-| `TourScrollWalk.tsx` | Sticky scroll-walk hero (framer-motion) |
 | `scripts/optimize-tour-images.mjs` | Image pipeline (`npm run tour:images`) |
 
 Raw photos live in `tour-source/photos/` (gitignored). Optimized WebP +
@@ -48,8 +47,22 @@ Raw photos live in `tour-source/photos/` (gitignored). Optimized WebP +
 Add a scene object to `scenes` in the config (`id`, `order`, `room`,
 `title`, `kind`, `src`, `thumb`, `focus`, `heading`, `links`,
 `specHotspots`, `minimap`, `zone`, `enabled`, `alt`) and, if it is a new
-room, a `plan.rooms` rect. Dots, menu chips, room grid, progress and the
-scroll-walk all update automatically.
+room, a `plan.rooms` rect. Dots, menu chips, room grid and progress all
+update automatically.
+
+## Entry points
+
+- **"View Flat" poster** on the project page opens the viewer at scene 0;
+  each room-grid thumb opens its own scene.
+- **"View Flat" on `ProjectCard`** (home + projects pages) shows for any
+  slug with a tour config and links to `/projects/<slug>?tour=open`.
+  `TourRoot` reads that param once, scrolls to the block, opens the
+  viewer and strips the param from the URL.
+- **Tour guide**: `GUIDE_STEPS` in `TourViewer.tsx` — a 6-step overlay
+  auto-shown once per session (`sessionStorage.eliteTourGuideSeen`) and
+  replayable any time via the `?` toolbar button. Each step highlights
+  its control (`guideHl`); interacting with the highlighted control
+  advances the guide.
 
 ## Change the WhatsApp text
 
