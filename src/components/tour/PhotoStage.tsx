@@ -60,16 +60,16 @@ interface PhotoStageProps {
   /** compare mode freezes pan/zoom so the split stays meaningful */
   gesturesDisabled?: boolean;
   /**
-   * Walk-through transition: while set, the view animates a zoom toward
-   * this photo-% point (the doorway/link being walked through) before the
-   * parent swaps the scene — reads as stepping into the next room.
+   * Walk-through transition: while true, the view animates a zoom into
+   * the centre of the photo before the parent swaps the scene — reads as
+   * flying into the frame, Google-Maps style.
    */
-  transitTo?: { x: number; y: number } | null;
+  transiting?: boolean;
   /** any pan/zoom gesture — the guided tour uses it to pause auto-advance */
   onUserInteract?: () => void;
 }
 
-export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, zoomApi, variantSrc, variantOn, comparePos, gesturesDisabled, transitTo, onUserInteract }: PhotoStageProps) {
+export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, zoomApi, variantSrc, variantOn, comparePos, gesturesDisabled, transiting, onUserInteract }: PhotoStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLImageElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -164,18 +164,13 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
     };
   }, [zoomApi, zoomAt, box.w, box.h]);
 
-  /* ---- walk-through zoom: push toward the tapped doorway before the
-     parent swaps scenes. transform transitions only while transitTo is
-     set, so gesture pans stay instant. ---- */
+  /* ---- walk-through zoom: dive into the centre of the photo just
+     before the parent swaps scenes. transform transitions only while
+     transiting, so gesture pans stay instant. ---- */
   useEffect(() => {
-    if (!transitTo || !photo.w || !box.w) return;
-    const z = 1.45;
-    apply({
-      z,
-      tx: (0.5 - transitTo.x / 100) * photo.w * base * z,
-      ty: (0.5 - transitTo.y / 100) * photo.h * base * z,
-    });
-  }, [transitTo, photo.w, photo.h, base, box.w, box.h, apply]);
+    if (!transiting || !photo.w || !box.w) return;
+    apply({ z: 1.5, tx: 0, ty: 0 });
+  }, [transiting, photo.w, box.w, apply]);
 
   /* ---- reset dimensions when the scene image changes ---- */
   useEffect(() => {
@@ -214,7 +209,7 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
 
   /* ---- gestures ---- */
   const handleDown = (e: React.PointerEvent) => {
-    if (gesturesDisabled) return;
+    if (gesturesDisabled || transiting) return;
     onUserInteract?.();
     // presses on in-photo controls (walk pills, spec dots) must stay clicks —
     // capturing the pointer would retarget pointerup/click to the stage
@@ -231,7 +226,7 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
   };
 
   const handleMove = (e: React.PointerEvent) => {
-    if (gesturesDisabled) return;
+    if (gesturesDisabled || transiting) return;
     const g = gesture.current;
     if (!g || !pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -259,7 +254,7 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
   };
 
   const handleUp = (e: React.PointerEvent) => {
-    if (gesturesDisabled) return;
+    if (gesturesDisabled || transiting) return;
     if (!pointers.current.has(e.pointerId)) return; // press started on a control
     const wasPinch = pointers.current.size >= 2;
     pointers.current.delete(e.pointerId);
@@ -285,7 +280,7 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    if (gesturesDisabled) return;
+    if (gesturesDisabled || transiting) return;
     onUserInteract?.();
     const rect = containerRef.current!.getBoundingClientRect();
     zoomAt(e.clientX - rect.left, e.clientY - rect.top, viewRef.current.z * Math.exp(-e.deltaY * 0.0016));
@@ -348,7 +343,7 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
             width: photoW,
             height: photoH,
             transform: `translate3d(${finalTx - photoW / 2}px, ${finalTy - photoH / 2}px, 0)`,
-            transition: transitTo ? 'transform 520ms cubic-bezier(0.4, 0, 0.2, 1)' : undefined,
+            transition: transiting ? 'transform 460ms cubic-bezier(0.4, 0, 0.2, 1)' : undefined,
           }}
         >
           {/* slow idle drift (Ken Burns) — keeps the still photo feeling

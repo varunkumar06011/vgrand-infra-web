@@ -47,10 +47,11 @@ export default function ConsentPopup() {
     }
   }, [pathname]);
 
-  const allChecked = checked.terms && checked.privacy && checked.contact;
+  const requiredChecked = checked.terms && checked.privacy;
+  const allChecked = requiredChecked && checked.contact;
 
   const handleContinue = async () => {
-    if (!allChecked) return;
+    if (!requiredChecked) return;
     localStorage.setItem(STORAGE_KEY, 'true');
     document.body.style.overflow = '';
     setShow(false);
@@ -72,6 +73,11 @@ export default function ConsentPopup() {
 
   const toggleCheck = (id: string) => {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleAll = () => {
+    const next = !allChecked;
+    setChecked({ terms: next, privacy: next, contact: next });
   };
 
   if (!show) return null;
@@ -150,6 +156,40 @@ export default function ConsentPopup() {
 
           {/* Checklist */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                paddingBottom: 10,
+                borderBottom: '1px solid #eee',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={allChecked}
+                onChange={toggleAll}
+                style={{
+                  marginTop: 1,
+                  width: 14,
+                  height: 14,
+                  accentColor: '#C0392B',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  color: '#1a1a1a',
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  fontWeight: 700,
+                }}
+              >
+                Accept all
+              </span>
+            </label>
             {checklist.map((item) => (
               <label
                 key={item.id}
@@ -201,7 +241,7 @@ export default function ConsentPopup() {
           {/* Continue Button */}
           <button
             onClick={handleContinue}
-            disabled={!allChecked}
+            disabled={!requiredChecked}
             style={{
               width: '100%',
               marginTop: 16,
@@ -212,16 +252,16 @@ export default function ConsentPopup() {
               letterSpacing: 1,
               textTransform: 'uppercase',
               border: 'none',
-              cursor: allChecked ? 'pointer' : 'not-allowed',
-              background: allChecked ? '#C0392B' : '#e0d0d0',
-              color: allChecked ? '#fff' : '#999',
+              cursor: requiredChecked ? 'pointer' : 'not-allowed',
+              background: requiredChecked ? '#C0392B' : '#e0d0d0',
+              color: requiredChecked ? '#fff' : '#999',
               transition: 'background 0.2s, color 0.2s',
             }}
           >
             Continue to Website
           </button>
 
-          {!allChecked && (
+          {!requiredChecked && (
             <p
               style={{
                 textAlign: 'center',
@@ -231,7 +271,7 @@ export default function ConsentPopup() {
                 marginBottom: 0,
               }}
             >
-              Please tick all boxes to enable the continue button.
+              Please accept the Terms &amp; Conditions and Privacy Policy to continue.
             </p>
           )}
         </div>

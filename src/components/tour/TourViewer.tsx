@@ -162,9 +162,9 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
   const tiltRaf = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const zoomApi = useRef<((factor: number) => void) | null>(null);
-  // walk-through transition — while set, PhotoStage zooms toward the
-  // tapped link before the next scene mounts
-  const [transit, setTransit] = useState<{ x: number; y: number } | null>(null);
+  // walk-through transition — while true, PhotoStage zooms into the
+  // centre of the photo before the next scene mounts
+  const [transiting, setTransiting] = useState(false);
   const transitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* guided engine refs */
@@ -238,13 +238,34 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
     setGuidedPlaying((p) => (mode === 'guided' && p ? false : p));
   }, [mode]);
 
+  /**
+   * Zoom-in → swap → zoom-out hop (Google-Maps style): unless
+   * reduced-motion is set, the current photo dives to centre for ~430ms,
+   * then the next scene mounts zoomed and settles back.
+   */
+  const hopTo = useCallback(
+    (i: number) => {
+      if (reducedMotion) {
+        goTo(i);
+        return;
+      }
+      if (transitTimer.current) clearTimeout(transitTimer.current);
+      setTransiting(true);
+      transitTimer.current = setTimeout(() => {
+        setTransiting(false);
+        goTo(i);
+      }, 430);
+    },
+    [goTo, reducedMotion]
+  );
+
   /** every user-initiated navigation pauses auto-advance */
   const userGoTo = useCallback(
     (i: number) => {
       pauseGuided();
-      goTo(i);
+      hopTo(i);
     },
-    [pauseGuided, goTo]
+    [pauseGuided, hopTo]
   );
 
   const next = useCallback(() => userGoTo(index + 1), [userGoTo, index]);
@@ -327,10 +348,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
     indexRef.current = index;
     playingRef.current = mode === 'guided' && guidedPlaying && !isEnd;
     advanceRef.current = () => {
-      if (index + 1 < scenes.length) goTo(index + 1);
+      if (index + 1 < scenes.length) hopTo(index + 1);
       else {
         setGuidedPlaying(false);
-        goTo(scenes.length);
+        hopTo(scenes.length);
       }
     };
     failAudioRef.current = () => {
@@ -580,7 +601,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
 
   const transition = reducedMotion
     ? { duration: 0.25 }
-    : { duration: 0.55, ease: [0.32, 0.72, 0, 1] as const };
+    : { duration: 0.7, ease: [0.32, 0.72, 0, 1] as const };
 
   const comparing = comparePos !== null;
   const showCaption =
@@ -604,9 +625,9 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
         <motion.div
           key={scene.id}
           className="absolute inset-0"
-          initial={{ opacity: 0, scale: reducedMotion ? 1 : 1.06 }}
+          initial={{ opacity: 0, scale: reducedMotion ? 1 : 1.28 }}
           animate={{ opacity: isEnd ? 0.35 : 1, scale: 1 }}
-          exit={{ opacity: 0, scale: reducedMotion ? 1 : 1.045 }}
+          exit={{ opacity: 0, scale: reducedMotion ? 1 : 1.12 }}
           transition={transition}
         >
           {scene.kind === 'pano' ? (
@@ -624,7 +645,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
               variantOn={!!activeV}
               comparePos={comparePos}
               gesturesDisabled={comparing}
-              transitTo={transit}
+              transiting={transiting}
               onUserInteract={pauseGuided}
             >
               {/* walk arrows */}
@@ -637,20 +658,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                     y={l.y}
                     onClick={(e) => {
                       e.stopPropagation();
-                      const target =
-                        l.to === 'end' ? scenes.length : scenes.findIndex((s) => s.id === l.to);
-                      if (reducedMotion) {
-                        userGoTo(target);
-                        return;
-                      }
-                      // zoom into the tapped doorway, then swap scenes —
-                      // reads as stepping through rather than a cut
-                      setTransit({ x: l.x, y: l.y });
-                      if (transitTimer.current) clearTimeout(transitTimer.current);
-                      transitTimer.current = setTimeout(() => {
-                        setTransit(null);
-                        userGoTo(target);
-                      }, 540);
+                      userGoTo(l.to === 'end' ? scenes.length : scenes.findIndex((s) => s.id === l.to));
                     }}
                     aria-label={fmt(ui.goToRoom, { label: linkLabel(text, scene.id, l.to) })}
                     className="absolute group cursor-pointer"
@@ -1160,8 +1168,8 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
           total={scenes.length}
           progress={(index + sceneProgress) / scenes.length}
           onPlayPause={() => setGuidedPlaying((p) => !p)}
-          onPrev={() => goTo(index - 1)}
-          onNext={() => goTo(index + 1)}
+          onPrev={() => hopTo(index - 1)}
+          onNext={() => hopTo(index + 1)}
           onMute={() => setMuted((m) => !m)}
           onCc={() => setCcOn((c) => !c)}
           onStop={stopGuided}
