@@ -114,6 +114,41 @@ img {
   -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
 }
 
+.marquee-track {
+  display: inline-block;
+  animation: marquee 30s linear infinite;
+  white-space: nowrap;
+}
+
+/* Virtual tour — slow drift so still photos feel like moving through
+   the room (Ken Burns). Applied to the inner photo layer in PhotoStage. */
+@keyframes tourDrift {
+  0% { transform: scale(1.001) translate(0, 0); }
+  100% { transform: scale(1.085) translate(-1.2%, -0.9%); }
+}
+
+.tour-drift {
+  animation: tourDrift 24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Hero carousel — gentle zoom while a slide is visible */
+@keyframes heroDrift {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+.hero-drift {
+  animation: heroDrift 8s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-drift,
+  .hero-drift {
+    animation: none;
+  }
+}
+
 @media (max-width: 768px) {
   body {
     font-size: 15px;

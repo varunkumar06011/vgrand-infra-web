@@ -38,6 +38,8 @@ export interface PhotoView {
 
 interface PhotoStageProps {
   scene: TourScene;
+  /** resolved alt text (display strings live in the i18n maps) */
+  alt: string;
   /** external tilt parallax, -1..1 on each axis */
   tilt: { x: number; y: number };
   /** hotspots/arrows laid over the photo, % coords — they track pan/zoom */
@@ -46,13 +48,35 @@ interface PhotoStageProps {
   onShiftClick?: (x: number, y: number) => void;
   /** parent receives a zoom function: zoomAt(center, factor) */
   zoomApi?: React.MutableRefObject<((factor: number) => void) | null>;
+  /**
+   * Phase 3 variants — parent only passes variantSrc once the user has
+   * asked for it (hover/tap/compare), so nothing is fetched at scene load.
+   * variantOn crossfades the layer; comparePos != null clips it for the
+   * before/after slider instead.
+   */
+  variantSrc?: string | null;
+  variantOn?: boolean;
+  comparePos?: number | null;
+  /** compare mode freezes pan/zoom so the split stays meaningful */
+  gesturesDisabled?: boolean;
+  /**
+   * Walk-through transition: while set, the view animates a zoom toward
+   * this photo-% point (the doorway/link being walked through) before the
+   * parent swaps the scene — reads as stepping into the next room.
+   */
+  transitTo?: { x: number; y: number } | null;
+  /** any pan/zoom gesture — the guided tour uses it to pause auto-advance */
+  onUserInteract?: () => void;
 }
 
-export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomApi }: PhotoStageProps) {
+export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, zoomApi, variantSrc, variantOn, comparePos, gesturesDisabled, transitTo, onUserInteract }: PhotoStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLImageElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const [photo, setPhoto] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<PhotoView>({ z: 1, tx: 0, ty: 0 });
+  // variant layer fades in only after its pixels are actually decoded
+  const [variantReady, setVariantReady] = useState(false);
 
   // pointerId -> current position / gesture-start position
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -71,6 +95,11 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
     setBox({ w: el.clientWidth, h: el.clientHeight });
     return () => ro.disconnect();
   }, []);
+
+  /* ---- orientation-aware source ----
+     tall viewers get the portrait take of the scene when one exists —
+     far less cropping than squeezing the landscape frame onto a phone */
+  const activeSrc = scene.portraitSrc && box.h > box.w ? scene.portraitSrc : scene.src;
 
   /* ---- base fit ---- */
   // narrow/portrait viewers get a tighter crop so more of the room shows
@@ -102,7 +131,7 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
 
   const apply = useCallback((v: PhotoView) => setView(clampView(v)), [clampView]);
 
-  /* ---- reset to the scene's focus point on scene/size change ---- */
+  /* ---- reset to the scene's focus point on scene/size/compare change ---- */
   useEffect(() => {
     if (!photo.w || !box.w) return;
     apply({
@@ -111,7 +140,7 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
       ty: (0.5 - scene.focus.y / 100) * photo.h * base,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene.id, photo.w, photo.h, box.w, box.h, base]);
+  }, [scene.id, photo.w, photo.h, box.w, box.h, base, gesturesDisabled]);
 
   /* ---- zoom keeping a container-relative point fixed ---- */
   const zoomAt = useCallback(
@@ -135,13 +164,61 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
     };
   }, [zoomApi, zoomAt, box.w, box.h]);
 
+  /* ---- walk-through zoom: push toward the tapped doorway before the
+     parent swaps scenes. transform transitions only while transitTo is
+     set, so gesture pans stay instant. ---- */
+  useEffect(() => {
+    if (!transitTo || !photo.w || !box.w) return;
+    const z = 1.45;
+    apply({
+      z,
+      tx: (0.5 - transitTo.x / 100) * photo.w * base * z,
+      ty: (0.5 - transitTo.y / 100) * photo.h * base * z,
+    });
+  }, [transitTo, photo.w, photo.h, base, box.w, box.h, apply]);
+
   /* ---- reset dimensions when the scene image changes ---- */
   useEffect(() => {
     setPhoto({ w: 0, h: 0 });
-  }, [scene.src]);
+  }, [activeSrc]);
+
+  /* ---- measure the scene photo ----
+     onLoad alone is not enough: an img that completes before the
+     listener attaches (cache, remount, fast-refresh, a mid-transition
+     mount) never fires `load` again and would leave the stage black.
+     Read `complete` directly and poll briefly as a safety net. */
+  useEffect(() => {
+    if (photo.w) return;
+    const img = measureRef.current;
+    if (!img) return;
+    const read = () => {
+      if (img.complete && img.naturalWidth > 0) {
+        setPhoto({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    };
+    read();
+    img.addEventListener('load', read);
+    const poll = window.setInterval(read, 120);
+    const giveUp = window.setTimeout(() => window.clearInterval(poll), 5000);
+    return () => {
+      img.removeEventListener('load', read);
+      window.clearInterval(poll);
+      window.clearTimeout(giveUp);
+    };
+  }, [photo.w, activeSrc, box.w]);
+
+  /* ---- variant layer reload flag ---- */
+  useEffect(() => {
+    setVariantReady(false);
+  }, [variantSrc]);
 
   /* ---- gestures ---- */
   const handleDown = (e: React.PointerEvent) => {
+    if (gesturesDisabled) return;
+    onUserInteract?.();
+    // presses on in-photo controls (walk pills, spec dots) must stay clicks —
+    // capturing the pointer would retarget pointerup/click to the stage
+    if ((e.target as HTMLElement).closest('button, a')) return;
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     start.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -154,6 +231,7 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
   };
 
   const handleMove = (e: React.PointerEvent) => {
+    if (gesturesDisabled) return;
     const g = gesture.current;
     if (!g || !pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -181,6 +259,8 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
   };
 
   const handleUp = (e: React.PointerEvent) => {
+    if (gesturesDisabled) return;
+    if (!pointers.current.has(e.pointerId)) return; // press started on a control
     const wasPinch = pointers.current.size >= 2;
     pointers.current.delete(e.pointerId);
     start.current.delete(e.pointerId);
@@ -205,6 +285,8 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
+    if (gesturesDisabled) return;
+    onUserInteract?.();
     const rect = containerRef.current!.getBoundingClientRect();
     zoomAt(e.clientX - rect.left, e.clientY - rect.top, viewRef.current.z * Math.exp(-e.deltaY * 0.0016));
   };
@@ -239,7 +321,7 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
       {/* blurred backdrop when the photo can't fill the frame */}
       {blurFill && photo.w > 0 && (
         <img
-          src={scene.src}
+          src={activeSrc}
           alt=""
           aria-hidden
           draggable={false}
@@ -266,20 +348,54 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
             width: photoW,
             height: photoH,
             transform: `translate3d(${finalTx - photoW / 2}px, ${finalTy - photoH / 2}px, 0)`,
+            transition: transitTo ? 'transform 520ms cubic-bezier(0.4, 0, 0.2, 1)' : undefined,
           }}
         >
-          <img
-            src={scene.src}
-            alt={scene.alt}
-            draggable={false}
-            style={{ width: '100%', height: '100%', maxWidth: 'none', display: 'block' }}
-          />
-          {children}
+          {/* slow idle drift (Ken Burns) — keeps the still photo feeling
+              like motion; hotspots ride along since they share the layer.
+              Frozen while comparing variants so the split stays put. */}
+          <div
+            className={gesturesDisabled ? undefined : 'tour-drift'}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <img
+              src={activeSrc}
+              alt={alt}
+              draggable={false}
+              style={{ width: '100%', height: '100%', maxWidth: 'none', display: 'block' }}
+            />
+            {/* variant layer — same aspect ratio enforced by the pipeline,
+                so it shares the base image's box exactly */}
+            {variantSrc && (
+              <img
+                src={variantSrc}
+                alt=""
+                aria-hidden
+                draggable={false}
+                onLoad={() => setVariantReady(true)}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  maxWidth: 'none',
+                  display: 'block',
+                  opacity: comparePos != null ? (variantReady ? 1 : 0) : variantOn && variantReady ? 1 : 0,
+                  transition: 'opacity 250ms ease',
+                  clipPath:
+                    comparePos != null ? `inset(0 0 0 ${comparePos}%)` : undefined,
+                }}
+              />
+            )}
+            {children}
+          </div>
         </div>
-      ) : (
-        /* invisible pre-measure image */
+      ) : box.w > 0 ? (
+        /* invisible pre-measure image — waits for the first box read so
+           portrait phones don't fetch the landscape file first */
         <img
-          src={scene.src}
+          ref={measureRef}
+          src={activeSrc}
           alt=""
           aria-hidden
           draggable={false}
@@ -288,7 +404,7 @@ export default function PhotoStage({ scene, tilt, children, onShiftClick, zoomAp
           }
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: 0 }}
         />
-      )}
+      ) : null}
     </div>
   );
 }

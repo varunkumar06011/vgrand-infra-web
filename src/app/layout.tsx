@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Inter } from 'next/font/google'
+import { Montserrat, Inter, Noto_Sans_Telugu } from 'next/font/google'
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import RouteHandler from '@/components/RouteHandler';
@@ -22,9 +22,19 @@ const inter = Inter({
   display: 'swap'
 })
 
+// Telugu tour text — not preloaded; the font file is fetched only if a
+// user actually switches the tour UI to తెలుగు.
+const notoTelugu = Noto_Sans_Telugu({
+  subsets: ['telugu'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-telugu',
+  display: 'swap',
+  preload: false,
+})
+
 export const metadata = {
   title: 'V Grand Infra | Apartments & Flats in Ongole, Andhra Pradesh',
-  description: 'V Grand Infra builds premium 3BHK gated community apartments in Ongole and Koppolu, Andhra Pradesh. Starting from ₹29 Lakhs. RERA registered. Adjacent to NH-16 highway. Best flats, plots and homes near Ongole.',
+  description: 'Premium 2 & 3 BHK gated community flats in Ongole & Koppolu, AP. RERA registered, adjacent to NH-16. Homes from ₹29 Lakhs by V Grand Infra.',
   keywords: [
     'best construction company in ongole',
     'best builders in ongole',
@@ -118,6 +128,8 @@ export default async function RootLayout({
   const isAdmin = fullPath.includes('/admin');
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
   const content = (
     <>
       <VisitTracker />
@@ -139,7 +151,7 @@ export default async function RootLayout({
     name: 'V Grand Infra',
     alternateName: 'VGrand Infra',
     url: siteUrl,
-    logo: `${siteUrl}/images/logo.png`,
+    logo: `${siteUrl}/icon.io/android-chrome-512x512.png`,
     sameAs: [
       'https://www.facebook.com/vgrandinfra',
       'https://www.instagram.com/vgrandinfra',
@@ -158,7 +170,7 @@ export default async function RootLayout({
     '@context': 'https://schema.org',
     '@type': 'RealEstateAgent',
     name: 'V Grand Infra',
-    image: `${siteUrl}/images/logo.png`,
+    image: `${siteUrl}/icon.io/android-chrome-512x512.png`,
     url: siteUrl,
     telephone: '+91-90301-43333',
     address: {
@@ -179,26 +191,36 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
-      <head>
+    <html lang="en" className={`${montserrat.variable} ${inter.variable} ${notoTelugu.variable}`} suppressHydrationWarning>
+      <body className={`${inter.className} ${montserrat.className}`} suppressHydrationWarning>
         {!isAdmin && (
           <>
-            <Script
-              id="schema-organization"
+            <script
               type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema).replace(/</g, '\\u003c') }}
             />
-            <Script
-              id="schema-local-business"
+            <script
               type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
-              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema).replace(/</g, '\\u003c') }}
             />
           </>
         )}
-      </head>
-      <body className={`${inter.className} ${montserrat.className}`} suppressHydrationWarning>
+        {gaId && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${gaId}');`}
+            </Script>
+          </>
+        )}
+        {fbPixelId && (
+          <Script id="fb-pixel" strategy="afterInteractive">
+            {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${fbPixelId}');fbq('track','PageView');`}
+          </Script>
+        )}
         {googleClientId ? (
           <GoogleOAuthProvider clientId={googleClientId}>
             {content}

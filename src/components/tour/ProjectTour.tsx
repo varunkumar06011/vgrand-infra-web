@@ -9,6 +9,8 @@ import TourRoot from './TourRoot';
 export default function ProjectTour({ slug }: { slug: string }) {
   const tour = getTour(slug);
   if (!tour) return null;
+  // the SEO block is always English — crawlable text doesn't follow the UI language
+  const meta = tour.i18n.en.meta;
 
   return (
     <div role="region" aria-labelledby="virtual-tour-heading" style={{ marginBottom: 56 }}>
@@ -25,7 +27,7 @@ export default function ProjectTour({ slug }: { slug: string }) {
         Virtual Tour: 3 BHK Flat at Elite Homes, Koppolu, Ongole
       </h2>
       <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', marginBottom: 24 }}>
-        Walk through our {tour.flatLabel} ({tour.area}, {tour.facing}) room by room — from the
+        Walk through our {meta.flatLabel} ({meta.area}, {meta.facing}) room by room — from the
         entrance foyer and living room to the kitchen, bedrooms and balcony. Tap the arrows to move,
         follow the live floor plan, and check brochure specifications right on the photos.
       </p>

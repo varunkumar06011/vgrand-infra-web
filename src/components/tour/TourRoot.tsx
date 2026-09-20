@@ -6,7 +6,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Play } from 'lucide-react';
-import type { TourConfig } from '@/data/tours';
+import type { TourConfig, TourLang, TourText } from '@/data/tours';
+import { textFor, readStoredLang, storeLang, loadTourText, fmt } from './tourText';
 
 // next/dynamic with ssr:false must live inside a Client Component —
 // the heavy viewer (and, for pano scenes, three.js) never ships in the
@@ -17,8 +18,34 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
   const [open, setOpen] = useState(false);
   const [startAt, setStartAt] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // SSR-safe: default 'en', then hydrate the stored choice in an effect
+  const [lang, setLang] = useState<TourLang>('en');
+  /** lazily imported language maps (te etc.) — en ships inline */
+  const [extraText, setExtraText] = useState<Partial<Record<TourLang, TourText>>>({});
 
   const scenes = tour.scenes.filter((s) => s.enabled);
+
+  useEffect(() => {
+    const stored = readStoredLang(tour);
+    setLang(stored);
+    if (stored !== 'en') {
+      loadTourText(tour, stored).then((t) => {
+        if (t) setExtraText((m) => ({ ...m, [stored]: t }));
+      });
+    }
+  }, [tour]);
+
+  const changeLang = (l: TourLang) => {
+    if (l !== 'en' && !extraText[l]) {
+      loadTourText(tour, l).then((t) => {
+        if (t) setExtraText((m) => ({ ...m, [l]: t }));
+      });
+    }
+    setLang(l);
+    storeLang(l);
+  };
+
+  const text = extraText[lang] ?? textFor(tour, lang);
 
   // warm the viewer chunk when the block nears the viewport so opening
   // feels instant, without loading it for users who never scroll here
@@ -64,7 +91,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
         onClick={() => openAt(0)}
         role="button"
         tabIndex={0}
-        aria-label="View the 3 BHK flat — open the virtual walkthrough"
+        aria-label={text.ui.posterAria}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -74,7 +101,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
       >
         <img
           src={tour.poster}
-          alt="Living room of the Elite Homes 3 BHK sample flat — start the virtual tour"
+          alt={text.ui.posterAria}
           loading="lazy"
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
           style={{ maxWidth: 'none' }}
@@ -82,7 +109,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/30" />
 
         <div className="absolute top-4 left-4 flex gap-2">
-          {[tour.flatLabel, tour.area, tour.facing].map((chip) => (
+          {[text.meta.flatLabel, text.meta.area, text.meta.facing].map((chip) => (
             <span
               key={chip}
               className="rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-white text-[10px] md:text-[11px] font-semibold px-3 py-1 tracking-wide"
@@ -97,47 +124,54 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
               <Play size={15} className="ml-0.5" />
             </span>
-            View Flat
+            {text.ui.posterCta}
           </span>
         </div>
 
         <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-white/70 px-4">
-          Walk room to room with photos, a live floor plan and spec hotspots.
+          {text.ui.posterSub}
         </p>
       </div>
 
-      {/* room list — real crawlable markup, each thumb opens that scene */}
+      {/* room list — real crawlable markup, each thumb opens its own scene */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-8">
         {scenes.map((s, i) => (
           <button
             key={s.id}
             onClick={() => openAt(i)}
             className="group relative rounded-lg overflow-hidden border border-[#e8d5d5] text-left cursor-pointer bg-white"
-            aria-label={`Open the tour at ${s.room}`}
+            aria-label={fmt(text.ui.openAtRoom, { room: text.scenes[s.id]?.room ?? s.id })}
           >
             <img
               src={s.thumb}
-              alt={s.alt}
+              alt={text.scenes[s.id]?.alt ?? ''}
               loading="lazy"
               className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-105"
               style={{ maxWidth: 'none' }}
             />
             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-2.5 pt-6 pb-2">
               <span className="block text-white text-[12px] font-semibold leading-tight">
-                {s.room}
+                {text.scenes[s.id]?.room ?? s.id}
               </span>
-              <span className="block text-white/60 text-[10px]">{s.zone}</span>
+              <span className="block text-white/60 text-[10px]">{text.scenes[s.id]?.zone}</span>
             </span>
           </button>
         ))}
       </div>
 
       <p className="text-[11px] mt-4 leading-relaxed" style={{ color: '#888' }}>
-        {tour.disclaimer}
+        {text.meta.disclaimer}
       </p>
 
       {open && (
-        <TourViewer tour={tour} initialIndex={startAt} onClose={() => setOpen(false)} />
+        <TourViewer
+          tour={tour}
+          initialIndex={startAt}
+          onClose={() => setOpen(false)}
+          lang={lang}
+          text={text}
+          onLangChange={changeLang}
+        />
       )}
     </div>
   );

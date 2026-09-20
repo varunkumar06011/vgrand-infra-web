@@ -13,7 +13,14 @@ export default function RouteHandler() {
 
   useEffect(() => {
     // FIX 5: SCOPE THE RouteHandler SCROLL RESET
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Route through Lenis so its internal scroll state resets too —
+    // a bare window.scrollTo gets overridden by Lenis on the next frame.
+    const lenis = (window as any).__lenis;
+    if (lenis?.scrollTo) {
+      lenis.scrollTo(0, { immediate: true, force: true });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
 
     // RE-INITIALISE ANIMATIONS ON ROUTE CHANGE (AOS/GSAP SAFETY)
     if (typeof window !== 'undefined' && (window as any).AOS) {

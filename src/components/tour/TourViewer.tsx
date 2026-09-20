@@ -3,16 +3,26 @@
 /* eslint-disable @next/next/no-img-element -- tour imagery is pre-optimized
    WebP served same-origin; plain <img> gives precise transform control */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, Minimize, Map as MapIcon,
   Smartphone, RotateCcw, Info, ArrowRight, LayoutGrid, CalendarCheck, HelpCircle,
+  Building2,
 } from 'lucide-react';
-import type { TourConfig, TourHotspot } from '@/data/tours';
+import type { TourConfig, TourHotspot, TourLang, TourText, SceneVariant } from '@/data/tours';
 import PhotoStage from './PhotoStage';
 import FloorplanMinimap from './FloorplanMinimap';
+import CompassNeedle from './CompassNeedle';
+import VariantBar from './VariantBar';
+import CompareHandle from './CompareHandle';
+import FloorViewsPanel from './FloorViewsPanel';
+import { LangSwitch, ModeChooser, CaptionPanel, GuidedBar } from './GuidedUI';
+import {
+  textFor, sceneText, hotspotText, linkLabel, fmt, audioUrl, captionDurationMs,
+  facingToHeading, availableLangs,
+} from './tourText';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import EnquireModal from '@/components/EnquireModal';
 import BrochureDownload from '@/components/BrochureDownload';
@@ -28,28 +38,84 @@ interface Props {
   tour: TourConfig;
   initialIndex?: number;
   onClose: () => void;
+  lang: TourLang;
+  /** resolved display text (lazy language maps are loaded by the caller) */
+  text: TourText;
+  onLangChange: (l: TourLang) => void;
 }
 
 const glassBtn =
   'flex items-center justify-center w-11 h-11 rounded-full text-white transition-colors ' +
   'bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 cursor-pointer';
 
-// step-by-step guide shown the first time the viewer opens each session;
-// each index highlights the matching UI zone via guideHl()
-const GUIDE_STEPS = [
-  'Welcome! Follow the red arrows on the photo to walk into the next room.',
-  'Or use the side arrows — or your ← → keys — to step back and forward.',
-  'Pulsing dots reveal brochure specs and notes about what you see.',
-  'The floor plan follows you — tap any room to jump straight to it.',
-  'Zoom in, tilt your phone to look around, or browse every room from here.',
-  'That\u2019s it — walk to the end for the brochure and a free site visit. Enjoy!',
-];
+type TourMode = 'choose' | 'guided' | 'explore';
 
-export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
+/**
+ * A stage-anchored button (walk pill / spec dot). Its anchor point lives in
+ * photo coordinates and can sit under a cropped edge — this measures the
+ * rendered rect every layout and slides the control back inside the viewport
+ * so it is never clipped or unreachable on narrow screens.
+ */
+function StageAnchor({
+  x,
+  y,
+  ...buttonProps
+}: React.ComponentProps<'button'> & { x: number; y: number }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // reset to the pure anchor position, measure, then nudge back inside —
+    // resetting first keeps the measurement honest (no accumulating offsets)
+    el.style.transform = 'translate(-50%, -50%)';
+    const r = el.getBoundingClientRect();
+    // clear the floating chrome: side arrows column + top/bottom bars
+    const ix = window.innerWidth >= 768 ? 64 : 52;
+    const iy = 100;
+    const dx =
+      r.left < ix ? ix - r.left
+      : r.right > window.innerWidth - ix ? window.innerWidth - ix - r.right
+      : 0;
+    const dy =
+      r.top < iy ? iy - r.top
+      : r.bottom > window.innerHeight - iy ? window.innerHeight - iy - r.bottom
+      : 0;
+    if (dx || dy) {
+      el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    }
+  });
+  return (
+    <button
+      ref={ref}
+      {...buttonProps}
+      style={{ left: `${x}%`, top: `${y}%` }}
+    />
+  );
+}
+
+export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text, onLangChange }: Props) {
   const scenes = useMemo(() => tour.scenes.filter((s) => s.enabled), [tour]);
   const [index, setIndex] = useState(Math.min(initialIndex, scenes.length - 1));
   const isEnd = index >= scenes.length;
   const scene = scenes[Math.min(index, scenes.length - 1)];
+
+  /* ---------- language + resolved text ---------- */
+  const ui = text.ui;
+  const langs = useMemo(() => availableLangs(tour), [tour]);
+  const stxt = useCallback(
+    (id: string) => sceneText(text, id) ?? sceneText(tour.i18n.en, id)!,
+    [text, tour]
+  );
+  const sText = scene ? stxt(scene.id) : undefined;
+  const bodyFont =
+    lang === 'te'
+      ? "var(--font-telugu), 'Noto Sans Telugu', sans-serif"
+      : "var(--font-body), 'Inter', sans-serif";
+  const headFont =
+    lang === 'te'
+      ? "var(--font-telugu), 'Noto Sans Telugu', sans-serif"
+      : "var(--font-heading), 'Montserrat', sans-serif";
+  const bodyLine = lang === 'te' ? 1.75 : undefined; // Telugu needs >= 1.7
 
   const [menuOpen, setMenuOpen] = useState(false);
   // this component is client-only (ssr:false) so lazy window reads are safe
@@ -75,10 +141,43 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     }
   });
 
+  /* ---------- Phase 3 state ---------- */
+  const [mode, setMode] = useState<TourMode>('choose');
+  const [guidedPlaying, setGuidedPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [ccOn, setCcOn] = useState(true);
+  const [sceneProgress, setSceneProgress] = useState(0);
+
+  const [activeVariant, setActiveVariant] = useState<string | null>(null);
+  const [comparePos, setComparePos] = useState<number | null>(null);
+  const [floorOpen, setFloorOpen] = useState(false);
+
+  /** scene ids the visitor has seen, in visit order (memory only) */
+  const [viewedIds, setViewedIds] = useState<string[]>(() => {
+    const s = scenes[Math.min(initialIndex, scenes.length - 1)];
+    return s ? [s.id] : [];
+  });
+
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const tiltRaf = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const zoomApi = useRef<((factor: number) => void) | null>(null);
+  // walk-through transition — while set, PhotoStage zooms toward the
+  // tapped link before the next scene mounts
+  const [transit, setTransit] = useState<{ x: number; y: number } | null>(null);
+  const transitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* guided engine refs */
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const armedRef = useRef<string | null>(null);
+  const sceneStartRef = useRef(0);
+  const sceneDurRef = useRef(0);
+  const mutedRef = useRef(muted);
+  const advanceRef = useRef<() => void>(() => {});
+  const indexRef = useRef(index);
+  const playingRef = useRef(false);
+  const failAudioRef = useRef<() => void>(() => {});
 
   /** rAF-throttled tilt update so orientation events don't flood renders */
   const pushTilt = useCallback((x: number, y: number) => {
@@ -106,7 +205,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
   const advanceGuide = () => {
     if (guideStep === null) return;
     const nextStep = guideStep + 1;
-    if (nextStep >= GUIDE_STEPS.length) {
+    if (nextStep >= ui.guideSteps.length) {
       markGuideSeen();
       setGuideStep(null);
       return;
@@ -119,16 +218,254 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     (i: number) => {
       const target = Math.max(0, Math.min(scenes.length, i));
       setIndex(target);
+      const t = scenes[Math.min(target, scenes.length - 1)];
+      if (t) setViewedIds((ids) => (ids.includes(t.id) ? ids : [...ids, t.id]));
       setHotspot(null);
+      setActiveVariant(null);
+      setComparePos(null);
+      setFloorOpen(false);
       if (guideStep !== null) {
         if (target >= scenes.length) skipGuide();
         else if (guideStep <= 1) setGuideStep(2);
       }
     },
-    [scenes.length, guideStep, skipGuide]
+    [scenes, guideStep, skipGuide]
   );
-  const next = useCallback(() => goTo(index + 1), [goTo, index]);
-  const prev = useCallback(() => goTo(index - 1), [goTo, index]);
+
+  /* ================= guided tour engine ================= */
+
+  const pauseGuided = useCallback(() => {
+    setGuidedPlaying((p) => (mode === 'guided' && p ? false : p));
+  }, [mode]);
+
+  /** every user-initiated navigation pauses auto-advance */
+  const userGoTo = useCallback(
+    (i: number) => {
+      pauseGuided();
+      goTo(i);
+    },
+    [pauseGuided, goTo]
+  );
+
+  const next = useCallback(() => userGoTo(index + 1), [userGoTo, index]);
+  const prev = useCallback(() => userGoTo(index - 1), [userGoTo, index]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const armTimer = useCallback(
+    (i: number) => {
+      stopTimer();
+      const s = scenes[i];
+      if (!s) return;
+      const dur = captionDurationMs(stxt(s.id).narration);
+      sceneStartRef.current = performance.now();
+      sceneDurRef.current = dur;
+      timerRef.current = setTimeout(() => advanceRef.current(), dur);
+    },
+    [scenes, stxt, stopTimer]
+  );
+
+  const ensureAudio = useCallback(() => {
+    if (!audioRef.current) {
+      const a = new Audio();
+      a.preload = 'auto';
+      a.addEventListener('ended', () => advanceRef.current());
+      // missing/corrupt file mid-play → silent caption fallback
+      a.addEventListener('error', () => failAudioRef.current());
+      audioRef.current = a;
+    }
+    return audioRef.current;
+  }, []);
+
+  /**
+   * Arm a scene: play its narration file if one is configured for the
+   * current language, otherwise fall back to a caption dwell timer.
+   * Audio errors/blocking fall back silently — captions always show.
+   */
+  const armScene = useCallback(
+    (i: number) => {
+      const s = scenes[i];
+      if (!s) return;
+      armedRef.current = `${s.id}:${lang}`;
+      stopTimer();
+      const url = audioUrl(tour, lang, s.id);
+      const a = audioRef.current;
+      if (url && a) {
+        try {
+          if (!a.src.endsWith(url)) a.src = url;
+          a.muted = mutedRef.current;
+          a.currentTime = 0;
+          sceneStartRef.current = performance.now();
+          sceneDurRef.current = NaN; // progress follows the audio clock
+          const p = a.play();
+          if (p) p.catch(() => armTimer(i));
+          // warm only the NEXT scene's file — never bulk-fetch
+          const nxt = scenes[i + 1];
+          const nu = nxt ? audioUrl(tour, lang, nxt.id) : null;
+          if (nu) {
+            const pre = new Audio();
+            pre.preload = 'auto';
+            pre.src = nu;
+          }
+        } catch {
+          armTimer(i);
+        }
+      } else {
+        armTimer(i);
+      }
+    },
+    [scenes, lang, tour, armTimer, stopTimer]
+  );
+
+  // keep the latest advance() reachable from audio 'ended' / timers
+  useEffect(() => {
+    indexRef.current = index;
+    playingRef.current = mode === 'guided' && guidedPlaying && !isEnd;
+    advanceRef.current = () => {
+      if (index + 1 < scenes.length) goTo(index + 1);
+      else {
+        setGuidedPlaying(false);
+        goTo(scenes.length);
+      }
+    };
+    failAudioRef.current = () => {
+      if (playingRef.current) armTimer(indexRef.current);
+    };
+  });
+
+  const startGuided = () => {
+    ensureAudio(); // created inside the click — keeps autoplay unlocked
+    armedRef.current = null;
+    setMode('guided');
+    setGuidedPlaying(true);
+    armScene(Math.min(index, scenes.length - 1)); // gesture context: play() is allowed here
+  };
+
+  const stopGuided = useCallback(() => {
+    setMode('explore');
+    setGuidedPlaying(false);
+  }, []);
+
+  /* drive the engine */
+  useEffect(() => {
+    if (mode !== 'guided' || !guidedPlaying || isEnd) {
+      if (audioRef.current) audioRef.current.pause();
+      stopTimer();
+      if (!guidedPlaying || mode !== 'guided') armedRef.current = null;
+      return;
+    }
+    const key = `${scene.id}:${lang}`;
+    if (armedRef.current !== key) armScene(index);
+  }, [mode, guidedPlaying, isEnd, index, lang, scene, armScene, stopTimer]);
+
+  /* mute follows the toggle */
+  useEffect(() => {
+    mutedRef.current = muted;
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, [muted]);
+
+  /* per-scene progress (audio clock or timer clock) */
+  useEffect(() => {
+    if (mode !== 'guided' || !guidedPlaying || isEnd) return;
+    const t = setInterval(() => {
+      const a = audioRef.current;
+      let p = 0;
+      if (a && a.src && !a.paused && isFinite(a.duration) && a.duration > 0) {
+        p = a.currentTime / a.duration;
+      } else if (sceneDurRef.current > 0) {
+        p = Math.min(1, (performance.now() - sceneStartRef.current) / sceneDurRef.current);
+      }
+      setSceneProgress(p);
+    }, 250);
+    return () => clearInterval(t);
+  }, [mode, guidedPlaying, isEnd]);
+
+  /* teardown on unmount */
+  useEffect(
+    () => () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      stopTimer();
+      if (transitTimer.current) clearTimeout(transitTimer.current);
+    },
+    [stopTimer]
+  );
+
+  /* ================= viewed rooms (Feature 4, memory only) ================= */
+  const roomsViewed = useCallback(
+    (forLang: TourLang) => {
+      const t = forLang === lang ? text : textFor(tour, forLang);
+      const names: string[] = [];
+      viewedIds.forEach((id) => {
+        const r = t.scenes[id]?.room;
+        if (r && !names.includes(r)) names.push(r);
+      });
+      return names;
+    },
+    [tour, viewedIds, lang, text]
+  );
+
+  const waMessage = (room: string) => {
+    const base = fmt(ui.whatsappMessage, { room });
+    const names = roomsViewed(lang);
+    return names.length ? `${base}\n\n${ui.roomsViewed}: ${names.join(', ')}` : base;
+  };
+  // lead note keeps English room names — stable CRM values
+  const leadNote = (room: string) => {
+    const names = roomsViewed('en');
+    const suffix = names.length ? ` | Rooms viewed: ${names.join(', ')}` : '';
+    return `${tour.projectName} - Virtual Tour - ${room}${suffix}`;
+  };
+
+  /* ================= variants ================= */
+  const sceneVariants = useMemo(
+    () => (scene && scene.kind === 'photo' ? scene.variants ?? [] : []),
+    [scene]
+  );
+  const activeV = sceneVariants.find((v) => v.id === activeVariant) ?? null;
+
+  const warmVariant = useCallback((v: SceneVariant) => {
+    const im = new window.Image();
+    im.src = v.src; // hover/focus prefetch — activates instantly on tap
+  }, []);
+
+  const activateVariant = (v: SceneVariant | null) => {
+    if (v) warmVariant(v);
+    setActiveVariant(v ? v.id : null);
+  };
+
+  const openCompare = () => {
+    if (comparePos !== null) {
+      setComparePos(null);
+      return;
+    }
+    const v = activeV ?? sceneVariants[0];
+    if (!v) return;
+    warmVariant(v);
+    setActiveVariant(v.id);
+    setComparePos(50);
+    pauseGuided();
+  };
+
+  /* ================= floor views ================= */
+  const fv = tour.floorViews;
+  const fvOn = !!fv && fv.verified && fv.floors.length >= 2;
+  const fvHostId = useMemo(() => {
+    if (!fvOn) return null;
+    const ids = new Set(scenes.map((s) => s.id));
+    if (ids.has('balcony-view')) return 'balcony-view';
+    if (ids.has('bedroom-3-balcony')) return 'bedroom-3-balcony';
+    return null;
+  }, [fvOn, scenes]);
+  const fvHeading = fv ? facingToHeading(fv.facing) : 270;
+  const fvDirLabel = fv ? ui.facingNames?.[fv.facing] ?? fv.facing : '';
 
   /* ---------- lock page scroll while the overlay is open ---------- */
   useEffect(() => {
@@ -146,6 +483,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
       if (s && s.kind === 'photo') {
         const img = new window.Image();
         img.src = s.src;
+        if (s.portraitSrc) {
+          const p = new window.Image();
+          p.src = s.portraitSrc;
+        }
       }
     });
   }, [index, scenes]);
@@ -155,7 +496,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (enquireOpen) return;
       if (e.key === 'Escape') {
-        if (guideStep !== null) skipGuide();
+        if (comparePos !== null) setComparePos(null);
+        else if (floorOpen) setFloorOpen(false);
+        else if (mode === 'choose') setMode('explore');
+        else if (guideStep !== null) skipGuide();
         else onClose();
       }
       else if (e.key === 'ArrowRight') next();
@@ -165,7 +509,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, onClose, enquireOpen, guideStep, skipGuide]);
+  }, [next, prev, onClose, enquireOpen, guideStep, skipGuide, comparePos, floorOpen, mode]);
 
   /* ---------- fullscreen (real API where supported, iOS just uses the overlay) ---------- */
   useEffect(() => {
@@ -225,10 +569,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
       }
     : undefined;
 
-  const waMessage = (room: string) => tour.whatsappMessage.replace('{room}', room);
-  const leadNote = (room: string) => `${tour.projectName} - Virtual Tour - ${room}`;
-
-  const zoomBy = (f: number) => zoomApi.current?.(f);
+  const zoomBy = (f: number) => {
+    pauseGuided();
+    zoomApi.current?.(f);
+  };
 
   // highlight ring for whichever control the guide is pointing at
   const guideHl = (step: number) =>
@@ -238,15 +582,21 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
     ? { duration: 0.25 }
     : { duration: 0.55, ease: [0.32, 0.72, 0, 1] as const };
 
+  const comparing = comparePos !== null;
+  const showCaption =
+    mode === 'guided' && !isEnd && !!sText && (ccOn || !audioUrl(tour, lang, scene.id));
+
+  const langSwitch = <LangSwitch langs={langs} lang={lang} onChange={onLangChange} />;
+
   return (
     <div
       ref={rootRef}
       data-lenis-prevent
       role="dialog"
       aria-modal="true"
-      aria-label={`Virtual tour — ${tour.projectName}`}
+      aria-label={`${ui.dialogLabel} — ${tour.projectName}`}
       className="fixed inset-0 z-[1500] bg-[#0b0b0d] text-white overflow-hidden"
-      style={{ fontFamily: "var(--font-body), 'Inter', sans-serif" }}
+      style={{ fontFamily: bodyFont }}
       onPointerMove={parallaxMove}
     >
       {/* ======================= stage ======================= */}
@@ -260,38 +610,68 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
           transition={transition}
         >
           {scene.kind === 'pano' ? (
-            <PanoStage scene={scene} gyro={tiltOn} />
+            <div className="absolute inset-0" onPointerDown={pauseGuided}>
+              <PanoStage scene={scene} gyro={tiltOn} />
+            </div>
           ) : (
-            <PhotoStage scene={scene} tilt={tilt} onShiftClick={shiftClick} zoomApi={zoomApi}>
+            <PhotoStage
+              scene={scene}
+              alt={sText?.alt ?? ''}
+              tilt={tilt}
+              onShiftClick={shiftClick}
+              zoomApi={zoomApi}
+              variantSrc={activeV?.src ?? null}
+              variantOn={!!activeV}
+              comparePos={comparePos}
+              gesturesDisabled={comparing}
+              transitTo={transit}
+              onUserInteract={pauseGuided}
+            >
               {/* walk arrows */}
               {scene.links
                 .filter((l) => l.to === 'end' || scenes.some((s) => s.id === l.to))
                 .map((l, i) => (
-                  <button
+                  <StageAnchor
                     key={i}
+                    x={l.x}
+                    y={l.y}
                     onClick={(e) => {
                       e.stopPropagation();
-                      goTo(l.to === 'end' ? scenes.length : scenes.findIndex((s) => s.id === l.to));
+                      const target =
+                        l.to === 'end' ? scenes.length : scenes.findIndex((s) => s.id === l.to);
+                      if (reducedMotion) {
+                        userGoTo(target);
+                        return;
+                      }
+                      // zoom into the tapped doorway, then swap scenes —
+                      // reads as stepping through rather than a cut
+                      setTransit({ x: l.x, y: l.y });
+                      if (transitTimer.current) clearTimeout(transitTimer.current);
+                      transitTimer.current = setTimeout(() => {
+                        setTransit(null);
+                        userGoTo(target);
+                      }, 540);
                     }}
-                    aria-label={`Go to ${l.label}`}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
-                    style={{ left: `${l.x}%`, top: `${l.y}%` }}
+                    aria-label={fmt(ui.goToRoom, { label: linkLabel(text, scene.id, l.to) })}
+                    className="absolute group cursor-pointer"
                   >
                     <span className={`flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 pl-2.5 pr-1.5 py-1.5 text-white text-[11px] font-semibold tracking-wide shadow-lg animate-[tourFloat_2.6s_ease-in-out_infinite] ${guideHl(0)}`}>
-                      {l.label}
+                      {linkLabel(text, scene.id, l.to)}
                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#C0392B]">
                         <ArrowRight size={13} />
                       </span>
                     </span>
-                  </button>
+                  </StageAnchor>
                 ))}
 
               {/* spec / note hotspots */}
               {scene.specHotspots
                 .filter((hspot) => hspot.enabled)
                 .map((hspot, i) => (
-                  <button
-                    key={i}
+                  <StageAnchor
+                    key={hspot.key ?? i}
+                    x={hspot.x}
+                    y={hspot.y}
                     onClick={(e) => {
                       e.stopPropagation();
                       setHotspot(hspot);
@@ -300,9 +680,8 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                         setMapOpen(true);
                       }
                     }}
-                    aria-label={`${hspot.kind === 'spec' ? 'Specification' : 'Note'}: ${hspot.title}`}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                    style={{ left: `${hspot.x}%`, top: `${hspot.y}%` }}
+                    aria-label={`${hspot.kind === 'spec' ? ui.specTag : ui.fitoutTag}: ${hotspotText(text, scene.id, hspot).title}`}
+                    className="absolute cursor-pointer"
                   >
                     <span
                       className={`relative flex items-center justify-center w-7 h-7 rounded-full border backdrop-blur-sm shadow-md ${
@@ -314,51 +693,67 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                       <span className="absolute inset-0 rounded-full bg-white/25 animate-ping [animation-duration:2.4s]" />
                       <Info size={13} className="relative text-white" />
                     </span>
-                  </button>
+                  </StageAnchor>
                 ))}
             </PhotoStage>
+          )}
+
+          {/* before/after handle — sibling of the stage, viewport-fixed split */}
+          {comparing && activeV && (
+            <CompareHandle
+              pos={comparePos}
+              onChange={setComparePos}
+              label={ui.compareSlider}
+              beforeLabel={
+                activeV.group === 'furnishing'
+                  ? ui.variantBaseFurnishing
+                  : ui.variantBaseLighting
+              }
+              afterLabel={sText?.variants?.[activeV.id] ?? activeV.label}
+            />
           )}
         </motion.div>
       </AnimatePresence>
 
       {/* ======================= top bar ======================= */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-3 md:px-5 pt-3 pb-8 flex items-start justify-between gap-2">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-3 md:px-5 pt-3 pb-8 flex items-start justify-between gap-2 pointer-events-none">
         <div className="min-w-0 pt-1 flex-1">
           <p
             className="hidden sm:block text-[10px] tracking-[0.22em] uppercase text-white/60 font-bold truncate"
-            style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
+            style={{ fontFamily: headFont }}
           >
-            {tour.projectName} · {tour.flatLabel}
+            {tour.projectName} · {text.meta.flatLabel}
           </p>
           <h3
             className="text-white font-bold text-base md:text-xl leading-snug truncate"
-            style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
+            style={{ fontFamily: headFont }}
           >
-            {isEnd ? 'Walkthrough complete' : scene.title}
+            {isEnd ? ui.endHeading : sText?.title}
           </h3>
           {/* vastu zone chip — neutral wording */}
           <span className="inline-flex items-center gap-1.5 mt-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/85 whitespace-nowrap">
             <CompassNeedle heading={isEnd ? 90 : scene.heading} />
-            <span className="md:hidden">{isEnd ? 'Exit' : scene.zone}</span>
+            <span className="md:hidden">{isEnd ? ui.exit : sText?.zone}</span>
             <span className="hidden md:inline">
-              {isEnd ? 'Exit' : `${scene.room} — ${scene.zone}`}
+              {isEnd ? ui.exit : `${sText?.room} — ${sText?.zone}`}
             </span>
           </span>
         </div>
 
         {/* controls — desktop row */}
-        <div className={`hidden md:flex items-center gap-2 shrink-0 rounded-full ${guideHl(4)}`}>
-          <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label="Zoom out">
+        <div className={`hidden md:flex items-center gap-2 shrink-0 rounded-full pointer-events-auto ${guideHl(4)}`}>
+          {langSwitch}
+          <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label={ui.zoomOut}>
             <ZoomOut size={18} />
           </button>
-          <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label="Zoom in">
+          <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label={ui.zoomIn}>
             <ZoomIn size={18} />
           </button>
           {tiltSupported && (
             <button
               onClick={enableTilt}
               className={`${glassBtn} ${tiltOn ? '!bg-[#C0392B]/80' : ''}`}
-              aria-label={tiltOn ? 'Disable gyroscope look-around' : 'Enable gyroscope look-around'}
+              aria-label={tiltOn ? ui.gyroOn : ui.gyroOff}
               aria-pressed={tiltOn}
             >
               <Smartphone size={18} />
@@ -367,7 +762,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
           <button
             onClick={() => setGuideStep(0)}
             className={`${glassBtn} ${guideStep !== null ? '!bg-[#C0392B]/80' : ''}`}
-            aria-label="Replay the tour guide"
+            aria-label={ui.replayGuide}
             aria-pressed={guideStep !== null}
           >
             <HelpCircle size={18} />
@@ -375,40 +770,59 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
           <button
             onClick={() => setMapOpen((m) => !m)}
             className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
-            aria-label="Toggle floor plan"
+            aria-label={ui.floorPlan}
             aria-pressed={mapOpen}
           >
             <MapIcon size={18} />
           </button>
           {fsSupported && (
-            <button onClick={toggleFullscreen} className={glassBtn} aria-label="Toggle fullscreen">
+            <button onClick={toggleFullscreen} className={glassBtn} aria-label={ui.fullscreen}>
               {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
           )}
-          <button onClick={onClose} className={glassBtn} aria-label="Close tour">
+          <button onClick={onClose} className={glassBtn} aria-label={ui.close}>
             <X size={20} />
           </button>
         </div>
 
-        {/* mobile: just the close button */}
-        <button onClick={onClose} className={`${glassBtn} md:hidden shrink-0`} aria-label="Close tour">
-          <X size={20} />
-        </button>
+        {/* mobile: language switch + close */}
+        <div className="md:hidden flex items-center gap-2 shrink-0 pointer-events-auto">
+          {langSwitch}
+          <button onClick={onClose} className={glassBtn} aria-label={ui.close}>
+            <X size={20} />
+          </button>
+        </div>
       </div>
+
+      {/* variant pills + compare — top centre, only for scenes that have them */}
+      {!isEnd && sceneVariants.length > 0 && (
+        <div className="absolute top-16 md:top-[72px] left-1/2 -translate-x-1/2 z-20">
+          <VariantBar
+            variants={sceneVariants}
+            activeId={activeVariant}
+            ui={ui}
+            variantLabels={sText?.variants}
+            comparing={comparing}
+            onPrefetch={warmVariant}
+            onActivate={activateVariant}
+            onCompare={openCompare}
+          />
+        </div>
+      )}
 
       {/* mobile: floating vertical toolbar (zoom / tilt / guide / map / fullscreen) */}
       <div className={`md:hidden absolute right-2.5 top-[104px] z-20 flex flex-col gap-1.5 rounded-full ${guideHl(4)}`}>
-        <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label="Zoom in">
+        <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label={ui.zoomIn}>
           <ZoomIn size={18} />
         </button>
-        <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label="Zoom out">
+        <button onClick={() => zoomBy(1 / 1.3)} className={glassBtn} aria-label={ui.zoomOut}>
           <ZoomOut size={18} />
         </button>
         {tiltSupported && (
           <button
             onClick={enableTilt}
             className={`${glassBtn} ${tiltOn ? '!bg-[#C0392B]/80' : ''}`}
-            aria-label={tiltOn ? 'Disable gyroscope look-around' : 'Enable gyroscope look-around'}
+            aria-label={tiltOn ? ui.gyroOn : ui.gyroOff}
             aria-pressed={tiltOn}
           >
             <Smartphone size={18} />
@@ -417,7 +831,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         <button
           onClick={() => setGuideStep(0)}
           className={`${glassBtn} ${guideStep !== null ? '!bg-[#C0392B]/80' : ''}`}
-          aria-label="Replay the tour guide"
+          aria-label={ui.replayGuide}
           aria-pressed={guideStep !== null}
         >
           <HelpCircle size={18} />
@@ -425,35 +839,53 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         <button
           onClick={() => setMapOpen((m) => !m)}
           className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
-          aria-label="Toggle floor plan"
+          aria-label={ui.floorPlan}
           aria-pressed={mapOpen}
         >
           <MapIcon size={18} />
         </button>
         {fsSupported && (
-          <button onClick={toggleFullscreen} className={glassBtn} aria-label="Toggle fullscreen">
+          <button onClick={toggleFullscreen} className={glassBtn} aria-label={ui.fullscreen}>
             {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
           </button>
         )}
       </div>
 
       {/* ======================= side arrows ======================= */}
-      {!isEnd && index > 0 && (
+      {!isEnd && !comparing && index > 0 && (
         <button
           onClick={prev}
-          aria-label={`Previous: ${scenes[index - 1].room}`}
+          aria-label={fmt(ui.previous, { room: stxt(scenes[index - 1].id).room })}
           className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-white cursor-pointer ${guideHl(1)}`}
         >
           <ChevronLeft size={22} />
         </button>
       )}
-      {!isEnd && (
+      {!isEnd && !comparing && (
         <button
           onClick={next}
-          aria-label={index + 1 < scenes.length ? `Next: ${scenes[index + 1].room}` : 'Finish tour'}
+          aria-label={index + 1 < scenes.length ? fmt(ui.next, { room: stxt(scenes[index + 1].id).room }) : ui.finishTour}
           className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md border border-white/15 text-white cursor-pointer ${guideHl(1)}`}
         >
           <ChevronRight size={22} />
+        </button>
+      )}
+
+      {/* ======================= floor-view host card ======================= */}
+      {!isEnd && fvHostId === scene.id && !floorOpen && (
+        <button
+          onClick={() => setFloorOpen(true)}
+          data-lenis-prevent
+          className="absolute left-3 md:left-5 bottom-24 md:bottom-24 z-20 flex flex-col gap-1 rounded-xl bg-black/55 backdrop-blur-md border border-white/15 px-3.5 py-3 text-left shadow-2xl cursor-pointer hover:bg-black/70 transition-colors max-w-[190px]"
+        >
+          <span className="flex items-center gap-1.5 text-[11px] font-bold text-white">
+            <Building2 size={14} className="text-[#FFB4AB]" />
+            {ui.floorViews}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] text-white/65">
+            <CompassNeedle heading={fvHeading} />
+            {fmt(ui.facingChip, { dir: fvDirLabel })}
+          </span>
         </button>
       )}
 
@@ -470,13 +902,16 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
               tour={tour}
               scenes={scenes}
               current={index}
+              planLabels={text.plan}
+              sceneNames={Object.fromEntries(scenes.map((s) => [s.id, stxt(s.id).room]))}
+              floorViewArrow={fvHostId ? { sceneId: fvHostId, heading: fvHeading } : null}
               onJump={(i) => {
-                goTo(i);
+                userGoTo(i);
                 if (guideStep === 3) setGuideStep(4);
               }}
             />
             <p className="text-center text-[9px] tracking-[0.18em] uppercase text-white/50 pb-1.5 -mt-1">
-              East-facing plan
+              {ui.planCaption}
             </p>
           </motion.div>
         )}
@@ -484,7 +919,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
 
       {/* ======================= guided steps ======================= */}
       <AnimatePresence>
-        {guideStep !== null && !hotspot && !menuOpen && !isEnd && (
+        {guideStep !== null && mode === 'explore' && !hotspot && !menuOpen && !isEnd && (
           <motion.div
             key="guide"
             initial={{ opacity: 0, y: 14 }}
@@ -496,24 +931,24 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             <div className="flex items-center justify-between gap-3">
               <p
                 className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#FFB4AB]"
-                style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
+                style={{ fontFamily: headFont }}
               >
-                Tour guide · {guideStep + 1} of {GUIDE_STEPS.length}
+                {ui.guideTag} · {fmt(ui.sceneOf, { a: guideStep + 1, b: ui.guideSteps.length })}
               </p>
               <button
                 onClick={skipGuide}
                 className="text-[11px] font-semibold text-white/50 hover:text-white cursor-pointer"
-                aria-label="Skip the tour guide"
+                aria-label={ui.guideSkip}
               >
-                Skip
+                {ui.guideSkip}
               </button>
             </div>
-            <p className="text-[13px] leading-relaxed text-white/90 mt-1.5">
-              {GUIDE_STEPS[guideStep]}
+            <p className="text-[13px] text-white/90 mt-1.5" style={{ lineHeight: bodyLine ?? 1.6 }}>
+              {ui.guideSteps[guideStep]}
             </p>
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                {GUIDE_STEPS.map((_, i) => (
+                {ui.guideSteps.map((_, i) => (
                   <span
                     key={i}
                     className={`h-1 rounded-full transition-all ${
@@ -526,7 +961,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                 onClick={advanceGuide}
                 className="rounded-full bg-[#C0392B] hover:bg-[#a93226] text-white text-[11px] font-bold px-4 py-2 cursor-pointer"
               >
-                {guideStep === GUIDE_STEPS.length - 1 ? 'Done' : 'Next'}
+                {guideStep === ui.guideSteps.length - 1 ? ui.guideDone : ui.guideNext}
               </button>
             </div>
           </motion.div>
@@ -546,23 +981,23 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
               <div>
                 <p
                   className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#C0392B]"
-                  style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
+                  style={{ fontFamily: headFont }}
                 >
-                  {hotspot.kind === 'spec' ? 'Specification' : 'Sample fit-out'}
+                  {hotspot.kind === 'spec' ? ui.specTag : ui.fitoutTag}
                 </p>
                 <h4
                   className="font-bold text-[15px] mt-0.5"
-                  style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif", color: '#1a1a1a' }}
+                  style={{ fontFamily: headFont, color: '#1a1a1a' }}
                 >
-                  {hotspot.title}
+                  {hotspotText(text, scene.id, hotspot).title}
                 </h4>
-                <p className="text-[13px] leading-relaxed mt-1" style={{ color: '#444' }}>
-                  {hotspot.body}
+                <p className="text-[13px] mt-1" style={{ color: '#444', lineHeight: bodyLine ?? 1.6 }}>
+                  {hotspotText(text, scene.id, hotspot).body}
                 </p>
               </div>
               <button
                 onClick={() => setHotspot(null)}
-                aria-label="Close"
+                aria-label={ui.closeCard}
                 className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer shrink-0"
               >
                 <X size={16} />
@@ -589,17 +1024,18 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
               exit={{ y: '100%' }}
               transition={{ type: 'tween', duration: 0.28, ease: 'easeOut' }}
               className="absolute z-30 left-0 right-0 bottom-0 rounded-t-2xl bg-[#141416] border-t border-white/15 p-4 pb-6 max-h-[60vh] overflow-y-auto"
+              data-lenis-prevent
             >
               <div className="w-10 h-1 rounded-full bg-white/25 mx-auto mb-4" />
               <p className="text-[11px] tracking-[0.2em] uppercase text-white/50 font-bold mb-3 px-1">
-                Rooms
+                {ui.roomsTitle}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {scenes.map((s, i) => (
                   <button
                     key={s.id}
                     onClick={() => {
-                      goTo(i);
+                      userGoTo(i);
                       setMenuOpen(false);
                     }}
                     className={`relative rounded-lg overflow-hidden text-left border cursor-pointer ${
@@ -608,19 +1044,47 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                   >
                     <img
                       src={s.thumb}
-                      alt={s.alt}
+                      alt={stxt(s.id).alt}
                       className="w-full aspect-[4/3] object-cover"
                       loading="lazy"
                     />
                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pt-5 pb-1.5 text-[11px] font-semibold text-white">
-                      {s.room}
+                      {stxt(s.id).room}
                     </span>
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-white/45 mt-4 px-1 leading-relaxed">{tour.disclaimer}</p>
+              <p className="text-[11px] text-white/45 mt-4 px-1" style={{ lineHeight: bodyLine ?? 1.6 }}>
+                {text.meta.disclaimer}
+              </p>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* ======================= mode chooser ======================= */}
+      <AnimatePresence>
+        {mode === 'choose' && !isEnd && (
+          <ModeChooser
+            ui={ui}
+            lang={lang}
+            onGuided={startGuided}
+            onExplore={() => setMode('explore')}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ======================= guided caption ======================= */}
+      <AnimatePresence>
+        {showCaption && sText && (
+          <CaptionPanel ui={ui} lang={lang} room={sText.room} text={sText.narration} />
+        )}
+      </AnimatePresence>
+
+      {/* ======================= floor views panel ======================= */}
+      <AnimatePresence>
+        {floorOpen && fv && fvOn && (
+          <FloorViewsPanel config={fv} ui={ui} lang={lang} onClose={() => setFloorOpen(false)} />
         )}
       </AnimatePresence>
 
@@ -636,21 +1100,21 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             <div className="w-full max-w-md rounded-2xl bg-white text-[#1a1a1a] shadow-2xl border border-[#e8d5d5] p-6 md:p-8 text-center">
               <p
                 className="text-[10px] font-bold tracking-[0.24em] uppercase text-[#C0392B]"
-                style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif" }}
+                style={{ fontFamily: headFont }}
               >
-                {tour.projectName} · {tour.area}
+                {tour.projectName} · {text.meta.area}
               </p>
               <h3
                 className="text-2xl font-bold mt-1"
-                style={{ fontFamily: "var(--font-heading), 'Montserrat', sans-serif", color: '#1a1a1a' }}
+                style={{ fontFamily: headFont, color: '#1a1a1a' }}
               >
-                You&rsquo;ve seen the whole flat
+                {ui.endTitle}
               </h3>
-              <p className="text-sm mt-2 leading-relaxed" style={{ color: '#444' }}>
-                Like what you saw? Book a free site visit or get the full brochure.
+              <p className="text-sm mt-2" style={{ color: '#444', lineHeight: bodyLine ?? 1.6 }}>
+                {ui.endSubtitle}
               </p>
-              <p className="text-[11px] mt-3 leading-relaxed" style={{ color: '#888' }}>
-                {tour.disclaimer}
+              <p className="text-[11px] mt-3" style={{ color: '#888', lineHeight: bodyLine ?? 1.6 }}>
+                {text.meta.disclaimer}
               </p>
 
               <div className="mt-5 space-y-3">
@@ -660,23 +1124,23 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                   message={waMessage('sample flat')}
                   leadProject={tour.projectName}
                   leadNote={leadNote('End of tour')}
-                  title="Chat on WhatsApp"
+                  title={ui.chatWhatsApp}
                   showText={false}
                 />
                 <button
                   onClick={() => setEnquireOpen(true)}
                   className="w-full inline-flex items-center justify-center gap-2 bg-[#C0392B] hover:bg-[#a93226] text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer border-none text-sm"
                 >
-                  <CalendarCheck size={18} /> Book a site visit
+                  <CalendarCheck size={18} /> {ui.bookVisit}
                 </button>
                 <div className="[&>button]:!w-full [&>button]:!rounded-xl">
                   <BrochureDownload brochureUrl={tour.brochureUrl} projectName={tour.projectName} />
                 </div>
                 <button
-                  onClick={() => goTo(0)}
+                  onClick={() => userGoTo(0)}
                   className="w-full inline-flex items-center justify-center gap-2 text-[#C0392B] px-6 py-2.5 rounded-xl font-semibold hover:bg-[#fff5f5] transition-colors cursor-pointer border-none text-sm"
                 >
-                  <RotateCcw size={16} /> Restart tour
+                  <RotateCcw size={16} /> {ui.restartTour}
                 </button>
               </div>
             </div>
@@ -685,12 +1149,31 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
       </AnimatePresence>
 
       {/* ======================= bottom bar ======================= */}
-      {!isEnd && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/75 to-transparent px-3 md:px-5 pb-3 pt-10">
+      {!isEnd && mode === 'guided' && scene && (
+        <GuidedBar
+          ui={ui}
+          playing={guidedPlaying}
+          muted={muted}
+          ccOn={ccOn}
+          hasAudio={!!audioUrl(tour, lang, scene.id)}
+          index={index}
+          total={scenes.length}
+          progress={(index + sceneProgress) / scenes.length}
+          onPlayPause={() => setGuidedPlaying((p) => !p)}
+          onPrev={() => goTo(index - 1)}
+          onNext={() => goTo(index + 1)}
+          onMute={() => setMuted((m) => !m)}
+          onCc={() => setCcOn((c) => !c)}
+          onStop={stopGuided}
+        />
+      )}
+
+      {!isEnd && mode !== 'guided' && (
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/75 to-transparent px-3 md:px-5 pb-3 pt-10 pointer-events-none">
           <p className="text-center text-[10px] text-white/45 mb-2 leading-snug px-2">
-            {tour.disclaimer}
+            {text.meta.disclaimer}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pointer-events-auto">
             {/* progress */}
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[11px] font-semibold text-white/80 tabular-nums whitespace-nowrap">
@@ -705,11 +1188,11 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             </div>
 
             {/* room chips — desktop */}
-            <div className={`hidden md:flex flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-full ${guideHl(4)}`}>
+            <div className={`hidden md:flex flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-full [mask-image:linear-gradient(to_right,black_92%,transparent)] ${guideHl(4)}`}>
               {scenes.map((s, i) => (
                 <button
                   key={s.id}
-                  onClick={() => goTo(i)}
+                  onClick={() => userGoTo(i)}
                   aria-current={i === index}
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-colors cursor-pointer ${
                     i === index
@@ -717,7 +1200,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
                       : 'bg-white/10 border-white/15 text-white/80 hover:bg-white/20'
                   }`}
                 >
-                  {s.room}
+                  {stxt(s.id).room}
                 </button>
               ))}
             </div>
@@ -726,9 +1209,9 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             <button
               onClick={() => setMenuOpen(true)}
               className={`${glassBtn} md:hidden !w-auto px-3.5 gap-1.5 text-[11px] font-semibold ${guideHl(4)}`}
-              aria-label="Open room list"
+              aria-label={ui.openRoomList}
             >
-              <LayoutGrid size={15} /> Rooms
+              <LayoutGrid size={15} /> {ui.roomsTitle}
             </button>
 
             <div className="flex-1 md:hidden" />
@@ -736,10 +1219,10 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
             <WhatsAppButton
               variant="pill"
               phoneNumber={SITE_WHATSAPP_NUMBER}
-              message={waMessage(scene.room)}
+              message={waMessage(sText?.room ?? '')}
               leadProject={tour.projectName}
-              leadNote={leadNote(scene.room)}
-              title="WhatsApp"
+              leadNote={leadNote(sText?.room ?? '')}
+              title={ui.chatWhatsApp}
               showText={true}
             />
           </div>
@@ -762,21 +1245,5 @@ export default function TourViewer({ tour, initialIndex = 0, onClose }: Props) {
         }
       `}</style>
     </div>
-  );
-}
-
-/** Small compass: fixed rose, needle rotated to the camera bearing (0=N). */
-function CompassNeedle({ heading }: { heading: number }) {
-  return (
-    <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden className="shrink-0">
-      <circle cx={8} cy={8} r={7} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={1} />
-      <text x={8} y={4.4} textAnchor="middle" fontSize={3.6} fill="rgba(255,255,255,0.7)">
-        N
-      </text>
-      <g transform={`rotate(${heading} 8 8)`}>
-        <path d="M 8 4.6 L 9.1 8 L 8 11.4 L 6.9 8 Z" fill="#C0392B" />
-        <circle cx={8} cy={8} r={0.9} fill="#fff" />
-      </g>
-    </svg>
   );
 }

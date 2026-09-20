@@ -25,11 +25,20 @@ interface Props {
   scenes: TourScene[];
   current: number;
   onJump: (index: number) => void;
+  /** plan-room labels resolved for the active language */
+  planLabels: Record<string, string>;
+  /** scene id -> room name (dot aria-labels) */
+  sceneNames: Record<string, string>;
+  /** Phase 3 — view-direction arrow on the floor-view host scene's dot */
+  floorViewArrow?: { sceneId: string; heading: number } | null;
 }
 
-export default function FloorplanMinimap({ tour, scenes, current, onJump }: Props) {
+export default function FloorplanMinimap({ tour, scenes, current, onJump, planLabels, sceneNames, floorViewArrow }: Props) {
   const { w, h } = tour.plan.viewBox;
   const scene = scenes[current];
+  const arrowScene = floorViewArrow
+    ? scenes.find((s) => s.id === floorViewArrow.sceneId)
+    : undefined;
 
   return (
     <svg
@@ -78,7 +87,7 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump }: Prop
             fontFamily="inherit"
             letterSpacing={0.4}
           >
-            {r.label}
+            {planLabels[r.id] ?? r.id}
           </text>
         </g>
       ))}
@@ -102,6 +111,32 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump }: Prop
         />
       )}
 
+      {/* view-direction arrow on the floor-view host scene's dot */}
+      {arrowScene && floorViewArrow && (
+        <g pointerEvents="none">
+          {(() => {
+            const d = planDir(floorViewArrow.heading);
+            const sx = arrowScene.minimap.x;
+            const sy = arrowScene.minimap.y;
+            const ex = sx + d.x * 9.5;
+            const ey = sy + d.y * 9.5;
+            const bx = sx + d.x * 6;
+            const by = sy + d.y * 6;
+            const px = -d.y;
+            const py = d.x;
+            return (
+              <>
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#C0392B" strokeWidth={1.3} strokeLinecap="round" />
+                <path
+                  d={`M ${ex} ${ey} L ${bx + px * 2.1} ${by + py * 2.1} L ${bx - px * 2.1} ${by - py * 2.1} Z`}
+                  fill="#C0392B"
+                />
+              </>
+            );
+          })()}
+        </g>
+      )}
+
       {/* scene dots */}
       {scenes.map((s, i) => {
         const active = i === current;
@@ -111,7 +146,7 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump }: Prop
             onClick={() => onJump(i)}
             style={{ cursor: 'pointer' }}
             role="button"
-            aria-label={`Go to ${s.room}`}
+            aria-label={`Go to ${sceneNames[s.id] ?? s.id}`}
           >
             {/* generous tap target */}
             <circle cx={s.minimap.x} cy={s.minimap.y} r={7} fill="transparent" />

@@ -9,4 +9,19 @@ export function getTour(slug: string): TourConfig | null {
   return tours[slug] ?? null;
 }
 
-export type { TourConfig, TourScene, TourLink, TourHotspot, PlanRoom } from './types';
+export type {
+  TourConfig,
+  TourScene,
+  TourLink,
+  TourHotspot,
+  PlanRoom,
+  TourLang,
+  TourText,
+  TourSceneText,
+  TourUIStrings,
+  SceneVariant,
+  VariantGroup,
+  FloorViewsConfig,
+  FloorViewEntry,
+  GuidedConfig,
+} from './types';

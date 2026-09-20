@@ -29,21 +29,7 @@ const Navbar = () => {
 
   return (
     <nav
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 1000,
-        background: '#ffffff',
-        borderBottom: '1px solid #f0e0e0',
-        height: 84, // Increased from 72 for larger logo visibility
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 32px',
-        width: '100%',
-        boxSizing: 'border-box',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)'
-      }}
+      className="fixed top-0 left-0 right-0 z-[1000] bg-white border-b border-[#f0e0e0] h-[84px] flex items-center justify-between px-8 w-full shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
     >
       <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center no-underline">
@@ -54,11 +40,7 @@ const Navbar = () => {
               fill
               priority
               unoptimized={true}
-              style={{ 
-                borderRadius: 10, 
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))'
-              }}
+              className="rounded-[10px] object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.1)]"
             />
           </div>
         </Link>
@@ -101,14 +83,7 @@ const Navbar = () => {
           {/* Enquire Now */}
           <button
             onClick={() => setIsEnquireModalOpen(true)}
-            className="text-sm font-semibold uppercase tracking-wider px-4 py-2 rounded text-white transition-colors"
-            style={{ background: '#C0392B' }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#a93226';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#C0392B';
-            }}
+            className="text-sm font-semibold uppercase tracking-wider px-4 py-2 rounded text-white transition-colors bg-[#C0392B] hover:bg-[#a93226]"
           >
             Enquire Now
           </button>
@@ -135,8 +110,7 @@ const Navbar = () => {
 
           <button
             onClick={() => setIsEnquireModalOpen(true)}
-            className="text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded text-white transition-colors"
-            style={{ background: '#C0392B' }}
+            className="text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded text-white transition-colors bg-[#C0392B] hover:bg-[#a93226]"
           >
             Enquire Now
           </button>

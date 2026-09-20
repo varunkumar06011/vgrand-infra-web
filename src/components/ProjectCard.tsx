@@ -55,8 +55,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
   return (
     <Link
       href={`/projects/${project.slug}`}
-      className="block group relative"
-      style={{ isolation: 'isolate' }}
+      className="block group relative isolate"
     >
       <motion.div
         variants={cardVariants}
@@ -80,43 +79,20 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           {/* Gradient overlay - Only active in overlay mode (xl) */}
           <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
 
-          <span style={{
-            position: 'absolute',
-            top: 14,
-            right: 14,
-            background: project.status === 'Ongoing'
-              ? '#C0392B'
-              : project.status === 'Upcoming'
-                ? '#1a1a1a'
-                : '#2E7D32',
-            color: '#ffffff',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            padding: '5px 12px',
-            borderRadius: 4,
-            zIndex: 5
-          }}>
+          <span
+            className="absolute top-[14px] right-[14px] text-white text-[10px] font-bold tracking-[2px] uppercase py-[5px] px-3 rounded z-[5]"
+            style={{
+              background: project.status === 'Ongoing'
+                ? '#C0392B'
+                : project.status === 'Upcoming'
+                  ? '#1a1a1a'
+                  : '#2E7D32',
+            }}>
             {project.status}
           </span>
 
           {project.slug === 'elite-homes' && (
-            <span style={{
-              position: 'absolute',
-              top: 14,
-              left: 14,
-              background: '#FFD700',
-              color: '#1a1a1a',
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              padding: '5px 12px',
-              borderRadius: 4,
-              zIndex: 5,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            }}>
+            <span className="absolute top-[14px] left-[14px] bg-[#FFD700] text-[#1a1a1a] text-[10px] font-extrabold tracking-[1px] uppercase py-[5px] px-3 rounded z-[5] shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
               ★ Flagship
             </span>
           )}
@@ -135,16 +111,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           </h3>
           <p className="text-slate-500 lg:text-white/70 text-[11px] lg:text-xs mb-3">{project.location}</p>
           
-          <p style={{
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: '0.5px',
-            marginTop: 4,
-            borderLeft: '2px solid #C0392B',
-            paddingLeft: 8
-          }}
-          className="text-[#1a1a1a] lg:text-white mb-2"
-          >
+          <p className="text-xs font-semibold tracking-[0.5px] mt-1 border-l-2 border-[#C0392B] pl-2 text-[#1a1a1a] lg:text-white mb-2">
             Adjacent to NH-16 Highway — High Appreciation Value
           </p>
           
@@ -154,8 +121,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           
           <div className="mt-4 self-start flex items-center gap-2.5 flex-wrap">
             <div
-              className="text-[10px] lg:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300"
-              style={{ background: '#C0392B', color: '#fff' }}
+              className="text-[10px] lg:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all duration-300 bg-[#C0392B] text-white"
             >
               View Project →
             </div>
