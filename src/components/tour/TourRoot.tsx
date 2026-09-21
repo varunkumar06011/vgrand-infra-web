@@ -4,6 +4,7 @@
    WebP served same-origin from /public/tour */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { Play } from 'lucide-react';
 import type { TourConfig, TourLang, TourText } from '@/data/tours';
@@ -163,16 +164,21 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
         {text.meta.disclaimer}
       </p>
 
-      {open && (
-        <TourViewer
-          tour={tour}
-          initialIndex={startAt}
-          onClose={() => setOpen(false)}
-          lang={lang}
-          text={text}
-          onLangChange={changeLang}
-        />
-      )}
+      {/* portal to body — escapes ancestor stacking contexts (opacity,
+          transforms, isolation) so the fixed viewer + its z-index really
+          sit above page chrome like the floating WhatsApp button */}
+      {open &&
+        createPortal(
+          <TourViewer
+            tour={tour}
+            initialIndex={startAt}
+            onClose={() => setOpen(false)}
+            lang={lang}
+            text={text}
+            onLangChange={changeLang}
+          />,
+          document.body
+        )}
     </div>
   );
 }

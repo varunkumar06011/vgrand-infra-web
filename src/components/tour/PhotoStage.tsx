@@ -131,9 +131,20 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
 
   const apply = useCallback((v: PhotoView) => setView(clampView(v)), [clampView]);
 
-  /* ---- reset to the scene's focus point on scene/size/compare change ---- */
+  /* ---- reset to the scene's focus point on scene/compare change ----
+     Only a scene (or compare-mode) change re-fits. A pure container
+     resize — phone URL-bar collapse, rotation, split-screen — must NOT
+     snap the user's zoom back to 1x, so in that case we just re-clamp
+     the current view into the new bounds. */
+  const fitKeyRef = useRef('');
   useEffect(() => {
     if (!photo.w || !box.w) return;
+    const fitKey = `${scene.id}:${gesturesDisabled ? 1 : 0}`;
+    if (fitKeyRef.current === fitKey) {
+      apply(viewRef.current);
+      return;
+    }
+    fitKeyRef.current = fitKey;
     apply({
       z: 1,
       tx: (0.5 - scene.focus.x / 100) * photo.w * base,
@@ -155,10 +166,34 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
     [box.w, box.h, apply]
   );
 
-  // exposed to the parent viewer for the +/- buttons
+  /* ---- toolbar +/- buttons: animate the zoom like a map app ----
+     Gestures (pinch/wheel/drag) stay instant via zoomAt; only the
+     discrete button path gets the ~240ms ease so the zoom actually
+     reads on screen instead of jumping. */
+  const zoomRaf = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(zoomRaf.current), []);
   useEffect(() => {
     if (!zoomApi) return;
-    zoomApi.current = (f: number) => zoomAt(box.w / 2, box.h / 2, viewRef.current.z * f);
+    zoomApi.current = (f: number) => {
+      cancelAnimationFrame(zoomRaf.current);
+      const zTo = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, viewRef.current.z * f));
+      const reduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced) {
+        zoomAt(box.w / 2, box.h / 2, zTo);
+        return;
+      }
+      const zFrom = viewRef.current.z;
+      const t0 = performance.now();
+      const step = (t: number) => {
+        const p = Math.min(1, (t - t0) / 240);
+        const ease = 1 - Math.pow(1 - p, 3);
+        zoomAt(box.w / 2, box.h / 2, zFrom + (zTo - zFrom) * ease);
+        if (p < 1) zoomRaf.current = requestAnimationFrame(step);
+      };
+      zoomRaf.current = requestAnimationFrame(step);
+    };
     return () => {
       zoomApi.current = null;
     };
@@ -211,6 +246,8 @@ export default function PhotoStage({ scene, alt, tilt, children, onShiftClick, z
   const handleDown = (e: React.PointerEvent) => {
     if (gesturesDisabled || transiting) return;
     onUserInteract?.();
+    // a grab cancels any in-flight toolbar zoom animation
+    cancelAnimationFrame(zoomRaf.current);
     // presses on in-photo controls (walk pills, spec dots) must stay clicks —
     // capturing the pointer would retarget pointerup/click to the stage
     if ((e.target as HTMLElement).closest('button, a')) return;

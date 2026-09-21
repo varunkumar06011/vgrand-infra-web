@@ -116,8 +116,8 @@ const en: TourText = {
 
   scenes: {
     entrance: {
-      room: 'Entrance Foyer',
-      title: 'Entrance foyer',
+      room: 'Entrance',
+      title: 'Entrance',
       zone: 'East',
       alt: 'Entrance foyer of the Elite Homes 3 BHK sample flat with a panelled feature wall and the opening to the living room',
       narration:
@@ -253,15 +253,16 @@ const en: TourText = {
         "From the balcony you can look out over the surroundings. This photo was taken at the sample flat's level; the view from other floors will differ.",
       links: { dining: 'Dining' },
     },
-    'entrance-inside': {
-      room: 'Living Room',
-      title: 'Back to the entrance',
-      zone: 'East',
-      alt: 'View from inside the Elite Homes 3 BHK sample flat looking back at the main door',
+    puja: {
+      room: 'Puja Room',
+      title: 'Puja room',
+      zone: 'South-East',
+      alt: 'Puja niche of the Elite Homes 3 BHK sample flat beside the main door, with a built-in unit',
       narration:
-        'Looking back at the main door — an imported door, while the other shutters are laminated. That completes the walkthrough of this 1,771 square foot, three bedroom flat.',
+        'Beside the entrance is the puja niche, in the south-east of the plan. The built-in unit is a sample flat fit-out. That completes the walkthrough of this 1,771 square foot, three bedroom flat.',
       links: { end: 'Finish tour' },
       hotspots: {
+        'puja-unit': { title: 'Puja niche unit', body: FITOUT_EN },
         door: {
           title: 'Main door',
           body: 'Imported main door. All other door shutters are laminated.',

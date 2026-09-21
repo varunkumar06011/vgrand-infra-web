@@ -724,7 +724,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
       </AnimatePresence>
 
       {/* ======================= top bar ======================= */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-3 md:px-5 pt-3 pb-8 flex items-start justify-between gap-2 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-3 md:px-5 pt-[max(12px,env(safe-area-inset-top))] pb-8 flex items-start justify-between gap-2 pointer-events-none">
         <div className="min-w-0 pt-1 flex-1">
           <p
             className="hidden sm:block text-[10px] tracking-[0.22em] uppercase text-white/60 font-bold truncate"
@@ -819,7 +819,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
       )}
 
       {/* mobile: floating vertical toolbar (zoom / tilt / guide / map / fullscreen) */}
-      <div className={`md:hidden absolute right-2.5 top-[104px] z-20 flex flex-col gap-1.5 rounded-full ${guideHl(4)}`}>
+      <div className={`md:hidden absolute right-[max(10px,env(safe-area-inset-right))] top-[calc(104px+env(safe-area-inset-top))] z-20 flex flex-col gap-1.5 rounded-full ${guideHl(4)}`}>
         <button onClick={() => zoomBy(1.3)} className={glassBtn} aria-label={ui.zoomIn}>
           <ZoomIn size={18} />
         </button>
@@ -934,7 +934,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 14 }}
             role="status"
-            className="absolute z-[28] left-1/2 -translate-x-1/2 bottom-28 w-[calc(100%-32px)] max-w-sm rounded-xl bg-[#141416]/95 backdrop-blur-md border border-white/15 shadow-2xl p-4"
+            className="absolute z-[28] inset-x-4 mx-auto bottom-28 max-w-sm rounded-xl bg-[#141416]/95 backdrop-blur-md border border-white/15 shadow-2xl p-4"
           >
             <div className="flex items-center justify-between gap-3">
               <p
@@ -983,7 +983,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 14 }}
-            className="absolute z-30 left-1/2 -translate-x-1/2 bottom-28 md:bottom-28 w-[calc(100%-32px)] max-w-sm rounded-xl bg-white text-[#1a1a1a] shadow-2xl border border-[#e8d5d5]"
+            className="absolute z-30 inset-x-4 mx-auto bottom-28 max-w-sm rounded-xl bg-white text-[#1a1a1a] shadow-2xl border border-[#e8d5d5]"
           >
             <div className="flex items-start justify-between gap-3 p-4">
               <div>
@@ -1177,7 +1177,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
       )}
 
       {!isEnd && mode !== 'guided' && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/75 to-transparent px-3 md:px-5 pb-3 pt-10 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/75 to-transparent px-3 md:px-5 pb-[max(12px,env(safe-area-inset-bottom))] pt-10 pointer-events-none">
           <p className="text-center text-[10px] text-white/45 mb-2 leading-snug px-2">
             {text.meta.disclaimer}
           </p>
@@ -1224,15 +1224,28 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
 
             <div className="flex-1 md:hidden" />
 
-            <WhatsAppButton
-              variant="pill"
-              phoneNumber={SITE_WHATSAPP_NUMBER}
-              message={waMessage(sText?.room ?? '')}
-              leadProject={tour.projectName}
-              leadNote={leadNote(sText?.room ?? '')}
-              title={ui.chatWhatsApp}
-              showText={true}
-            />
+            <div className="md:hidden shrink-0">
+              <WhatsAppButton
+                variant="pill"
+                phoneNumber={SITE_WHATSAPP_NUMBER}
+                message={waMessage(sText?.room ?? '')}
+                leadProject={tour.projectName}
+                leadNote={leadNote(sText?.room ?? '')}
+                title={ui.chatWhatsApp}
+                showText={false}
+              />
+            </div>
+            <div className="hidden md:block shrink-0">
+              <WhatsAppButton
+                variant="pill"
+                phoneNumber={SITE_WHATSAPP_NUMBER}
+                message={waMessage(sText?.room ?? '')}
+                leadProject={tour.projectName}
+                leadNote={leadNote(sText?.room ?? '')}
+                title={ui.chatWhatsApp}
+                showText={true}
+              />
+            </div>
           </div>
         </div>
       )}
