@@ -1,0 +1,202 @@
+name: Claude task
+
+# Started only from TaskHub (the "Run with Claude" button calls the GitHub API to dispatch this).
+# Claude works on a new branch and opens a pull request. It never commits to main: the change reaches
+# main only when someone presses Approve in TaskHub (which merges the pull request).
+# The same file is used in every project repository. It adapts to the repo: default branch (main/master),
+# Node version (.nvmrc / .node-version), package manager (pnpm / yarn / npm) and which check script exists.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: TaskHub run id
+        required: true
+      branch:
+        description: Branch to create (claude/task-<run>-<slug>)
+        required: true
+      task_title:
+        description: Short task title
+        required: true
+      task_prompt:
+        description: The task, with notes, sub-tasks and comments
+        required: true
+      callback_url:
+        description: TaskHub endpoint that receives progress reports
+        required: true
+
+permissions:
+  contents: write        # push the branch
+  pull-requests: write   # open the pull request
+  id-token: write        # required by claude-code-action
+
+concurrency:
+  group: claude-task-${{ inputs.run_id }}
+  cancel-in-progress: false
+
+env:
+  RUN_ID: ${{ inputs.run_id }}
+  BRANCH: ${{ inputs.branch }}
+  TASK_TITLE: ${{ inputs.task_title }}
+  CALLBACK_URL: ${{ inputs.callback_url }}
+  WEBHOOK_SECRET: ${{ secrets.CLAUDE_WEBHOOK_SECRET }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  claude:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check the dispatch
+        run: |
+          set -e
+          if [ "$GITHUB_REF_NAME" != "${{ github.event.repository.default_branch }}" ]; then echo "::error::Run this workflow from the default branch only."; exit 1; fi
+          case "$BRANCH" in claude/task-*) ;; *) echo "::error::Branch must start with claude/task-"; exit 1;; esac
+          if [ -z "$WEBHOOK_SECRET" ]; then echo "::error::Repository secret CLAUDE_WEBHOOK_SECRET is missing."; exit 1; fi
+          if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then echo "::error::Repository secret CLAUDE_CODE_OAUTH_TOKEN is missing."; exit 1; fi
+
+      - name: Prepare the progress reporter
+        run: |
+          cat > "$RUNNER_TEMP/report.sh" <<'SCRIPT'
+          #!/usr/bin/env bash
+          # report.sh <status> [pr_url] [summary]  — tells TaskHub how the run is going (body is HMAC-signed)
+          CALLBACK_URL="$(printf '%s' "$CALLBACK_URL" | tr -d '[:space:]')"
+          status="$1"; pr_url="${2:-}"; summary="${3:-}"
+          body=$(jq -cn --arg run_id "$RUN_ID" --arg status "$status" --arg pr_url "$pr_url" \
+                        --arg summary "$summary" --arg ts "$(date +%s)000" \
+                        '{run_id: ($run_id|tonumber), status: $status, pr_url: $pr_url, summary: $summary, ts: ($ts|tonumber)}')
+          sig=$(printf '%s' "$body" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')
+          curl -sS --fail --retry 4 --retry-delay 5 --retry-all-errors --max-time 30 \
+               -X POST "$CALLBACK_URL" -H 'Content-Type: application/json' \
+               -H "X-Claude-Signature: sha256=$sig" --data-binary "$body"
+          SCRIPT
+          chmod +x "$RUNNER_TEMP/report.sh"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tell TaskHub the run started
+        run: '"$RUNNER_TEMP/report.sh" running "" "" || true'
+
+      - name: Find the Node version
+        id: node
+        run: |
+          v=20
+          for f in .nvmrc .node-version; do
+            if [ -f "$f" ]; then v=$(tr -dc '0-9.' < "$f"); break; fi
+          done
+          echo "version=${v:-20}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable && echo "PM=pnpm" >> "$GITHUB_ENV" && pnpm install --frozen-lockfile
+          elif [ -f yarn.lock ]; then
+            corepack enable && echo "PM=yarn" >> "$GITHUB_ENV" && yarn install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
+            echo "PM=npm" >> "$GITHUB_ENV" && npm ci
+          elif [ -f package.json ]; then
+            echo "PM=npm" >> "$GITHUB_ENV" && npm install
+          else
+            echo "PM=none" >> "$GITHUB_ENV"
+          fi
+
+      - name: Create the branch
+        run: git switch -c "$BRANCH"
+
+      - name: Claude does the work
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            You are working on this repository from a task in TaskHub. Do the task below.
+
+            Rules:
+            - Read CLAUDE.md first and follow it. Match the surrounding code's style and comment density.
+            - Make the smallest correct change. Do not refactor unrelated code.
+            - Do not touch .env files, secrets, or anything under .github/.
+            - Do not run commands against any live database or deployed service. Never add a migration that deletes data.
+            - Do not run git commit, git push or change branches: the workflow does that after you finish.
+            - Run the project's own check when you are done (see CLAUDE.md and the scripts in package.json: build, test, lint or typecheck) and fix what you broke.
+            - Finally, write a short plain-English summary to a file named .claude-summary.md in the repository root:
+              what you changed, which files, how you checked it, and anything the reviewer should look at.
+              If the task is unclear or you could not do it, say so there and change nothing.
+
+            ---
+            ${{ inputs.task_prompt }}
+          claude_args: >-
+            --max-turns 50
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(npm run:*),Bash(npm test:*),Bash(npm install:*),Bash(pnpm run:*),Bash(pnpm test:*),Bash(pnpm install:*),Bash(pnpm exec:*),Bash(yarn run:*),Bash(yarn test:*),Bash(npx tsc:*),Bash(node --test:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(ls:*)"
+
+      - name: Run the project's check
+        id: check
+        continue-on-error: true
+        run: |
+          [ "$PM" = "none" ] && { echo "No package.json: no check to run"; exit 0; }
+          has() { node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)"; }
+          for script in build:web test build lint; do
+            if has "$script"; then
+              echo "Running the $script script"
+              case "$PM" in pnpm) pnpm run "$script";; yarn) yarn run "$script";; *) npm run "$script";; esac
+              exit $?
+            fi
+          done
+          echo "No check script found"
+
+      - name: Commit, push and open the pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          set -e
+          summary="$(cat .claude-summary.md 2>/dev/null || true)"
+          rm -f .claude-summary.md
+          # Claude may not change the workflows or leave env files behind.
+          git checkout -- .github 2>/dev/null || true
+          git clean -fdq -- .github 2>/dev/null || true
+          git add -A
+          git reset -q -- '.env' '.env.*' '*.pem' '*.key' 2>/dev/null || true
+          if git diff --cached --quiet; then
+            "$RUNNER_TEMP/report.sh" no_changes "" "${summary:-Claude did not change any files.}"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git -c user.name="claude[bot]" -c user.email="claude[bot]@users.noreply.github.com" \
+              commit -q -m "$TASK_TITLE" -m "Claude, TaskHub run #$RUN_ID"
+          git push -q origin "$BRANCH"
+          [ "$CHECK_OUTCOME" = "success" ] && checks="Passed" || checks="Failed or not run (see the workflow log)"
+          {
+            echo "Made by Claude from a TaskHub task. **Nothing is merged until you approve it in TaskHub.**"
+            echo
+            echo "- Task: $TASK_TITLE"
+            echo "- Project check: $checks"
+            echo "- Workflow run: $RUN_URL"
+            echo
+            echo "## Claude's summary"
+            echo
+            echo "${summary:-No summary was written.}"
+          } > "$RUNNER_TEMP/pr-body.md"
+          pr_url=$(gh pr create --base "$GITHUB_REF_NAME" --head "$BRANCH" --title "$TASK_TITLE (Claude)" --body-file "$RUNNER_TEMP/pr-body.md")
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "summary<<EOF_SUMMARY" >> "$GITHUB_OUTPUT"
+          echo "${summary:-Claude opened a pull request.}" >> "$GITHUB_OUTPUT"
+          echo "EOF_SUMMARY" >> "$GITHUB_OUTPUT"
+
+      - name: Tell TaskHub the pull request is ready
+        if: steps.pr.outputs.changed == 'true'
+        env:
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          SUMMARY: ${{ steps.pr.outputs.summary }}
+        run: '"$RUNNER_TEMP/report.sh" pr_ready "$PR_URL" "$SUMMARY"'
+
+      - name: Tell TaskHub the run failed
+        if: failure() || cancelled()
+        run: '"$RUNNER_TEMP/report.sh" failed "" "The workflow did not finish. Details: $RUN_URL" || true'
