@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data: https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
               "media-src 'self' https:",
-              "connect-src 'self' https://sqpnywqcmshkcrogurlw.supabase.co https://graph.facebook.com https://graph.instagram.com https://www.facebook.com https://www.google-analytics.com https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com",
+              "connect-src 'self' blob: https://sqpnywqcmshkcrogurlw.supabase.co https://graph.facebook.com https://graph.instagram.com https://www.facebook.com https://www.google-analytics.com https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com",
               "frame-src 'self' https://accounts.google.com https://www.google.com",
               "object-src 'none'",
               "base-uri 'self'",

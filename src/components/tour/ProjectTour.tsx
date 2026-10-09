@@ -1,5 +1,6 @@
 import { getTour } from '@/data/tours';
 import TourRoot from './TourRoot';
+import FlatWalkthrough from '@/components/walkthrough/FlatWalkthrough';
 
 /**
  * Server Component — renders the crawlable tour block (heading, copy,
@@ -33,6 +34,10 @@ export default function ProjectTour({ slug }: { slug: string }) {
       </p>
 
       <TourRoot tour={tour} />
+
+      <div style={{ marginTop: 56 }}>
+        <FlatWalkthrough />
+      </div>
     </div>
   );
 }
