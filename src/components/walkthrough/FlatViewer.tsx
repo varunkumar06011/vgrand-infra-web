@@ -151,6 +151,19 @@ export default function FlatViewer({ url, onClose }: { url: string; onClose: () 
             const m = o.material as THREE.MeshStandardMaterial;
             if (m.transparent) { m.depthWrite = false; m.side = THREE.DoubleSide; }
             if (m.map) m.map.anisotropy = aniso;
+            // the baked atlas has near-pure-black regions (kitchen backsplash, hood, dark
+            // panels) that read as holes; lift blacks to a warm charcoal so detail shows
+            if (ex.baked && m.emissiveMap && !m.userData.lifted) {
+              m.userData.lifted = true;
+              m.onBeforeCompile = (sh) => {
+                sh.fragmentShader = sh.fragmentShader.replace(
+                  '#include <emissivemap_fragment>',
+                  `#include <emissivemap_fragment>
+                  totalEmissiveRadiance = totalEmissiveRadiance + vec3(0.05, 0.045, 0.04) * (vec3(1.0) - clamp(totalEmissiveRadiance, 0.0, 1.0));`
+                );
+              };
+              m.needsUpdate = true;
+            }
           }
         });
         scene.add(root);

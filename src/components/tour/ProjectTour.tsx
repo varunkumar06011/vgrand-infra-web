@@ -1,43 +1,16 @@
 import { getTour } from '@/data/tours';
-import TourRoot from './TourRoot';
 import FlatWalkthrough from '@/components/walkthrough/FlatWalkthrough';
 
 /**
- * Server Component — renders the crawlable tour block (heading, copy,
- * launch UI) and mounts the interactive client experience via TourRoot.
- * Renders nothing for slugs without a tour config.
+ * Server Component — shows the 3D flat walkthrough for projects that have a
+ * tour config. Renders nothing for other slugs.
  */
 export default function ProjectTour({ slug }: { slug: string }) {
-  const tour = getTour(slug);
-  if (!tour) return null;
-  // the SEO block is always English — crawlable text doesn't follow the UI language
-  const meta = tour.i18n.en.meta;
+  if (!getTour(slug)) return null;
 
   return (
-    <div role="region" aria-labelledby="virtual-tour-heading" style={{ marginBottom: 56 }}>
-      <h2
-        id="virtual-tour-heading"
-        style={{
-          fontFamily: 'var(--font-heading)',
-          color: '#1a1a1a',
-          fontSize: 28,
-          marginBottom: 16,
-          fontWeight: 700,
-        }}
-      >
-        Virtual Tour: 3 BHK Flat at Elite Homes, Koppolu, Ongole
-      </h2>
-      <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', marginBottom: 24 }}>
-        Walk through our {meta.flatLabel} ({meta.area}, {meta.facing}) room by room — from the
-        entrance foyer and living room to the kitchen, bedrooms and balcony. Tap the arrows to move,
-        follow the live floor plan, and check brochure specifications right on the photos.
-      </p>
-
-      <TourRoot tour={tour} />
-
-      <div style={{ marginTop: 56 }}>
-        <FlatWalkthrough />
-      </div>
+    <div role="region" aria-label="3D walkthrough of the 3 BHK flat at Elite Homes, Koppolu, Ongole">
+      <FlatWalkthrough />
     </div>
   );
 }
