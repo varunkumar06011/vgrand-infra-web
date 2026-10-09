@@ -39,6 +39,17 @@ export default function FlatWalkthrough() {
     return () => { document.body.style.overflow = prev; };
   }, [open]);
 
+  // /projects/<slug>?tour=open — launched from the "View Flat" card button
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tour') !== 'open') return;
+    wrapRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    queueMicrotask(() => setOpen(true));
+    params.delete('tour');
+    const qs = params.toString();
+    window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
+  }, []);
+
   const close = useCallback(() => setOpen(false), []);
 
   return (
