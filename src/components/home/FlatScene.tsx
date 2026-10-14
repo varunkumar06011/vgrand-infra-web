@@ -45,6 +45,8 @@ const shiftAt = (keys: ShiftKey[], t: number) => {
   return keys[keys.length - 1][1];
 };
 
+const MAX_RATE = 0.035;
+
 export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], progressRef, instant = false, onReady, onError }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -155,7 +157,11 @@ export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], prog
       if (hidden || !loaded) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      smooth = smooth + (progressRef.current - smooth) * (1 - Math.exp(-dt * (instant ? 6 : 3)));
+      // ease toward the scroll target, but never faster than MAX_RATE of the tour per second,
+      // so a hard flick or scrollbar drag can't whip the camera through the rooms
+      const step = (progressRef.current - smooth) * (1 - Math.exp(-dt * (instant ? 6 : 3)));
+      const cap = MAX_RATE * dt;
+      smooth += Math.max(-cap, Math.min(cap, step));
       const t = Math.min(1, Math.max(0, smooth));
       camCurve.getPoint(t, camPos);
       lookCurve.getPoint(t, lookPos);

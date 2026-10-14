@@ -77,7 +77,7 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
     const lenis = (window as unknown as { __lenis?: L }).__lenis;
     if (!lenis) return;
     const prev = { w: lenis.options.wheelMultiplier, t: lenis.options.touchMultiplier };
-    lenis.options.wheelMultiplier = 0.4;
+    lenis.options.wheelMultiplier = 0.3;
     lenis.options.touchMultiplier = 0.7;
     return () => { lenis.options.wheelMultiplier = prev.w; lenis.options.touchMultiplier = prev.t; };
   }, []);
