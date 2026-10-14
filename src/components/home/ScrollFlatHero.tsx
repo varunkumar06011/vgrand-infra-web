@@ -71,6 +71,17 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
     });
   }, []);
 
+  // gentler wheel/touch travel while the tour is on screen, so each flick moves the camera less
+  useEffect(() => {
+    type L = { options: { wheelMultiplier?: number; touchMultiplier?: number } };
+    const lenis = (window as unknown as { __lenis?: L }).__lenis;
+    if (!lenis) return;
+    const prev = { w: lenis.options.wheelMultiplier, t: lenis.options.touchMultiplier };
+    lenis.options.wheelMultiplier = 0.4;
+    lenis.options.touchMultiplier = 0.7;
+    return () => { lenis.options.wheelMultiplier = prev.w; lenis.options.touchMultiplier = prev.t; };
+  }, []);
+
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: [`start ${NAVBAR_H}px`, 'end end'] });
   useMotionValueEvent(scrollYProgress, 'change', (v) => { progressRef.current = v; });
 
