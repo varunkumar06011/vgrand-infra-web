@@ -21,6 +21,8 @@ type Props = {
   shiftKeys?: ShiftKey[];
   /** 0..1 scroll progress through the hero, written by the parent */
   progressRef: React.MutableRefObject<number>;
+  /** follow the scroll exactly, with no easing (reduced-motion users) */
+  instant?: boolean;
   onReady: () => void;
   onError: () => void;
 };
@@ -43,7 +45,7 @@ const shiftAt = (keys: ShiftKey[], t: number) => {
   return keys[keys.length - 1][1];
 };
 
-export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], progressRef, onReady, onError }: Props) {
+export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], progressRef, instant = false, onReady, onError }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -153,7 +155,7 @@ export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], prog
       if (hidden || !loaded) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      smooth += (progressRef.current - smooth) * (1 - Math.exp(-dt * 6));
+      smooth = instant ? progressRef.current : smooth + (progressRef.current - smooth) * (1 - Math.exp(-dt * 6));
       const t = Math.min(1, Math.max(0, smooth));
       camCurve.getPoint(t, camPos);
       lookCurve.getPoint(t, lookPos);

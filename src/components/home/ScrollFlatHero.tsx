@@ -12,8 +12,8 @@ const FlatScene = dynamic(() => import('./FlatScene'), { ssr: false });
 
 const NAVBAR_H = 84;
 
-function ChapterBlock({ progress, chapter, last, first, children }: {
-  progress: MotionValue<number>; chapter: FlatTourChapter; last: boolean; first: boolean; children: React.ReactNode;
+function ChapterBlock({ progress, chapter, last, first, calm, children }: {
+  progress: MotionValue<number>; chapter: FlatTourChapter; last: boolean; first: boolean; calm: boolean; children: React.ReactNode;
 }) {
   const [a, b] = chapter.range;
   const fade = Math.min(0.03, (b - a) / 3);
@@ -27,6 +27,7 @@ function ChapterBlock({ progress, chapter, last, first, children }: {
   };
   const opacity = useTransform(progress, level);
   const y = useTransform(progress, (p) => {
+    if (calm) return 0;
     if (p < a + fade) return first ? 0 : 28 * (1 - level(p));
     if (last || p < b - fade) return 0;
     return -28 * (1 - level(p));
@@ -49,7 +50,8 @@ const sub = 'mt-5 text-white/90 text-[15px] md:text-lg leading-relaxed max-w-[44
 
 /**
  * Scroll-pinned 3D intro for a project page. `fallback` is rendered instead when the
- * device can't (or shouldn't) run it: reduced motion, data-saver, low memory, no WebGL.
+ * device can't (or shouldn't) run it: data-saver, low memory, no WebGL. With reduced motion the
+ * tour still runs but is toned down: the camera follows the scroll 1:1 and text only fades.
  */
 export default function ScrollFlatHero({ tour, projectName, fallback }: {
   tour: FlatTourConfig; projectName: string; fallback: React.ReactNode;
@@ -57,12 +59,16 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
   const sectionRef = useRef<HTMLElement>(null);
   const progressRef = useRef(0);
   const [status, setStatus] = useState<'checking' | 'loading' | 'ready' | 'fallback'>('checking');
+  const [calm, setCalm] = useState(false);
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
     const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-    queueMicrotask(() => setStatus(reduced || saveData || (mem !== undefined && mem < 3) ? 'fallback' : 'loading'));
+    queueMicrotask(() => {
+      setCalm(reduced);
+      setStatus(saveData || (mem !== undefined && mem < 3) ? 'fallback' : 'loading');
+    });
   }, []);
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: [`start ${NAVBAR_H}px`, 'end end'] });
@@ -95,6 +101,7 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
               lookPath={tour.lookPath}
               shiftKeys={tour.shiftKeys}
               progressRef={progressRef}
+              instant={calm}
               onReady={() => setStatus('ready')}
               onError={() => setStatus('fallback')}
             />
@@ -106,7 +113,7 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.28)_100%)]" />
 
         {tour.chapters.map((c, i) => (
-          <ChapterBlock key={i} progress={scrollYProgress} chapter={c} first={i === 0} last={i === lastIdx}>
+          <ChapterBlock key={i} progress={scrollYProgress} chapter={c} first={i === 0} last={i === lastIdx} calm={calm}>
             <p className={eyebrow}>{c.eyebrow}</p>
             {i === 0 ? (
               <h1 className={headline}>
