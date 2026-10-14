@@ -6,6 +6,8 @@ import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
 import BrochureDownload from '@/components/BrochureDownload';
 import ProjectTour from '@/components/tour/ProjectTour';
+import ScrollFlatHero from '@/components/home/ScrollFlatHero';
+import { getFlatTour } from '@/data/flatTours';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -103,14 +105,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     status: uiProject.status === 'ongoing' ? 'https://schema.org/ActiveActionStatus' : 'https://schema.org/PotentialActionStatus'
   };
 
-  return (
-    <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
-      <Script
-        id="schema-realestate"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(realEstateSchema) }}
-      />
-      {/* Hero Section - Redesigned for 100% Visibility */}
+  const flatTour = getFlatTour(slug);
+  const staticHero = (
+    <>
       <div className="relative w-full flex flex-col lg:block overflow-hidden bg-black">
         {/* Image Part */}
         <div className="relative w-full aspect-[2/1] md:aspect-[16/10] lg:aspect-auto lg:h-[70vh] min-h-[240px] md:min-h-[420px] lg:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
@@ -140,6 +137,21 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </p>
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
+      <Script
+        id="schema-realestate"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(realEstateSchema) }}
+      />
+      {flatTour ? (
+        <ScrollFlatHero tour={flatTour} projectName={uiProject.name} fallback={staticHero} />
+      ) : (
+        staticHero
+      )}
 
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 5vw, 64px) 24px' }}>

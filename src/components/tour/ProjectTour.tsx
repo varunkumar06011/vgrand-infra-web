@@ -9,7 +9,7 @@ export default function ProjectTour({ slug }: { slug: string }) {
   if (!getTour(slug)) return null;
 
   return (
-    <div role="region" aria-label="3D walkthrough of the 3 BHK flat at Elite Homes, Koppolu, Ongole">
+    <div id="walkthrough" className="scroll-mt-24" role="region" aria-label="3D walkthrough of the 3 BHK flat at Elite Homes, Koppolu, Ongole">
       <FlatWalkthrough />
     </div>
   );
