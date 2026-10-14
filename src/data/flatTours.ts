@@ -34,7 +34,7 @@ const flatTours: Record<string, FlatTourConfig> = {
   'elite-homes': {
     modelUrl: '/models/flat-premium.glb',
     poster: '/images/ban a.png',
-    scrollVh: 800,
+    scrollVh: 2000,
     camPath: [
       [4.0, 1.6, 1.0],
       [3.3, 1.6, 1.8],

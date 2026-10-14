@@ -155,7 +155,7 @@ export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], prog
       if (hidden || !loaded) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      smooth = instant ? progressRef.current : smooth + (progressRef.current - smooth) * (1 - Math.exp(-dt * 6));
+      smooth = smooth + (progressRef.current - smooth) * (1 - Math.exp(-dt * (instant ? 8 : 4)));
       const t = Math.min(1, Math.max(0, smooth));
       camCurve.getPoint(t, camPos);
       lookCurve.getPoint(t, lookPos);
