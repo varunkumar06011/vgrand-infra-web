@@ -23,6 +23,8 @@ type Props = {
   progressRef: React.MutableRefObject<number>;
   /** follow the scroll exactly, with no easing (reduced-motion users) */
   instant?: boolean;
+  /** light multiplier; wins over the scene's own lightScale when set */
+  lightScale?: number;
   onReady: () => void;
   onError: () => void;
 };
@@ -47,7 +49,7 @@ const shiftAt = (keys: ShiftKey[], t: number) => {
 
 const MAX_RATE = 0.035;
 
-export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], progressRef, instant = false, onReady, onError }: Props) {
+export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], progressRef, instant = false, lightScale, onReady, onError }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,7 +111,7 @@ export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], prog
           renderer.toneMapping = THREE.LinearToneMapping; // lighting is baked into the atlas
           hemi.intensity = 0.9;
         }
-        const k = ex.lightScale || 0.008;
+        const k = lightScale || ex.lightScale || 0.008;
         const aniso = Math.min(renderer.capabilities.getMaxAnisotropy(), coarse ? 4 : 8);
         root.traverse((obj) => {
           const o = obj as THREE.PointLight & THREE.Mesh & { isLight?: boolean };
@@ -194,6 +196,8 @@ export default function FlatScene({ url, camPath, lookPath, shiftKeys = [], prog
         }
       });
       renderer.dispose();
+      // switching facing or colour remounts the scene; release the GL context so repeated switches can't exhaust the browser's limit
+      renderer.forceContextLoss();
       canvas.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
