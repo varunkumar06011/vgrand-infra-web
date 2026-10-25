@@ -1,4 +1,5 @@
 import { getTour } from '@/data/tours';
+import { getFlatTour } from '@/data/flatTours';
 import FlatWalkthrough from '@/components/walkthrough/FlatWalkthrough';
 
 /**
@@ -10,7 +11,7 @@ export default function ProjectTour({ slug }: { slug: string }) {
 
   return (
     <div id="walkthrough" className="scroll-mt-24" role="region" aria-label="3D walkthrough of the 3 BHK flat at Elite Homes, Koppolu, Ongole">
-      <FlatWalkthrough />
+      <FlatWalkthrough variants={getFlatTour(slug)?.variants} />
     </div>
   );
 }
