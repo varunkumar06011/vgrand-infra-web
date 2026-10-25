@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { X } from 'lucide-react';
+import type { FlatWalkGrid } from '@/data/flatTours';
 
 type Rect = [number, number, number, number];
 
@@ -24,7 +25,14 @@ const STICK_R = 52; // joystick travel radius in px
  *  - Desktop: click to capture the mouse, WASD / arrows to walk, Shift to run.
  *  - Touch: left thumb joystick to walk, drag anywhere else to look.
  */
-export default function FlatViewer({ url, onClose }: { url: string; onClose: () => void }) {
+export default function FlatViewer({ url, walkGrid, lightScale, onClose }: {
+  url: string;
+  /** walkable area for models without walkable metadata in their scene extras */
+  walkGrid?: FlatWalkGrid;
+  /** light multiplier; wins over the scene's own lightScale when set */
+  lightScale?: number;
+  onClose: () => void;
+}) {
   const mountRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef<HTMLDivElement>(null);
   const knobRef = useRef<HTMLDivElement>(null);
@@ -85,7 +93,16 @@ export default function FlatViewer({ url, onClose }: { url: string; onClose: () 
     let RADIUS = 0.24;
     let EYE = 1.6;
     const inRect = (x: number, z: number, r: Rect) => x >= r[0] && x <= r[2] && z >= r[1] && z <= r[3];
+    // packed bit grid from scripts/build-flat-walk-grid.mjs, used when the model has no rects
+    let GRID: (FlatWalkGrid & { bits: Uint8Array }) | null = null;
+    const gridFree = (g: FlatWalkGrid & { bits: Uint8Array }, x: number, z: number) => {
+      const ix = Math.floor((x - g.x0) / g.cell), iz = Math.floor((z - g.z0) / g.cell);
+      if (ix < 0 || iz < 0 || ix >= g.cols || iz >= g.rows) return false;
+      const k = iz * g.cols + ix;
+      return ((g.bits[k >> 3] >> (k & 7)) & 1) === 1;
+    };
     const free = (x: number, z: number) => {
+      if (GRID) return gridFree(GRID, x, z);
       let ok = false;
       for (const r of WALK) if (inRect(x, z, r)) { ok = true; break; }
       if (!ok) return false;
@@ -133,13 +150,18 @@ export default function FlatViewer({ url, onClose }: { url: string; onClose: () 
         const ex = (root.userData || {}) as WalkMeta;
         WALK = ex.walkable || [];
         BLOCK = ex.blockers || [];
+        if (walkGrid) {
+          const raw = atob(walkGrid.data);
+          const bits = Uint8Array.from(raw, (ch) => ch.charCodeAt(0));
+          GRID = { ...walkGrid, bits };
+        }
         RADIUS = ex.playerRadius || RADIUS;
         EYE = ex.eyeHeight || EYE;
         if (ex.baked) {
           renderer.toneMapping = THREE.LinearToneMapping; // lighting is baked into the atlas
           hemi.intensity = 0.9;
         }
-        const k = ex.lightScale || 0.008;
+        const k = lightScale || ex.lightScale || 0.008;
         const aniso = Math.min(renderer.capabilities.getMaxAnisotropy(), coarse ? 4 : 8);
         root.traverse((obj) => {
           const o = obj as THREE.PointLight & THREE.Mesh & { isLight?: boolean };
@@ -167,7 +189,7 @@ export default function FlatViewer({ url, onClose }: { url: string; onClose: () 
           }
         });
         scene.add(root);
-        const s = ex.spawn || { x: 2, z: 0.5, lookX: 3, lookZ: 3 };
+        const s = walkGrid?.spawn || ex.spawn || { x: 2, z: 0.5, lookX: 3, lookZ: 3 };
         pos.set(s.x, EYE, s.z);
         yaw = Math.atan2(-(s.lookX - s.x), -(s.lookZ - s.z));
         loaded = true;
@@ -315,7 +337,7 @@ export default function FlatViewer({ url, onClose }: { url: string; onClose: () 
       renderer.forceContextLoss();
       canvas.remove();
     };
-  }, [url, onClose]);
+  }, [url, walkGrid, lightScale, onClose]);
 
   return (
     <div

@@ -4,15 +4,34 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { Move3d } from 'lucide-react';
+import type { FlatTourVariant } from '@/data/flatTours';
 
 // three.js + the viewer only load when the visitor gets near this block
 const FlatViewer = dynamic(() => import('./FlatViewer'), { ssr: false });
 
-const MODEL_URL = '/models/flat-premium.glb';
+const DEFAULT_MODEL_URL = '/models/flat-premium.glb';
 
-export default function FlatWalkthrough() {
+const chip = (on: boolean): React.CSSProperties => ({
+  padding: '8px 16px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700, letterSpacing: '.04em',
+  border: `1px solid ${on ? '#C0392B' : '#e8d5d5'}`, background: on ? '#C0392B' : '#fff', color: on ? '#fff' : '#1a1a1a',
+});
+
+/**
+ * Entry card for the full-screen walkthrough. `variants` are the flat's facings (and colours) from
+ * `getFlatTour`; the chosen one decides which model the viewer loads. Without any, the Elite flat loads.
+ */
+export default function FlatWalkthrough({ variants = [] }: { variants?: FlatTourVariant[] }) {
   const [open, setOpen] = useState(false);
+  const [facing, setFacing] = useState(0);
+  const [colour, setColour] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  const variant = variants[facing];
+  const colours = variant?.colours ?? [];
+  const activeColour = colours[colour] ?? colours[0];
+  const modelUrl = activeColour?.modelUrl ?? variant?.modelUrl ?? DEFAULT_MODEL_URL;
+  const walkGrid = activeColour?.walkGrid ?? variant?.walkGrid;
+  const lightScale = variant?.lightScale;
 
   // warm the viewer chunk + model when the block nears the viewport
   useEffect(() => {
@@ -52,6 +71,8 @@ export default function FlatWalkthrough() {
 
   const close = useCallback(() => setOpen(false), []);
 
+  const pickFacing = (i: number) => { setFacing(i); setColour(0); };
+
   return (
     <div ref={wrapRef} style={{ marginBottom: 56 }}>
       <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 16, fontWeight: 700 }}>
@@ -61,6 +82,25 @@ export default function FlatWalkthrough() {
         Walk through the fully furnished 3 BHK flat in real 3D on your phone or laptop. Use the on-screen joystick
         to move and drag to look around — or WASD and the mouse on a computer.
       </p>
+
+      {variants.length > 1 && (
+        <div role="group" aria-label="Flat facing" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+          {variants.map((v, i) => (
+            <button key={v.id} type="button" aria-pressed={i === facing} onClick={() => pickFacing(i)} style={chip(i === facing)}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {colours.length > 1 && (
+        <div role="group" aria-label="Colour scheme" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {colours.map((c, i) => (
+            <button key={c.id} type="button" aria-pressed={i === colour} onClick={() => setColour(i)} style={chip(i === colour)}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <button
         onClick={() => setOpen(true)}
@@ -82,7 +122,10 @@ export default function FlatWalkthrough() {
         </span>
       </button>
 
-      {open && typeof document !== 'undefined' && createPortal(<FlatViewer url={MODEL_URL} onClose={close} />, document.body)}
+      {open && typeof document !== 'undefined' && createPortal(
+        <FlatViewer key={modelUrl} url={modelUrl} walkGrid={walkGrid} lightScale={lightScale} onClose={close} />,
+        document.body
+      )}
     </div>
   );
 }
