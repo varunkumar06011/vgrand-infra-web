@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion, useMotionValueEvent, useScroll, useTransform, type MotionValue } from 'framer-motion';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import { SITE_WHATSAPP_NUMBER } from '@/lib/site';
-import type { FlatTourChapter, FlatTourConfig } from '@/data/flatTours';
+import type { FlatTourChapter, FlatTourConfig, FlatTourVariant } from '@/data/flatTours';
 
 // three.js + model are only fetched on the client, after first paint
 const FlatScene = dynamic(() => import('./FlatScene'), { ssr: false });
@@ -48,10 +48,15 @@ const eyebrow = "text-[11px] md:text-xs tracking-[4px] uppercase font-bold text-
 const headline = 'font-heading font-extrabold text-white leading-[1.02] tracking-tight text-[clamp(34px,5.4vw,76px)] max-w-[14ch] drop-shadow-[0_4px_30px_rgba(0,0,0,0.65)]';
 const sub = 'mt-5 text-white/90 text-[15px] md:text-lg leading-relaxed max-w-[44ch] drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]';
 
+const switchGroup = 'inline-flex items-center gap-1 p-1 rounded-full bg-black/45 backdrop-blur-sm border border-white/15';
+const switchButton = (on: boolean) =>
+  `px-4 py-2 rounded-full text-[12px] font-bold tracking-[1px] uppercase transition-colors cursor-pointer ${on ? 'bg-[#C0392B] text-white' : 'text-white/80 hover:text-white'}`;
+
 /**
  * Scroll-pinned 3D intro for a project page. `fallback` is rendered instead when the
  * device can't (or shouldn't) run it: data-saver, low memory, no WebGL. With reduced motion the
  * tour still runs but is toned down: the camera follows the scroll 1:1 and text only fades.
+ * Visitors can switch between a flat's facings, and between colours where a facing has them.
  */
 export default function ScrollFlatHero({ tour, projectName, fallback }: {
   tour: FlatTourConfig; projectName: string; fallback: React.ReactNode;
@@ -60,6 +65,13 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
   const progressRef = useRef(0);
   const [status, setStatus] = useState<'checking' | 'loading' | 'ready' | 'fallback'>('checking');
   const [calm, setCalm] = useState(false);
+  const [facing, setFacing] = useState(0);
+  const [colour, setColour] = useState(0);
+
+  const variant: FlatTourVariant = tour.variants[facing];
+  const colours = variant.colours ?? [];
+  const activeColour = colours[colour] ?? colours[0];
+  const modelUrl = activeColour?.modelUrl ?? variant.modelUrl;
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -88,9 +100,22 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
   const hintOpacity = useTransform(scrollYProgress, (p) => Math.max(0, 1 - p / 0.03));
   const railScale = useTransform(scrollYProgress, (p) => p);
 
+  // a new model is a new scene: hold the poster until it reports ready
+  const pickFacing = (i: number) => {
+    if (i === facing) return;
+    setFacing(i);
+    setColour(0);
+    setStatus('loading');
+  };
+  const pickColour = (i: number) => {
+    if (i === colour) return;
+    setColour(i);
+    setStatus('loading');
+  };
+
   if (status === 'fallback') return <>{fallback}</>;
 
-  const lastIdx = tour.chapters.length - 1;
+  const lastIdx = variant.chapters.length - 1;
 
   return (
     <section
@@ -107,10 +132,12 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
         {status !== 'checking' && (
           <div className={`absolute inset-0 transition-opacity duration-1000 ${status === 'ready' ? 'opacity-100' : 'opacity-0'}`}>
             <FlatScene
-              url={tour.modelUrl}
-              camPath={tour.camPath}
-              lookPath={tour.lookPath}
-              shiftKeys={tour.shiftKeys}
+              key={modelUrl}
+              url={modelUrl}
+              camPath={variant.camPath}
+              lookPath={variant.lookPath}
+              shiftKeys={variant.shiftKeys}
+              lightScale={variant.lightScale}
               progressRef={progressRef}
               instant={calm}
               onReady={() => setStatus('ready')}
@@ -123,8 +150,8 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
         <div className="absolute inset-0 pointer-events-none bg-black/10" />
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.28)_100%)]" />
 
-        {tour.chapters.map((c, i) => (
-          <ChapterBlock key={i} progress={scrollYProgress} chapter={c} first={i === 0} last={i === lastIdx} calm={calm}>
+        {variant.chapters.map((c, i) => (
+          <ChapterBlock key={`${variant.id}-${i}`} progress={scrollYProgress} chapter={c} first={i === 0} last={i === lastIdx} calm={calm}>
             <p className={eyebrow}>{c.eyebrow}</p>
             {i === 0 ? (
               <h1 className={headline}>
@@ -148,6 +175,27 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
             )}
           </ChapterBlock>
         ))}
+
+        {tour.variants.length > 1 && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 max-w-[calc(100%-32px)]">
+            <div className={switchGroup} role="group" aria-label="Flat facing">
+              {tour.variants.map((v, i) => (
+                <button key={v.id} type="button" aria-pressed={i === facing} onClick={() => pickFacing(i)} className={switchButton(i === facing)}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            {colours.length > 1 && (
+              <div className={switchGroup} role="group" aria-label="Colour scheme">
+                {colours.map((c, i) => (
+                  <button key={c.id} type="button" aria-pressed={i === colour} onClick={() => pickColour(i)} className={switchButton(i === colour)}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {status === 'loading' && (
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/70 text-xs tracking-[3px] uppercase">
