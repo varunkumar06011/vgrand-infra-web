@@ -83,7 +83,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
       />
       
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300">
+      <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"

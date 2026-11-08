@@ -11,7 +11,6 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 const fraunces = Fraunces({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
   variable: '--font-heading',
   display: 'swap'
 })

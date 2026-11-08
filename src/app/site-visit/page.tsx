@@ -22,9 +22,8 @@ export default function SiteVisitPage() {
   return (
     <>
       <PageHero
-        eyebrow="Book a site visit"
-        title={<>See it with your <span className="italic text-meadow-600">own eyes.</span></>}
-        intro="Walk any of our ongoing or upcoming projects in Ongole, look at the construction quality and talk to our team. Free, and with no obligation."
+        title="Book a free site visit"
+        intro="Walk any of our ongoing or upcoming projects in Ongole, look at the construction quality and talk to our team. No obligation."
       />
 
       <section className="section !pt-10">
@@ -44,7 +43,7 @@ export default function SiteVisitPage() {
                     <span className="font-heading text-[34px] leading-none text-meadow-500/70">{s.n}</span>
                     <span>
                       <span className="block font-heading text-[20px] text-forest">{s.title}</span>
-                      <span className="block text-[15px] text-forest/65">{s.body}</span>
+                      <span className="block text-[15px] text-forest/70">{s.body}</span>
                     </span>
                   </li>
                 ))}
@@ -52,7 +51,7 @@ export default function SiteVisitPage() {
             </Reveal>
 
             <Reveal delay={0.16}>
-              <div className="rounded-[1.5rem] bg-forest p-7 text-white">
+              <div className="rounded-xl bg-forest p-7 text-white">
                 <CalendarCheck className="text-meadow-400" size={28} />
                 <h3 className="mt-4 font-heading text-[22px]">Prefer to talk first?</h3>
                 <ul className="mt-5 grid gap-4 text-[14px] text-white/80">

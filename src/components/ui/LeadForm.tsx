@@ -16,8 +16,8 @@ interface LeadFormProps {
 const slots = ['Morning (9:30 – 12:30)', 'Afternoon (12:30 – 3:30)', 'Evening (3:30 – 6:30)'];
 
 const field =
-  'w-full rounded-2xl border border-forest/15 bg-white px-4 py-3.5 text-[15px] text-forest placeholder:text-forest/35 outline-none transition focus:border-meadow focus:ring-2 focus:ring-meadow/25';
-const label = 'mb-2 block text-[12px] font-semibold uppercase tracking-[0.16em] text-forest/60';
+  'w-full rounded-lg border border-forest/15 bg-white px-4 py-3.5 text-[15px] text-forest placeholder:text-forest/35 outline-none transition focus:border-meadow focus:ring-2 focus:ring-meadow/25';
+const label = 'mb-2 block text-[12px] font-semibold uppercase tracking-[0.16em] text-forest/70';
 
 export default function LeadForm({ source, withVisitSlot, submitLabel = 'Send enquiry', defaultProject }: LeadFormProps) {
   const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle');
@@ -62,8 +62,8 @@ export default function LeadForm({ source, withVisitSlot, submitLabel = 'Send en
 
   if (state === 'done') {
     return (
-      <div role="status" className="flex flex-col items-center rounded-3xl bg-meadow/10 px-8 py-14 text-center">
-        <CheckCircle2 size={48} className="text-meadow-600" />
+      <div role="status" className="flex flex-col items-center rounded-xl bg-meadow/10 px-8 py-14 text-center">
+        <CheckCircle2 size={48} className="anim-pop text-meadow-600" />
         <h3 className="mt-5 font-heading text-[28px] text-forest">Thank you — we&apos;ve got it.</h3>
         <p className="mt-3 max-w-sm !text-[15px]">Our team will call you shortly to confirm. For anything urgent, call or WhatsApp us directly.</p>
       </div>
@@ -83,7 +83,7 @@ export default function LeadForm({ source, withVisitSlot, submitLabel = 'Send en
         </div>
       </div>
       <div>
-        <label htmlFor={`${source}-email`} className={label}>Email <span className="normal-case tracking-normal text-forest/40">(optional)</span></label>
+        <label htmlFor={`${source}-email`} className={label}>Email <span className="normal-case tracking-normal text-forest/70">(optional)</span></label>
         <input id={`${source}-email`} name="email" type="email" maxLength={200} autoComplete="email" placeholder="you@example.com" className={field} />
       </div>
       <div>
@@ -112,11 +112,11 @@ export default function LeadForm({ source, withVisitSlot, submitLabel = 'Send en
       )}
 
       <div>
-        <label htmlFor={`${source}-message`} className={label}>Message <span className="normal-case tracking-normal text-forest/40">(optional)</span></label>
+        <label htmlFor={`${source}-message`} className={label}>Message <span className="normal-case tracking-normal text-forest/70">(optional)</span></label>
         <textarea id={`${source}-message`} name="message" rows={4} maxLength={2000} placeholder="Tell us what you're looking for…" className={field} />
       </div>
 
-      {error && <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-[14px] !text-red-700">{error}</p>}
+      {error && <p key={error} role="alert" className="anim-shake rounded-lg bg-red-50 px-4 py-3 text-[14px] !text-red-700">{error}</p>}
 
       <button type="submit" disabled={state === 'loading'} className="btn btn-primary w-full sm:w-fit disabled:opacity-60">
         {state === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Sending…</> : submitLabel}

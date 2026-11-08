@@ -26,8 +26,7 @@ export default function ContactPage() {
   return (
     <>
       <PageHero
-        eyebrow="Get in touch"
-        title={<>Let's talk about <span className="italic text-meadow-600">your home.</span></>}
+        title="Talk to our team in Ongole"
         intro="Whether you have a question about our projects, pricing, or locations, our team is ready to help."
       />
 
@@ -38,7 +37,7 @@ export default function ContactPage() {
               <h2 className="mb-8 font-heading !text-[30px] text-forest">Send us a message</h2>
               <LeadForm source="contact_page" submitLabel="Send message" />
               <div className="mt-8 border-t border-forest/10 pt-6">
-                <p className="mb-3 text-[13px] text-forest/60">Prefer WhatsApp?</p>
+                <p className="mb-3 text-[13px] text-forest/70">Prefer WhatsApp?</p>
                 <WhatsAppButton variant="pill" phoneNumber={SITE_WHATSAPP_NUMBER} showText={true} />
               </div>
             </div>
@@ -46,8 +45,7 @@ export default function ContactPage() {
 
           <div className="grid content-start gap-6">
             <Reveal delay={0.08}>
-              <div className="relative overflow-hidden rounded-[1.5rem] bg-forest p-8 text-white">
-                <div className="dither-bg-dark absolute inset-0 opacity-70" aria-hidden />
+              <div className="relative overflow-hidden rounded-xl bg-forest p-8 text-white">
                 <div className="relative">
                   <h2 className="font-heading !text-[26px] text-white">Our office</h2>
                   <ul className="mt-6 grid gap-5">
@@ -55,7 +53,7 @@ export default function ContactPage() {
                       <li key={r.label} className="flex gap-4">
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-meadow-400"><r.icon size={18} /></span>
                         <span>
-                          <span className="block text-[11px] uppercase tracking-[0.18em] text-white/50">{r.label}</span>
+                          <span className="block text-[11px] uppercase tracking-[0.18em] text-white/65">{r.label}</span>
                           <span className="block text-[15px] text-white/90">{r.node}</span>
                         </span>
                       </li>
@@ -70,7 +68,7 @@ export default function ContactPage() {
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3841.5!2d80.0476!3d15.5057!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a4b6a6b6a6b6a6b%3A0x0!2zT25nb2xl!5e0!3m2!1sen!2sin!4v1"
                 width="100%"
                 height="300"
-                className="block rounded-[1.5rem] border-0"
+                className="block rounded-xl border-0"
                 allowFullScreen
                 loading="lazy"
               />

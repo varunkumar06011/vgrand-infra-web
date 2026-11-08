@@ -12,7 +12,7 @@ export default function Loading() {
         ))}
       </div>
       <p className="relative font-heading text-xl text-forest">
-        V Grand <span className="italic text-meadow-600">Infra</span>
+        V Grand <span className="text-meadow-600">Infra</span>
       </p>
     </div>
   );

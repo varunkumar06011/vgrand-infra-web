@@ -21,7 +21,7 @@ function Slider({
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between gap-4">
-        <label htmlFor={id} className="text-[13px] font-semibold uppercase tracking-[0.14em] text-forest/60">{label}</label>
+        <label htmlFor={id} className="text-[13px] font-semibold uppercase tracking-[0.14em] text-forest/70">{label}</label>
         <span className="font-heading text-[22px] text-forest">{display}</span>
       </div>
       <input
@@ -60,17 +60,17 @@ export default function EmiCalculator() {
   const principalShare = r.total ? r.loan / r.total : 1;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+    <div className="grid gap-8 tabular-nums lg:grid-cols-[1.15fr_0.85fr]">
       <div className="card p-6 md:p-10">
         <div className="mb-8">
-          <p className="mb-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-forest/60">Quick-fill from a project</p>
+          <p className="mb-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-forest/70">Quick-fill from a project</p>
           <div className="flex flex-wrap gap-2">
             {presets.map((p) => (
               <button
                 key={p.name}
                 type="button"
                 onClick={() => setPriceL(p.price)}
-                className={`rounded-full border px-4 py-2 text-[13px] font-medium transition ${
+                className={`rounded-md border px-4 py-2 text-[13px] font-medium transition ${
                   priceL === p.price ? 'border-meadow-600 bg-meadow-600 text-white' : 'border-forest/20 text-forest hover:border-forest'
                 }`}
               >
@@ -86,17 +86,16 @@ export default function EmiCalculator() {
           <Slider id="rate" label="Interest rate (p.a.)" value={rate} min={6} max={14} step={0.05} onChange={setRate} display={`${rate.toFixed(2)}%`} />
           <Slider id="years" label="Loan tenure" value={years} min={5} max={30} step={1} onChange={setYears} display={`${years} years`} />
         </div>
-        <p className="mt-8 text-[12px] !text-forest/50">
+        <p className="mt-8 text-[12px] !text-forest/70">
           Estimates only. Actual rates, eligibility and charges depend on your bank. Down-payment, registration and other charges are not included.
         </p>
       </div>
 
       <div className="grid content-start gap-6">
-        <div className="relative overflow-hidden rounded-[1.5rem] bg-forest p-8 text-white">
-          <div className="dither-bg-dark absolute inset-0 opacity-70" aria-hidden />
+        <div className="relative overflow-hidden rounded-xl bg-forest p-8 text-white">
           <div className="relative">
             <p className="text-[12px] uppercase tracking-[0.2em] text-white/60">Your monthly EMI</p>
-            <p className="mt-2 font-heading text-[clamp(38px,5vw,56px)] leading-none !text-white" aria-live="polite">{inr(r.emi)}</p>
+            <p key={Math.round(r.emi)} className="anim-tick mt-2 font-heading text-[clamp(38px,5vw,56px)] leading-none !text-white" aria-live="polite">{inr(r.emi)}</p>
 
             <div className="mt-8 flex items-center gap-6">
               <svg viewBox="0 0 180 180" className="h-36 w-36 shrink-0 -rotate-90" role="img" aria-label={`Principal ${Math.round(principalShare * 100)} percent, interest ${Math.round((1 - principalShare) * 100)} percent`}>

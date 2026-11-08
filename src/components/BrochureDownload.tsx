@@ -151,7 +151,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
             onClick={() => !loading && !success && !googleLoading && setShowModal(false)}
           />
 
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden">
             <button
               onClick={() => !loading && !success && !googleLoading && setShowModal(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"

@@ -306,17 +306,16 @@ export default function DitherHero() {
             className="absolute inset-0"
             style={{ background: 'radial-gradient(ellipse 70% 60% at 30% 46%, rgba(238,244,251,0.92), rgba(238,244,251,0) 72%)' }}
           />
-          <div ref={copyRef} className="container-x relative w-full px-5 md:px-8 pt-24 will-change-transform">
-            <p className="eyebrow mb-5 !text-forest">V Grand Infra · Ongole, Andhra Pradesh</p>
-            <h1 className="max-w-[900px] font-heading text-forest leading-[1.02]">
-              Premium apartments &amp; flats <span className="italic text-meadow-600">in Ongole.</span>
+          <div ref={copyRef} className="relative mx-auto w-full max-w-[1264px] px-5 pt-24 will-change-transform md:px-8">
+            <h1 className="-ml-[0.04em] max-w-[900px] font-heading text-forest leading-[1.02]">
+              Gated community flats in <span className="text-meadow-600">Koppolu, Ongole.</span>
             </h1>
             <p className="mt-6 max-w-[520px] !text-[17px] !text-forest/75">
-              Gated community homes near the NH-16 highway — quality construction, honest pricing and transparent timelines.
+              Elite Homes is the first gated community in Koppolu, next to the NH-16 highway. Quality construction, honest pricing and transparent timelines.
             </p>
             <div className="mt-9 flex flex-wrap gap-3 pointer-events-auto">
-              <Link href="/projects" className="btn btn-dark">Explore projects</Link>
-              <Link href="/site-visit" className="btn btn-ghost bg-white/50 backdrop-blur">Book a site visit</Link>
+              <Link href="/site-visit" className="btn btn-primary">Book a site visit</Link>
+              <Link href="/projects" className="btn btn-ghost bg-white/50 backdrop-blur">Explore projects</Link>
             </div>
             <p className="mt-6 inline-flex items-center gap-2 text-[13px] !text-forest/70">
               <ShieldCheck size={16} className="text-meadow-600" /> RERA registered developer
@@ -326,10 +325,9 @@ export default function DitherHero() {
 
         {/* 3b · second chapter, fades in once the photo is revealed */}
         <div className="absolute inset-x-0 bottom-0 pb-16 md:pb-20 pointer-events-none">
-          <div ref={copy2Ref} className="container-x px-5 md:px-8 opacity-0 will-change-transform">
-            <p className="eyebrow !text-white/90">Our promise</p>
-            <h2 className="mt-4 max-w-[760px] font-heading text-white leading-[1.05] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]">
-              Building with honesty, <span className="italic text-cream">delivering with pride.</span>
+          <div ref={copy2Ref} className="mx-auto w-full max-w-[1264px] px-5 opacity-0 will-change-transform md:px-8">
+            <h2 className="-ml-[0.04em] max-w-[760px] font-heading text-white leading-[1.05] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]">
+              Building with honesty, <span className="text-cream">delivering with pride.</span>
             </h2>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/projects" className="btn btn-light">See our projects</Link>

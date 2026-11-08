@@ -43,7 +43,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
   return (
     <Reveal delay={(index % 3) * 0.08}>
       <Link href={`/projects/${project.slug}`} className="group block h-full">
-        <article className="card flex h-full flex-col overflow-hidden transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-lift">
+        <article className="card flex h-full flex-col overflow-hidden transition-all duration-500 group-hover:border-forest/40">
           <div className="relative aspect-[4/3] overflow-hidden bg-cream">
             <Image
               src={project.image}
@@ -66,31 +66,26 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
               }}
             />
             <span
-              className={`absolute left-4 top-4 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+              className={`absolute left-4 top-4 rounded-md px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
                 statusStyle[project.status] ?? 'bg-forest text-white'
               }`}
             >
               {project.status}
             </span>
-            {project.slug === 'elite-homes' && (
-              <span className="absolute right-4 top-4 rounded-full bg-cream px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-forest">
-                Flagship
-              </span>
-            )}
           </div>
 
           <div className="flex flex-1 flex-col p-6 md:p-7">
             <span className="eyebrow !text-[11px]">{project.type}</span>
             <h3 className="mt-3 font-heading text-[26px] text-forest">{project.name}</h3>
-            <p className="mt-1 flex items-center gap-1.5 text-[13px] !text-forest/60">
+            <p className="mt-1 flex items-center gap-1.5 text-[13px] !text-forest/70">
               <MapPin size={14} className="text-meadow" /> {project.location}
             </p>
             <p className="mt-4 line-clamp-2 !text-[14px] !leading-relaxed">{project.description}</p>
 
             <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-6">
               <div>
-                <span className="block text-[11px] uppercase tracking-[0.16em] text-forest/50">Starting</span>
-                <span className="font-heading text-[17px] text-forest">{project.startingPrice}</span>
+                <span className="block text-[11px] uppercase tracking-[0.16em] text-forest/70">Starting</span>
+                <span className={`font-heading text-[17px] tabular-nums ${/\d/.test(String(project.startingPrice)) ? 'text-sky-600' : 'text-forest/70'}`}>{project.startingPrice}</span>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-white transition-colors group-hover:bg-meadow-600">
                 View <ArrowUpRight size={15} />

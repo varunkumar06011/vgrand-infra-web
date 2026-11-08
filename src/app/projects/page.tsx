@@ -51,24 +51,23 @@ export default function ProjectsPage() {
   );
 
   const pill = (active: boolean) =>
-    `rounded-full border px-5 py-2.5 text-[14px] font-medium transition-all ${
+    `rounded-md border px-5 py-2.5 text-[14px] font-medium transition-all ${
       active ? 'border-forest bg-forest text-white' : 'border-forest/20 bg-white text-forest hover:border-forest'
     }`;
 
   return (
     <>
       <PageHero
-        eyebrow="Our portfolio"
-        title={<>Building communities where <span className="italic text-meadow-600">families thrive.</span></>}
-        intro="Explore our ongoing and upcoming projects in Ongole — homes, and a hospital for the community."
+        title="Our projects in Ongole"
+        intro="Ongoing and upcoming homes in Koppolu, plus V Grand Healthcare, a hospital in Ongole."
       />
 
       <section className="section !pt-6">
         <div className="container-x">
           {/* Filters */}
-          <div className="mb-12 grid gap-5 rounded-[1.5rem] border border-forest/10 bg-white p-5 md:p-7">
+          <div className="mb-12 grid gap-5 rounded-xl border border-forest/10 bg-white p-5 md:p-7">
             <div>
-              <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-forest/50">Status</p>
+              <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-forest/70">Status</p>
               <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
                 {statusTabs.map((s) => (
                   <button key={s} onClick={() => setStatus(s)} aria-pressed={status === s} className={pill(status === s)}>{s}</button>
@@ -76,7 +75,7 @@ export default function ProjectsPage() {
               </div>
             </div>
             <div>
-              <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-forest/50">Type</p>
+              <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-forest/70">Type</p>
               <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by type">
                 {typeTabs.map((t) => (
                   <button key={t.value} onClick={() => setType(t.value)} aria-pressed={type === t.value} className={pill(type === t.value)}>{t.label}</button>
@@ -88,10 +87,10 @@ export default function ProjectsPage() {
           {/* Grid */}
           {loading ? (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3" aria-busy>
-              {[0, 1, 2].map((i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-[1.5rem] bg-cream" />)}
+              {[0, 1, 2].map((i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-cream" />)}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-[1.5rem] bg-cream px-6 py-16 text-center">
+            <div className="rounded-xl bg-cream px-6 py-16 text-center">
               <p className="font-heading text-[24px] text-forest">No projects match those filters.</p>
               <button onClick={() => { setStatus('All'); setType('all'); }} className="btn btn-dark mt-6">Clear filters</button>
             </div>

@@ -17,7 +17,7 @@ export default function Counter({ to, suffix = '' }: { to: number; suffix?: stri
   }, [inView, to, reduce]);
 
   return (
-    <span ref={ref}>
+    <span ref={ref} className="tabular-nums">
       {val}
       {suffix}
     </span>

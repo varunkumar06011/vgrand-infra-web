@@ -58,11 +58,11 @@ const Navbar = () => {
     <header className="fixed inset-x-0 top-0 z-[1000]">
       {/* Utility bar — collapses once the page is scrolled */}
       <div
-        className={`hidden lg:block overflow-hidden bg-forest text-white/80 text-[12px] transition-all duration-300 ${
+        className={`hidden lg:block overflow-hidden bg-forest px-8 text-white/80 text-[12px] transition-all duration-300 ${
           scrolled ? 'max-h-0 opacity-0' : 'max-h-10 opacity-100'
         }`}
       >
-        <div className="container-x flex h-10 items-center justify-between px-8">
+        <div className="container-x flex h-10 items-center justify-between">
           <span className="tracking-wide">{SITE_HOURS}</span>
           <div className="flex items-center gap-6">
             <a href={`mailto:${SITE_EMAIL}`} className="flex items-center gap-2 hover:text-white transition-colors">
@@ -77,13 +77,13 @@ const Navbar = () => {
 
       <nav
         aria-label="Main"
-        className={`transition-all duration-300 ${
+        className={`px-5 lg:px-8 transition-all duration-300 ${
           overHero
             ? 'bg-transparent'
             : 'bg-petal/90 backdrop-blur-md border-b border-forest/10 shadow-[0_6px_24px_-12px_rgba(20,48,28,0.25)]'
         }`}
       >
-        <div className="container-x flex h-[64px] lg:h-[76px] items-center justify-between px-5 lg:px-8">
+        <div className="container-x flex h-[64px] lg:h-[76px] items-center justify-between">
           <Link href="/" className="flex items-center gap-3" aria-label="V Grand Infra — home">
             <span className="relative block h-11 w-11 lg:h-12 lg:w-12">
               <Image
@@ -96,7 +96,7 @@ const Navbar = () => {
               />
             </span>
             <span className={`hidden sm:block font-heading text-xl leading-none ${textTone}`}>
-              V Grand <span className="italic text-meadow-400">Infra</span>
+              V Grand <span className="text-meadow-400">Infra</span>
             </span>
           </Link>
 
@@ -112,7 +112,7 @@ const Navbar = () => {
                 >
                   <Link
                     href={link.href}
-                    className={`flex items-center gap-1 rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${textTone} ${
+                    className={`flex items-center gap-1 rounded-md px-4 py-2 text-[14px] font-medium transition-colors ${textTone} ${
                       isActive(link.href) ? 'bg-meadow/15' : 'hover:bg-meadow/10'
                     }`}
                   >
@@ -129,7 +129,7 @@ const Navbar = () => {
                         transition={{ duration: 0.18 }}
                         className="absolute left-1/2 top-full w-[380px] -translate-x-1/2 pt-3"
                       >
-                        <div className="rounded-3xl bg-white p-3 shadow-lift border border-forest/10">
+                        <div className="rounded-xl bg-white p-3 shadow-lift border border-forest/10">
                           {(['Ongoing', 'Upcoming'] as const).map((group) => (
                             <div key={group} className="mb-1 last:mb-0">
                               <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-meadow-600">
@@ -141,11 +141,11 @@ const Navbar = () => {
                                   <Link
                                     key={p.slug}
                                     href={`/projects/${p.slug}`}
-                                    className="flex items-center justify-between rounded-2xl px-4 py-2.5 hover:bg-cream transition-colors"
+                                    className="flex items-center justify-between rounded-xl px-4 py-2.5 hover:bg-cream transition-colors"
                                   >
                                     <span>
                                       <span className="block font-heading text-[16px] text-forest">{p.name}</span>
-                                      <span className="block text-[12px] text-forest/60">{p.note}</span>
+                                      <span className="block text-[12px] text-forest/70">{p.note}</span>
                                     </span>
                                     <ArrowUpRight size={16} className="text-meadow" />
                                   </Link>
@@ -154,7 +154,7 @@ const Navbar = () => {
                           ))}
                           <Link
                             href="/projects"
-                            className="mt-2 block rounded-2xl bg-forest px-4 py-3 text-center text-[13px] font-semibold text-white hover:bg-forest-700 transition-colors"
+                            className="mt-2 block rounded-xl bg-forest px-4 py-3 text-center text-[13px] font-semibold text-white hover:bg-forest-700 transition-colors"
                           >
                             View all projects
                           </Link>
@@ -167,7 +167,7 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${textTone} ${
+                  className={`rounded-md px-4 py-2 text-[14px] font-medium transition-colors ${textTone} ${
                     isActive(link.href) ? 'bg-meadow/15' : 'hover:bg-meadow/10'
                   }`}
                 >

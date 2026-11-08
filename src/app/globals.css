@@ -45,7 +45,11 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.15;
+  text-wrap: balance; /* even line lengths, no stranded last word */
 }
+
+/* One stroke weight for every icon */
+svg.lucide { stroke-width: 1.75; }
 
 h1 { font-size: clamp(36px, 6vw, 72px); }
 h2 { font-size: clamp(28px, 4vw, 48px); }
@@ -56,6 +60,7 @@ p {
   font-size: 16px;
   line-height: 1.8;
   color: #3d4a40;
+  text-wrap: pretty;
 }
 
 a { text-decoration: none; }
@@ -86,42 +91,44 @@ img { max-width: 100%; display: block; }
     font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--meadow);
-  }
-  .eyebrow::before {
-    content: '';
-    width: 28px;
-    height: 1px;
-    background: currentColor;
+    color: #2f5d1e; /* meadow-700 — passes AA at this size */
   }
 
   .section { @apply px-5 py-20 md:px-8 md:py-28; }
   .container-x { @apply mx-auto w-full max-w-[1200px]; }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-all duration-300;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-colors duration-200 active:scale-[0.98];
   }
-  .btn-primary { @apply bg-meadow-600 text-white hover:bg-meadow-700 hover:-translate-y-0.5 hover:shadow-lift; }
-  .btn-dark    { @apply bg-forest text-white hover:bg-forest-700 hover:-translate-y-0.5; }
+  .btn-primary { @apply bg-meadow-600 text-white hover:bg-meadow-700; }
+  .btn-dark    { @apply bg-forest text-white hover:bg-forest-700; }
   .btn-ghost   { @apply border border-forest/25 text-forest hover:bg-forest hover:text-white; }
-  .btn-light   { @apply bg-white text-forest hover:bg-cream hover:-translate-y-0.5; }
+  .btn-light   { @apply bg-white text-forest hover:bg-cream; }
 
   .card {
-    @apply rounded-[1.5rem] bg-white shadow-soft border border-forest/5;
+    @apply rounded-xl bg-white border border-forest/15;
   }
 
-  /* Soft organic edge that sits between two sections */
-  .wave-top { position: relative; }
-  .wave-top::before {
-    content: '';
-    position: absolute;
-    inset: -1px 0 auto 0;
-    height: 48px;
-    background: inherit;
-    clip-path: ellipse(60% 100% at 50% 100%);
-    transform: translateY(-99%);
-  }
 }
+
+/* Feedback animations — used when something the user did has an outcome */
+@keyframes pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+@keyframes tick {
+  0%   { opacity: 0.35; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.anim-pop   { animation: pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-shake { animation: shake 0.4s ease-in-out; }
+.anim-tick  { animation: tick 0.28s ease-out both; }
 
 /* Dot-grid texture — the subtle dither accent used on section backgrounds */
 .dither-bg {
@@ -193,7 +200,8 @@ img { max-width: 100%; display: block; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tour-drift, .hero-drift, .drift-slow, .floaty, .marquee-track {
+  .tour-drift, .hero-drift, .drift-slow, .floaty, .marquee-track,
+  .anim-pop, .anim-shake, .anim-tick {
     animation: none;
   }
 }

@@ -15,9 +15,8 @@ export default function EmiCalculatorPage() {
   return (
     <>
       <PageHero
-        eyebrow="EMI calculator"
-        title={<>Plan your home loan, <span className="italic text-meadow-600">calmly.</span></>}
-        intro="Move the sliders to see your monthly EMI and what you'll pay in total. Low-cost flats in Ongole with EMI options — within your budget."
+        title="Home loan EMI calculator"
+        intro="Move the sliders to see your monthly EMI and what you'll pay in total."
       />
       <section className="section !pt-10">
         <div className="container-x">

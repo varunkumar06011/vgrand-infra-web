@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Leaf, ShieldCheck, Building2, Landmark, Calculator, FileCheck2, CalendarCheck } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
+import { getTour } from '@/data/tours';
 import DitherHero from '@/components/home/DitherHero';
 import ProjectCard from '@/components/ProjectCard';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
@@ -13,15 +14,6 @@ import { testimonials } from '@/data/testimonials';
 import { SITE_WHATSAPP_NUMBER } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
-
-const marquee = [
-  'Elite Homes — First Gated Community in Koppolu',
-  'V Grand Gateway — Premium 2 & 3 BHK Flats',
-  'Tripura — Affordable 2BHK Homes in Ongole',
-  'V Grand Healthcare — Hospital in Ongole',
-  'Trusted Builders in Ongole',
-  'Low Cost Flats in Ongole with EMI Options',
-];
 
 const faqs = [
   {
@@ -43,16 +35,16 @@ const faqs = [
 ];
 
 const values = [
-  { icon: Leaf, title: 'Eco-Friendly Housing', body: 'We focus on building <strong>eco-friendly housing projects in Ongole</strong> with sustainable practices and green spaces.' },
-  { icon: Building2, title: 'Trusted Infrastructure', body: 'As a premier <strong>infrastructure company in Ongole</strong>, we ensure our buildings exceed standard engineering norms.' },
-  { icon: ShieldCheck, title: 'Modern Gated Community', body: 'Each project is a <strong>modern gated community with security in Ongole</strong>, offering peace of mind for families.' },
-  { icon: Landmark, title: 'EMI & Finance', body: 'We provide <strong>low cost flats in Ongole with EMI options</strong> to make your dream home a reality within your budget.' },
+  { title: 'Eco-Friendly Housing', body: 'We focus on building <strong>eco-friendly housing projects in Ongole</strong> with sustainable practices and green spaces.' },
+  { title: 'Trusted Infrastructure', body: 'As a premier <strong>infrastructure company in Ongole</strong>, we ensure our buildings exceed standard engineering norms.' },
+  { title: 'Modern Gated Community', body: 'Each project is a <strong>modern gated community with security in Ongole</strong>, offering peace of mind for families.' },
+  { title: 'EMI & Finance', body: 'We provide <strong>low cost flats in Ongole with EMI options</strong> to make your dream home a reality within your budget.' },
 ];
 
-const tools = [
-  { icon: Calculator, title: 'EMI Calculator', body: 'Plan your home loan in seconds.', href: '/emi-calculator' },
-  { icon: FileCheck2, title: 'Approvals & RERA', body: 'Every registration, in one place.', href: '/approvals' },
-  { icon: CalendarCheck, title: 'Book a Site Visit', body: 'Walk the ground with our team.', href: '/site-visit' },
+const nextSteps = [
+  { title: 'EMI calculator', body: 'Work out the monthly instalment.', href: '/emi-calculator' },
+  { title: 'Approvals & RERA', body: 'Registration details for every project.', href: '/approvals' },
+  { title: 'Book a site visit', body: 'Walk the site with our team.', href: '/site-visit' },
 ];
 
 export default async function Home() {
@@ -70,7 +62,9 @@ export default async function Home() {
   }
 
   const projects = mergeProjects(dbProjects);
-  const featuredProjects = projects.slice(0, 4);
+  // One flagship gets a large feature; the rest sit below as smaller cards.
+  const flagship: any = projects.find((p: any) => p.slug === 'elite-homes') ?? projects[0];
+  const others = projects.filter((p: any) => p.slug !== flagship?.slug).slice(0, 3);
 
   const siteUrl = 'https://vgrandgroup.com';
   const websiteSchema = {
@@ -101,143 +95,170 @@ export default async function Home() {
 
       <DitherHero />
 
-      {/* Marquee */}
-      <div className="marquee-mask relative overflow-hidden whitespace-nowrap bg-forest py-4">
-        <div className="marquee-track">
-          {[1, 2].map((n) => (
-            <span key={n} className="inline-block">
-              {marquee.map((m) => (
-                <span key={m} className="mr-10 text-[13px] font-medium tracking-[0.14em] uppercase text-white/85">
-                  {m} <span className="ml-10 text-meadow-400">✦</span>
-                </span>
-              ))}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Featured projects */}
+      {/* Projects: one flagship feature, the rest smaller */}
       <section className="section">
         <div className="container-x">
-          <Reveal className="mb-14 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <Reveal className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <p className="eyebrow">Latest Developments</p>
-              <h2 className="mt-4 font-heading text-forest">Best apartments in Ongole</h2>
+              <h2 className="font-heading text-forest">Homes in Koppolu, a hospital in Ongole</h2>
               <p className="mt-4">
                 Discover our ongoing residential projects in Ongole, featuring 2BHK and 3BHK flats near highway locations with modern amenities and high appreciation potential.
               </p>
             </div>
-            <Link href="/projects" className="btn btn-ghost w-fit">
-              View all projects <ArrowRight size={16} />
+            <Link href="/projects" className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-forest underline underline-offset-4 decoration-forest/30 hover:decoration-forest">
+              All projects <ArrowRight size={16} />
             </Link>
           </Reveal>
-          <div className="grid gap-8 md:grid-cols-2">
-            {featuredProjects.map((project: any, index: number) => (
+
+          {flagship && (
+            <Reveal>
+              <article className="card grid overflow-hidden lg:grid-cols-[1.35fr_1fr]">
+                <div className="relative min-h-[280px] lg:min-h-[500px]">
+                  <Image
+                    src={flagship.image}
+                    alt={flagship.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 60vw"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex flex-col p-7 md:p-10">
+                  <span className="w-fit rounded-md bg-meadow-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
+                    {flagship.status}
+                  </span>
+                  <h3 className="mt-5 font-heading text-[clamp(30px,3.4vw,44px)] text-forest">{flagship.name}</h3>
+                  <p className="mt-2 flex items-center gap-2 text-[14px] !text-forest/70">
+                    <MapPin size={16} className="text-meadow-600" /> {flagship.location}
+                  </p>
+                  <p className="mt-5 line-clamp-4 !text-[15px]">{flagship.description}</p>
+                  <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-forest/15 pt-7 text-[14px] tabular-nums">
+                    {[
+                      ['Type', flagship.type],
+                      ['Area', flagship.area],
+                      ['Handover', flagship.handover],
+                      ['Starting price', flagship.startingPrice],
+                    ]
+                      .filter(([, v]) => !!v)
+                      .map(([k, v]) => {
+                        // "₹76 Lakhs (All Inclusive — …)" → big figure + small qualifier underneath
+                        const [main, ...rest] = String(v).split(' (');
+                        const note = rest.join(' (').replace(/\)$/, '');
+                        const isPrice = k === 'Starting price';
+                        return (
+                          <div key={k}>
+                            <dt className="text-[12px] uppercase tracking-[0.14em] text-forest/70">{k}</dt>
+                            <dd className={`mt-1 font-medium ${isPrice ? 'font-heading text-[22px] text-sky-600' : 'text-forest'}`}>
+                              {isPrice ? main : v}
+                              {isPrice && note && (
+                                <span className="mt-0.5 block font-body text-[12px] font-normal leading-snug text-forest/70">{note}</span>
+                              )}
+                            </dd>
+                          </div>
+                        );
+                      })}
+                  </dl>
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link href={`/projects/${flagship.slug}`} className="btn btn-primary">View project</Link>
+                    {getTour(flagship.slug) && (
+                      <Link href={`/projects/${flagship.slug}?tour=open`} className="btn btn-ghost">Walk through the flat</Link>
+                    )}
+                  </div>
+                </div>
+              </article>
+            </Reveal>
+          )}
+
+          <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {others.map((project: any, index: number) => (
               <ProjectCard key={project.slug} project={project} index={index} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats band */}
-      <section className="relative bg-sky-50 dither-bg py-16 md:py-20 px-5 md:px-8">
-        <div className="container-x grid grid-cols-2 gap-8 md:grid-cols-4">
-          {[
-            { n: 25, s: '+', l: 'Years of experience', count: true },
-            { n: 60, s: '+', l: 'Apartments built', count: true },
-            { n: 4, s: '', l: 'Projects, all RERA registered', count: true },
-            { n: 2025, s: '', l: 'V Grand Infra established', count: false },
-          ].map((s) => (
-            <Reveal key={s.l} className="text-center">
-              <p className="font-heading text-[clamp(40px,6vw,68px)] leading-none !text-forest">
-                {s.count ? <Counter to={s.n} suffix={s.s} /> : `${s.n}${s.s}`}
+      {/* About / founder, with the key numbers underneath */}
+      <section className="section bg-forest text-white">
+        <div className="container-x">
+          <div className="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
+            <Reveal>
+              <p className="eyebrow !text-meadow-400">Trusted Builders in Ongole</p>
+              <h2 className="mt-4 font-heading text-white">Infrastructure company in Prakasam district</h2>
+              <p className="mt-6 !text-white/75 !text-[17px]">
+                V Grand Infra, led by T. Vinod Kumar, has emerged as one of the <strong className="text-white">top real estate developers in Ongole</strong>. With a foundation built on 25+ years of cross-industry expertise, we are the preferred choice for families seeking <strong className="text-white">high quality construction in Ongole</strong>. Our mission is to deliver premium <strong className="text-white">residential projects in Ongole</strong> at honest prices, starting with <strong className="text-white">Elite Homes</strong> — the first gated community in Koppolu near the NH-16 highway. As <strong className="text-white">trusted builders in Ongole</strong>, we prioritize structural integrity and long-term value in every home.
               </p>
-              <p className="mt-3 text-[13px] uppercase tracking-[0.16em] !text-forest/60">{s.l}</p>
+              <Link href="/about" className="btn btn-light mt-8">
+                Our story <ArrowRight size={16} />
+              </Link>
             </Reveal>
-          ))}
+            <Reveal delay={0.1}>
+              <div className="mx-auto max-w-md">
+                <Image
+                  src="/images/founder-vinod-kumar.jpg"
+                  alt="Vinod Kumar Talasila, founder of V Grand Infra"
+                  width={1200}
+                  height={1800}
+                  className="aspect-[4/5] w-full rounded-xl object-cover"
+                />
+                <p className="mt-3 text-[13px] !text-white/65">Vinod Kumar Talasila — Founder, V Grand Infra</p>
+              </div>
+            </Reveal>
+          </div>
+
+          <dl className="mt-16 grid grid-cols-2 gap-y-8 border-t border-white/20 pt-10 md:grid-cols-4">
+            {[
+              { n: 25, s: '+', l: 'Years of experience', count: true },
+              { n: 60, s: '+', l: 'Apartments built', count: true },
+              { n: 4, s: '', l: 'Projects, all RERA registered', count: true },
+              { n: 2025, s: '', l: 'V Grand Infra established', count: false },
+            ].map((x) => (
+              <div key={x.l}>
+                <dd className="font-heading text-[clamp(36px,4.4vw,56px)] leading-none tabular-nums text-white">
+                  {x.count ? <Counter to={x.n} suffix={x.s} /> : `${x.n}${x.s}`}
+                </dd>
+                <dt className="mt-2 text-[13px] text-white/65">{x.l}</dt>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
-      {/* About / founder */}
-      <section className="section bg-forest text-white relative overflow-hidden">
-        <div className="dither-bg-dark absolute inset-0 pointer-events-none" aria-hidden />
-        <div className="container-x relative grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
-          <Reveal>
-            <p className="eyebrow !text-meadow-400">Trusted Builders in Ongole</p>
-            <h2 className="mt-4 font-heading text-white">Infrastructure company in Prakasam district</h2>
-            <p className="mt-6 !text-white/75 !text-[17px]">
-              V Grand Infra, led by T. Vinod Kumar, has emerged as one of the <strong className="text-white">top real estate developers in Ongole</strong>. With a foundation built on 25+ years of cross-industry expertise, we are the preferred choice for families seeking <strong className="text-white">high quality construction in Ongole</strong>. Our mission is to deliver premium <strong className="text-white">residential projects in Ongole</strong> at honest prices, starting with <strong className="text-white">Elite Homes</strong> — the first gated community in Koppolu near the NH-16 highway. As <strong className="text-white">trusted builders in Ongole</strong>, we prioritize structural integrity and long-term value in every home.
-            </p>
-            <Link href="/about" className="btn btn-light mt-8">
-              Our story <ArrowRight size={16} />
-            </Link>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <div className="relative mx-auto max-w-md">
-              <div className="absolute -inset-3 rounded-organic border border-meadow-400/40" aria-hidden />
-              <Image
-                src="/images/founder-vinod-kumar.jpg"
-                alt="Vinod Kumar Talasila, founder of V Grand Infra"
-                width={1200}
-                height={1800}
-                className="relative aspect-[4/5] w-full rounded-organic object-cover"
-              />
-              <p className="mt-4 text-center text-[13px] !text-white/60">Vinod Kumar Talasila — Founder, V Grand Infra</p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Why choose us */}
+      {/* What you get — plain ruled list, no cards or icons */}
       <section className="section">
         <div className="container-x">
           <Reveal className="max-w-2xl">
-            <p className="eyebrow">Quality Commitment</p>
-            <h2 className="mt-4 font-heading text-forest">Why choose V Grand Infra?</h2>
+            <h2 className="font-heading text-forest">What you get when you buy from V Grand Infra</h2>
           </Reveal>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-x-14 gap-y-10 md:grid-cols-2">
             {values.map((v, i) => (
-              <Reveal key={v.title} delay={i * 0.07}>
-                <div className="card h-full p-7 transition-transform duration-300 hover:-translate-y-1">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-meadow/12 text-meadow-600">
-                    <v.icon size={24} />
-                  </span>
-                  <h3 className="mt-5 font-heading text-[22px] text-forest">{v.title}</h3>
-                  <p className="mt-3 !text-[15px]">{renderSafeHtml(v.body)}</p>
+              <Reveal key={v.title} delay={(i % 2) * 0.06}>
+                <div className="border-t border-forest/25 pt-5">
+                  <h3 className="font-heading text-[24px] text-forest">{v.title}</h3>
+                  <p className="mt-3 !text-[16px]">{renderSafeHtml(v.body)}</p>
                 </div>
               </Reveal>
+            ))}
+          </div>
+
+          <div className="mt-20 grid gap-8 border-t border-forest/25 pt-8 md:grid-cols-3">
+            {nextSteps.map((t) => (
+              <Link key={t.title} href={t.href} className="group block">
+                <span className="flex items-center justify-between font-heading text-[22px] text-forest">
+                  {t.title}
+                  <ArrowRight size={20} className="text-meadow-600 transition-transform group-hover:translate-x-1" />
+                </span>
+                <span className="mt-1 block text-[15px] text-forest/70">{t.body}</span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Tools */}
-      <section className="px-5 md:px-8 pb-20 md:pb-28">
-        <div className="container-x grid gap-5 md:grid-cols-3">
-          {tools.map((t, i) => (
-            <Reveal key={t.title} delay={i * 0.07}>
-              <Link href={t.href} className="group flex items-center gap-5 rounded-[1.5rem] border border-forest/10 bg-cream p-6 transition-all hover:bg-forest hover:border-forest">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-meadow-600">
-                  <t.icon size={26} />
-                </span>
-                <span className="flex-1">
-                  <span className="block font-heading text-[20px] text-forest group-hover:text-white transition-colors">{t.title}</span>
-                  <span className="block text-[14px] text-forest/60 group-hover:text-white/70 transition-colors">{t.body}</span>
-                </span>
-                <ArrowRight size={20} className="text-meadow-600 transition-transform group-hover:translate-x-1 group-hover:text-white" />
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
       {/* Happy families — appears automatically once real testimonials are added to src/data/testimonials.ts */}
       {testimonials.length > 0 && (
-        <section className="section bg-cream">
+        <section className="section border-t border-forest/15">
           <div className="container-x">
             <Reveal className="max-w-2xl">
-              <p className="eyebrow">Happy families</p>
-              <h2 className="mt-4 font-heading text-forest">In their own words</h2>
+              <h2 className="font-heading text-forest">In their own words</h2>
             </Reveal>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {testimonials.map((t, i) => (
@@ -256,39 +277,39 @@ export default async function Home() {
       )}
 
       {/* FAQ */}
-      <section className="section bg-cream">
+      <section className="section border-t border-forest/15">
         <div className="mx-auto max-w-[900px]">
           <Reveal>
-            <p className="eyebrow">Expert Guidance</p>
-            <h2 className="mt-4 font-heading text-forest">Ongole real estate market insights</h2>
+            <h2 className="font-heading text-forest">Ongole real estate: your questions answered</h2>
           </Reveal>
-          <div className="mt-10 divide-y divide-forest/10 border-y border-forest/10">
+          <div className="mt-10 divide-y divide-forest/15 border-y border-forest/15">
             {faqs.map((f) => (
               <details key={f.q} className="group py-6">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-heading text-[20px] text-forest">
                   {f.q}
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-forest/20 text-xl leading-none transition-transform group-open:rotate-45">+</span>
+                  <span className="text-[28px] font-light leading-none text-meadow-600 transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-4 !text-[15px]">{renderSafeHtml(f.a)}</p>
               </details>
             ))}
           </div>
-          <div className="mt-12">
+          <div className="mt-10">
             <WhatsAppButton variant="banner" phoneNumber={SITE_WHATSAPP_NUMBER} title="Invest in the best real estate company in Ongole today!" />
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative overflow-hidden bg-meadow-700 px-5 py-24 text-center md:px-8">
-        <div className="dither-bg-dark absolute inset-0" aria-hidden />
-        <div className="relative mx-auto max-w-[720px]">
-          <h2 className="font-heading text-white">Premium lifestyle apartments in Ongole.</h2>
-          <p className="mt-5 !text-white/85">
-            Looking for <strong>flats in Ongole for sale</strong>? Explore our <strong>new housing projects in Ongole 2026</strong> and secure your investment in the <strong>best infrastructure projects in Ongole</strong>.
-          </p>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/projects" className="btn btn-light">Explore projects in Prakasam</Link>
+      {/* Closing call to action */}
+      <section className="border-t border-forest/15 bg-cream px-5 py-20 md:px-8 md:py-24">
+        <div className="container-x grid items-center gap-10 md:grid-cols-[1.4fr_1fr]">
+          <div>
+            <h2 className="font-heading text-forest">Visit Elite Homes in Koppolu</h2>
+            <p className="mt-4 max-w-xl">
+              Looking for <strong>flats in Ongole for sale</strong>? Explore our <strong>new housing projects in Ongole 2026</strong> and secure your investment in the <strong>best infrastructure projects in Ongole</strong>.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 md:justify-end">
+            <Link href="/site-visit" className="btn btn-primary">Book a site visit</Link>
             <WhatsAppButton variant="pill" phoneNumber={SITE_WHATSAPP_NUMBER} showText={true} />
           </div>
         </div>

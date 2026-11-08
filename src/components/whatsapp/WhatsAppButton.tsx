@@ -65,10 +65,10 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
   };
 
   const buttonClasses = {
-    floating: "fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-1.5 md:gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-3 py-2 md:px-4 md:py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-green-300/50 group cursor-pointer border-none",
-    inline: "inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 shadow-md cursor-pointer border-none",
-    banner: "flex w-full items-center justify-between bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white px-6 py-4 rounded-2xl hover:opacity-95 transition-opacity shadow-lg cursor-pointer border-none",
-    pill: "inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-6 py-2.5 rounded-full font-semibold transition-all duration-200 hover:scale-105 shadow-md cursor-pointer border-none"
+    floating: "fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 bg-[#1da851] hover:bg-[#188a43] text-white px-4 py-3 rounded-lg shadow-md transition-colors duration-200 cursor-pointer border-none",
+    inline: "inline-flex items-center gap-2 bg-[#1da851] hover:bg-[#188a43] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 cursor-pointer border-none",
+    banner: "flex w-full items-center justify-between gap-4 rounded-xl border border-forest/20 bg-white px-6 py-4 text-left text-[#1da851] transition-colors duration-200 hover:border-forest/50 cursor-pointer",
+    pill: "inline-flex items-center gap-2 bg-[#1da851] hover:bg-[#188a43] text-white px-6 py-3 rounded-lg text-sm font-semibold transition-colors duration-200 cursor-pointer border-none"
   };
 
   if (variant === 'floating') {
@@ -76,7 +76,6 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
       <button onClick={handleCapture} className={buttonClasses.floating} aria-label="Chat on WhatsApp">
         <WhatsAppIcon size={20} />
         <span className="text-xs md:text-sm font-semibold">Chat with us</span>
-        <span className="absolute -inset-1 rounded-full bg-[#25D366] opacity-30 animate-ping group-hover:opacity-0" />
       </button>
     );
   }
@@ -103,10 +102,10 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
   return (
     <button onClick={handleCapture} className={buttonClasses.banner}>
       <div className="text-left">
-        <p className="font-bold text-lg">{title || "Enquire on WhatsApp"}</p>
-        <p className="text-green-100 text-sm mt-0.5">Our team responds within 2 hours</p>
+        <p className="!text-forest font-heading font-semibold !text-[19px] leading-snug">{title || "Enquire on WhatsApp"}</p>
+        <p className="!text-forest/70 !text-[14px] mt-0.5">Our team responds within 2 hours</p>
       </div>
-      <WhatsAppIcon size={32} />
+      <WhatsAppIcon size={28} />
     </button>
   );
 };

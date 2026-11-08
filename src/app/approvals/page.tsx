@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, BadgeCheck, ArrowUpRight, Hospital, Home, Building2 } from 'lucide-react';
+import { ShieldCheck, ArrowUpRight, Hospital, Home, Building2 } from 'lucide-react';
 import PageHero from '@/components/ui/PageHero';
 import Reveal from '@/components/ui/Reveal';
 import { approvals, buyerChecklist } from '@/data/approvals';
@@ -19,14 +19,13 @@ export default function ApprovalsPage() {
   return (
     <>
       <PageHero
-        eyebrow="Approvals & legal"
-        title={<>Registered, transparent, <span className="italic text-meadow-600">verifiable.</span></>}
-        intro="V Grand Infra is a RERA registered developer, and every one of our projects is registered with it. Here is everything in one place — so you can check it yourself."
+        title="Every V Grand project is RERA registered"
+        intro="V Grand Infra is the registered developer, and each project is registered under it. Check the details yourself."
       />
 
       <section className="section !pt-10">
         <div className="container-x">
-          <Reveal className="mb-10 flex items-center gap-3 rounded-2xl bg-meadow/10 px-5 py-4 text-[15px] text-forest">
+          <Reveal className="mb-10 flex items-center gap-3 rounded-lg bg-meadow/10 px-5 py-4 text-[15px] text-forest">
             <ShieldCheck className="shrink-0 text-meadow-600" size={22} />
             <span>V Grand Infra is the registered developer. Elite Homes, Tripura, V Grand Gateway and V Grand Healthcare are all registered under it.</span>
           </Reveal>
@@ -38,22 +37,19 @@ export default function ApprovalsPage() {
                 <Reveal key={a.entity} delay={(i % 2) * 0.07}>
                   <article className="card flex h-full flex-col gap-5 p-7">
                     <div className="flex items-start justify-between gap-4">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-forest text-white"><Icon size={22} /></span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-meadow/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-meadow-700">
-                        <BadgeCheck size={14} /> RERA registered
-                      </span>
+                      <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-forest text-white"><Icon size={22} /></span>
                     </div>
                     <div>
                       <h2 className="font-heading !text-[26px] text-forest">{a.entity}</h2>
-                      {a.note && <p className="mt-1 text-[14px] !text-forest/60">{a.note}</p>}
+                      {a.note && <p className="mt-1 text-[14px] !text-forest/70">{a.note}</p>}
                     </div>
                     <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-forest/10 pt-5">
                       <div>
-                        <span className="block text-[11px] uppercase tracking-[0.16em] text-forest/50">Registration no.</span>
+                        <span className="block text-[11px] uppercase tracking-[0.16em] text-forest/70">Registration no.</span>
                         {a.reraNo ? (
                           <span className="font-mono text-[17px] text-forest">{a.reraNo}</span>
                         ) : (
-                          <span className="text-[14px] text-forest/60">Number being added — call us for a copy</span>
+                          <span className="text-[14px] text-forest/70">Number being added — call us for a copy</span>
                         )}
                       </div>
                       {a.slug && (

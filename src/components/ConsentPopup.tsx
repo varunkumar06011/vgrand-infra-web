@@ -46,7 +46,7 @@ export default function ConsentPopup() {
     <div
       role="dialog"
       aria-label="Terms and privacy"
-      className="consent-popup-card fixed inset-x-3 bottom-3 z-[99999] mx-auto max-w-[760px] rounded-2xl border border-forest/10 bg-white/95 p-4 shadow-lift backdrop-blur-md md:bottom-5 md:p-5"
+      className="consent-popup-card fixed inset-x-3 bottom-3 z-[99999] mx-auto max-w-[760px] rounded-lg border border-forest/10 bg-white/95 p-4 shadow-lift backdrop-blur-md md:bottom-5 md:p-5"
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
         <div className="min-w-0 flex-1">
@@ -61,7 +61,7 @@ export default function ConsentPopup() {
             </Link>
             .
           </p>
-          <label className="mt-2 flex cursor-pointer items-start gap-2 text-[12px] leading-snug text-forest/65">
+          <label className="mt-2 flex cursor-pointer items-start gap-2 text-[12px] leading-snug text-forest/70">
             <input
               type="checkbox"
               checked={contactOk}
