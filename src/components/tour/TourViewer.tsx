@@ -665,7 +665,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                   >
                     <span className={`flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 pl-2.5 pr-1.5 py-1.5 text-white text-[11px] font-semibold tracking-wide shadow-lg animate-[tourFloat_2.6s_ease-in-out_infinite] ${guideHl(0)}`}>
                       {linkLabel(text, scene.id, l.to)}
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#C0392B]">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#3b7122]">
                         <ArrowRight size={13} />
                       </span>
                     </span>
@@ -694,7 +694,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                     <span
                       className={`relative flex items-center justify-center w-7 h-7 rounded-full border backdrop-blur-sm shadow-md ${
                         hspot.kind === 'spec'
-                          ? 'bg-[#C0392B]/85 border-white/40'
+                          ? 'bg-[#3b7122]/85 border-white/40'
                           : 'bg-black/55 border-white/30'
                       } ${guideHl(2)}`}
                     >
@@ -760,7 +760,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
           {tiltSupported && (
             <button
               onClick={enableTilt}
-              className={`${glassBtn} ${tiltOn ? '!bg-[#C0392B]/80' : ''}`}
+              className={`${glassBtn} ${tiltOn ? '!bg-[#3b7122]/80' : ''}`}
               aria-label={tiltOn ? ui.gyroOn : ui.gyroOff}
               aria-pressed={tiltOn}
             >
@@ -769,7 +769,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
           )}
           <button
             onClick={() => setGuideStep(0)}
-            className={`${glassBtn} ${guideStep !== null ? '!bg-[#C0392B]/80' : ''}`}
+            className={`${glassBtn} ${guideStep !== null ? '!bg-[#3b7122]/80' : ''}`}
             aria-label={ui.replayGuide}
             aria-pressed={guideStep !== null}
           >
@@ -777,7 +777,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
           </button>
           <button
             onClick={() => setMapOpen((m) => !m)}
-            className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
+            className={`${glassBtn} ${mapOpen ? '!bg-[#3b7122]/80' : ''}`}
             aria-label={ui.floorPlan}
             aria-pressed={mapOpen}
           >
@@ -829,7 +829,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
         {tiltSupported && (
           <button
             onClick={enableTilt}
-            className={`${glassBtn} ${tiltOn ? '!bg-[#C0392B]/80' : ''}`}
+            className={`${glassBtn} ${tiltOn ? '!bg-[#3b7122]/80' : ''}`}
             aria-label={tiltOn ? ui.gyroOn : ui.gyroOff}
             aria-pressed={tiltOn}
           >
@@ -838,7 +838,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
         )}
         <button
           onClick={() => setGuideStep(0)}
-          className={`${glassBtn} ${guideStep !== null ? '!bg-[#C0392B]/80' : ''}`}
+          className={`${glassBtn} ${guideStep !== null ? '!bg-[#3b7122]/80' : ''}`}
           aria-label={ui.replayGuide}
           aria-pressed={guideStep !== null}
         >
@@ -846,7 +846,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
         </button>
         <button
           onClick={() => setMapOpen((m) => !m)}
-          className={`${glassBtn} ${mapOpen ? '!bg-[#C0392B]/80' : ''}`}
+          className={`${glassBtn} ${mapOpen ? '!bg-[#3b7122]/80' : ''}`}
           aria-label={ui.floorPlan}
           aria-pressed={mapOpen}
         >
@@ -960,14 +960,14 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                   <span
                     key={i}
                     className={`h-1 rounded-full transition-all ${
-                      i === guideStep ? 'w-4 bg-[#C0392B]' : 'w-1.5 bg-white/25'
+                      i === guideStep ? 'w-4 bg-[#3b7122]' : 'w-1.5 bg-white/25'
                     }`}
                   />
                 ))}
               </div>
               <button
                 onClick={advanceGuide}
-                className="rounded-full bg-[#C0392B] hover:bg-[#a93226] text-white text-[11px] font-bold px-4 py-2 cursor-pointer"
+                className="rounded-full bg-[#3b7122] hover:bg-[#2f5d1e] text-white text-[11px] font-bold px-4 py-2 cursor-pointer"
               >
                 {guideStep === ui.guideSteps.length - 1 ? ui.guideDone : ui.guideNext}
               </button>
@@ -983,12 +983,12 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 14 }}
-            className="absolute z-30 inset-x-4 mx-auto bottom-28 max-w-sm rounded-xl bg-white text-[#1a1a1a] shadow-2xl border border-[#e8d5d5]"
+            className="absolute z-30 inset-x-4 mx-auto bottom-28 max-w-sm rounded-xl bg-white text-[#1a1a1a] shadow-2xl border border-[#dfe5d6]"
           >
             <div className="flex items-start justify-between gap-3 p-4">
               <div>
                 <p
-                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#C0392B]"
+                  className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#3b7122]"
                   style={{ fontFamily: headFont }}
                 >
                   {hotspot.kind === 'spec' ? ui.specTag : ui.fitoutTag}
@@ -1047,7 +1047,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                       setMenuOpen(false);
                     }}
                     className={`relative rounded-lg overflow-hidden text-left border cursor-pointer ${
-                      i === index ? 'border-[#C0392B] ring-1 ring-[#C0392B]' : 'border-white/10'
+                      i === index ? 'border-[#3b7122] ring-1 ring-[#3b7122]' : 'border-white/10'
                     }`}
                   >
                     <img
@@ -1105,9 +1105,9 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-40 flex items-center justify-center p-4"
           >
-            <div className="w-full max-w-md rounded-2xl bg-white text-[#1a1a1a] shadow-2xl border border-[#e8d5d5] p-6 md:p-8 text-center">
+            <div className="w-full max-w-md rounded-2xl bg-white text-[#1a1a1a] shadow-2xl border border-[#dfe5d6] p-6 md:p-8 text-center">
               <p
-                className="text-[10px] font-bold tracking-[0.24em] uppercase text-[#C0392B]"
+                className="text-[10px] font-bold tracking-[0.24em] uppercase text-[#3b7122]"
                 style={{ fontFamily: headFont }}
               >
                 {tour.projectName} · {text.meta.area}
@@ -1137,7 +1137,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                 />
                 <button
                   onClick={() => setEnquireOpen(true)}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#C0392B] hover:bg-[#a93226] text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer border-none text-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#3b7122] hover:bg-[#2f5d1e] text-white px-6 py-3 rounded-xl font-semibold transition-all cursor-pointer border-none text-sm"
                 >
                   <CalendarCheck size={18} /> {ui.bookVisit}
                 </button>
@@ -1146,7 +1146,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                 </div>
                 <button
                   onClick={() => userGoTo(0)}
-                  className="w-full inline-flex items-center justify-center gap-2 text-[#C0392B] px-6 py-2.5 rounded-xl font-semibold hover:bg-[#fff5f5] transition-colors cursor-pointer border-none text-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 text-[#3b7122] px-6 py-2.5 rounded-xl font-semibold hover:bg-[#fbf7ee] transition-colors cursor-pointer border-none text-sm"
                 >
                   <RotateCcw size={16} /> {ui.restartTour}
                 </button>
@@ -1189,7 +1189,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
               </span>
               <div className="w-14 md:w-24 h-1 rounded-full bg-white/20 overflow-hidden">
                 <div
-                  className="h-full bg-[#C0392B] transition-all duration-500"
+                  className="h-full bg-[#3b7122] transition-all duration-500"
                   style={{ width: `${((index + 1) / scenes.length) * 100}%` }}
                 />
               </div>
@@ -1204,7 +1204,7 @@ export default function TourViewer({ tour, initialIndex = 0, onClose, lang, text
                   aria-current={i === index}
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-colors cursor-pointer ${
                     i === index
-                      ? 'bg-[#C0392B] border-[#C0392B] text-white'
+                      ? 'bg-[#3b7122] border-[#3b7122] text-white'
                       : 'bg-white/10 border-white/15 text-white/80 hover:bg-white/20'
                   }`}
                 >

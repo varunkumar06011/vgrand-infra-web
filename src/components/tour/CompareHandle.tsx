@@ -104,7 +104,7 @@ export default function CompareHandle({ pos, onChange, label, beforeLabel, after
           aria-valuemax={100}
           aria-valuenow={Math.round(pos)}
           onKeyDown={onKeyDown}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full bg-white text-[#1a1a1a] shadow-xl border border-black/10 outline-none focus-visible:ring-2 focus-visible:ring-[#C0392B] cursor-ew-resize"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full bg-white text-[#1a1a1a] shadow-xl border border-black/10 outline-none focus-visible:ring-2 focus-visible:ring-[#3b7122] cursor-ew-resize"
         >
           <MoveHorizontal size={18} />
         </div>

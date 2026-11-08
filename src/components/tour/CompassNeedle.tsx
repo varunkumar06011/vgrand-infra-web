@@ -11,7 +11,7 @@ export default function CompassNeedle({ heading }: { heading: number }) {
         N
       </text>
       <g transform={`rotate(${heading} 8 8)`}>
-        <path d="M 8 4.6 L 9.1 8 L 8 11.4 L 6.9 8 Z" fill="#C0392B" />
+        <path d="M 8 4.6 L 9.1 8 L 8 11.4 L 6.9 8 Z" fill="#3b7122" />
         <circle cx={8} cy={8} r={0.9} fill="#fff" />
       </g>
     </svg>

@@ -114,7 +114,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
                     type="text"
                     id="name"
                     required
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#C0392B] focus:border-transparent outline-none transition-all text-slate-800"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3b7122] focus:border-transparent outline-none transition-all text-slate-800"
                     placeholder="Enter your full name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -128,7 +128,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
                     id="phone"
                     required
                     maxLength={10}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#C0392B] focus:border-transparent outline-none transition-all text-slate-800"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3b7122] focus:border-transparent outline-none transition-all text-slate-800"
                     placeholder="10 digit mobile number"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
@@ -140,7 +140,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
                   <select
                     id="property"
                     required
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#C0392B] focus:border-transparent outline-none transition-all text-slate-800 appearance-none bg-[url('https://cdn-icons-png.flaticon.com/512/2985/2985150.png')] bg-[length:12px] bg-[right_1.25rem_center] bg-no-repeat"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3b7122] focus:border-transparent outline-none transition-all text-slate-800 appearance-none bg-[url('https://cdn-icons-png.flaticon.com/512/2985/2985150.png')] bg-[length:12px] bg-[right_1.25rem_center] bg-no-repeat"
                     value={formData.interested_flat}
                     onChange={(e) => setFormData({ ...formData, interested_flat: e.target.value })}
                   >
@@ -161,7 +161,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 bg-[#C0392B] text-white font-bold rounded-xl shadow-lg shadow-red-900/20 hover:bg-[#a93226] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                  className="w-full py-4 bg-[#3b7122] text-white font-bold rounded-xl shadow-lg shadow-red-900/20 hover:bg-[#2f5d1e] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" size={20} />

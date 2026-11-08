@@ -65,7 +65,7 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
       <section style={{ marginBottom: 56 }}>
         {/* Heading */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ width: 3, height: 18, background: '#C0392B', borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ width: 3, height: 18, background: '#3b7122', borderRadius: 2, flexShrink: 0 }} />
           <h2 style={{
             fontFamily: 'var(--font-heading, Georgia, serif)',
             color: '#1a1a1a', fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: '-0.3px',
@@ -74,7 +74,7 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
           </h2>
           <span style={{
             fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
-            color: '#C0392B', background: '#fff5f5', border: '1px solid #f5c6c6',
+            color: '#3b7122', background: '#fbf7ee', border: '1px solid #f5c6c6',
             borderRadius: 4, padding: '2px 8px',
           }}>
             {images.length} photos
@@ -98,7 +98,7 @@ export default function ConstructionUpdateSlideshow({ projectId, initialImages }
               style={{
                 flexShrink: 0, scrollSnapAlign: 'start',
                 width: 160, height: 120, borderRadius: 8, overflow: 'hidden',
-                border: '1.5px solid #e8d5d5', background: '#f5f5f5',
+                border: '1.5px solid #dfe5d6', background: '#f5f5f5',
                 padding: 0, cursor: 'pointer', position: 'relative',
                 transition: 'transform 0.18s ease, box-shadow 0.18s ease',
               }}

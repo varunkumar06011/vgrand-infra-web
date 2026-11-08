@@ -68,11 +68,11 @@ export default function FlatWalkthrough() {
         style={{
           position: 'relative', display: 'block', width: '100%', aspectRatio: '16 / 9', maxHeight: 460,
           border: 'none', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', padding: 0,
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #3a2f25 55%, #C0392B 130%)',
+          background: 'linear-gradient(135deg, #1a1a1a 0%, #3a2f25 55%, #3b7122 130%)',
         }}
       >
         <span style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#fff' }}>
-          <span style={{ width: 72, height: 72, borderRadius: '50%', background: '#C0392B', display: 'grid', placeItems: 'center', boxShadow: '0 8px 30px rgba(192,57,43,.5)' }}>
+          <span style={{ width: 72, height: 72, borderRadius: '50%', background: '#3b7122', display: 'grid', placeItems: 'center', boxShadow: '0 8px 30px rgba(192,57,43,.5)' }}>
             <Move3d size={34} />
           </span>
           <span style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(18px, 3vw, 26px)', fontWeight: 700 }}>

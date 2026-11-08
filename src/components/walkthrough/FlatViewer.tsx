@@ -14,7 +14,7 @@ type WalkMeta = {
   spawn?: { x: number; z: number; lookX: number; lookZ: number };
 };
 
-const RED = '#C0392B';
+const RED = '#3b7122';
 const STICK_R = 52; // joystick travel radius in px
 
 /**

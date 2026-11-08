@@ -3,182 +3,256 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Phone, Mail, ChevronDown, ArrowUpRight } from 'lucide-react';
 import EnquireModal from './EnquireModal';
+import { navLinks, navProjects } from '@/data/nav';
+import {
+  SITE_PHONE_DISPLAY,
+  SITE_PHONE_TEL,
+  SITE_EMAIL,
+  SITE_HOURS,
+} from '@/lib/site';
 
-const InstagramIcon = ({ size = 24 }: { size?: number }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-);
-
-const FacebookIcon = ({ size = 24 }: { size?: number }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-);
-
-const navLinks = [
-  { name: 'Home', href: '/' },
-  { name: 'Projects', href: '/projects' },
-  { name: 'About', href: '/about' },
-  { name: 'Gallery', href: '/gallery' },
-  { name: 'Contact', href: '/contact' },
-];
+// Pages whose first section is a full-bleed dark/photo hero: the bar starts transparent with light text.
+const HERO_PATHS = ['/'];
 
 const Navbar = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isEnquireModalOpen, setIsEnquireModalOpen] = useState(false);
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [enquireOpen, setEnquireOpen] = useState(false);
+
+  const overHero = HERO_PATHS.includes(pathname) && !scrolled;
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMobileOpen(false);
+    setProjectsOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
+
+  // The hero base is pale, so nav text stays dark on every page.
+  const textTone = 'text-forest';
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-[1000] bg-white border-b border-[#f0e0e0] h-[84px] flex items-center justify-between px-8 w-full shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
-    >
-      <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center no-underline">
-          <div className="relative w-[58px] h-[58px] md:w-[72px] md:h-[72px]">
-            <Image
-              src="/icon.io/apple-touch-icon.png"
-              alt="V Grand Infra Logo"
-              fill
-              priority
-              unoptimized={true}
-              className="rounded-[10px] object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.1)]"
-            />
-          </div>
-        </Link>
-
-        {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-6 desktop-nav">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors text-sm font-medium uppercase tracking-wider"
-            >
-              {link.name}
-            </Link>
-          ))}
-
-          {/* Social Icons */}
-          <div className="flex items-center gap-4 px-3 border-l border-slate-200">
-            <a 
-              href="https://www.instagram.com/vgrandinfra?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-slate-600 hover:text-[#C0392B] transition-colors"
-              aria-label="Instagram"
-            >
-              <InstagramIcon size={18} />
+    <header className="fixed inset-x-0 top-0 z-[1000]">
+      {/* Utility bar — collapses once the page is scrolled */}
+      <div
+        className={`hidden lg:block overflow-hidden bg-forest text-white/80 text-[12px] transition-all duration-300 ${
+          scrolled ? 'max-h-0 opacity-0' : 'max-h-10 opacity-100'
+        }`}
+      >
+        <div className="container-x flex h-10 items-center justify-between px-8">
+          <span className="tracking-wide">{SITE_HOURS}</span>
+          <div className="flex items-center gap-6">
+            <a href={`mailto:${SITE_EMAIL}`} className="flex items-center gap-2 hover:text-white transition-colors">
+              <Mail size={13} /> {SITE_EMAIL}
             </a>
-            <a 
-              href="https://www.facebook.com/VGrandInfra/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-slate-600 hover:text-[#C0392B] transition-colors"
-              aria-label="Facebook"
-            >
-              <FacebookIcon size={18} />
+            <a href={`tel:${SITE_PHONE_TEL}`} className="flex items-center gap-2 hover:text-white transition-colors">
+              <Phone size={13} /> {SITE_PHONE_DISPLAY}
             </a>
           </div>
-
-
-          {/* Enquire Now */}
-          <button
-            onClick={() => setIsEnquireModalOpen(true)}
-            className="text-sm font-semibold uppercase tracking-wider px-4 py-2 rounded text-white transition-colors bg-[#C0392B] hover:bg-[#a93226]"
-          >
-            Enquire Now
-          </button>
-        </div>
-
-        {/* Mobile Header Items */}
-        <div className="lg:hidden flex items-center gap-3">
-          <div className="flex items-center gap-3 mr-1">
-            <a href="https://www.instagram.com/vgrandinfra?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors"
-               aria-label="Instagram">
-              <InstagramIcon size={19} />
-            </a>
-            <a href="https://www.facebook.com/VGrandInfra/" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors"
-               aria-label="Facebook">
-              <FacebookIcon size={19} />
-            </a>
-          </div>
-
-          <button
-            onClick={() => setIsEnquireModalOpen(true)}
-            className="text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded text-white transition-colors bg-[#C0392B] hover:bg-[#a93226]"
-          >
-            Enquire Now
-          </button>
-          
-          <button
-            className="text-[#1a1a1a] hover:text-[#C0392B] transition-colors mobile-menu-btn"
-            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="lg:hidden absolute top-full left-0 right-0 overflow-hidden bg-white border-t border-[#f0e0e0] shadow-xl"
-          >
-            <div className="flex flex-col px-6 py-6 gap-5">
-              {navLinks.map((link) => (
+      <nav
+        aria-label="Main"
+        className={`transition-all duration-300 ${
+          overHero
+            ? 'bg-transparent'
+            : 'bg-petal/90 backdrop-blur-md border-b border-forest/10 shadow-[0_6px_24px_-12px_rgba(20,48,28,0.25)]'
+        }`}
+      >
+        <div className="container-x flex h-[64px] lg:h-[76px] items-center justify-between px-5 lg:px-8">
+          <Link href="/" className="flex items-center gap-3" aria-label="V Grand Infra — home">
+            <span className="relative block h-11 w-11 lg:h-12 lg:w-12">
+              <Image
+                src="/icon.io/apple-touch-icon.png"
+                alt=""
+                fill
+                priority
+                unoptimized
+                className="rounded-xl object-contain"
+              />
+            </span>
+            <span className={`hidden sm:block font-heading text-xl leading-none ${textTone}`}>
+              V Grand <span className="italic text-meadow-400">Infra</span>
+            </span>
+          </Link>
+
+          {/* Desktop links */}
+          <div className="hidden lg:flex items-center gap-1">
+            {navLinks.map((link) =>
+              'dropdown' in link && link.dropdown ? (
+                <div
+                  key={link.name}
+                  className="relative"
+                  onMouseEnter={() => setProjectsOpen(true)}
+                  onMouseLeave={() => setProjectsOpen(false)}
+                >
+                  <Link
+                    href={link.href}
+                    className={`flex items-center gap-1 rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${textTone} ${
+                      isActive(link.href) ? 'bg-meadow/15' : 'hover:bg-meadow/10'
+                    }`}
+                  >
+                    {link.name}
+                    <ChevronDown size={14} className={`transition-transform ${projectsOpen ? 'rotate-180' : ''}`} />
+                  </Link>
+
+                  <AnimatePresence>
+                    {projectsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.18 }}
+                        className="absolute left-1/2 top-full w-[380px] -translate-x-1/2 pt-3"
+                      >
+                        <div className="rounded-3xl bg-white p-3 shadow-lift border border-forest/10">
+                          {(['Ongoing', 'Upcoming'] as const).map((group) => (
+                            <div key={group} className="mb-1 last:mb-0">
+                              <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-meadow-600">
+                                {group}
+                              </p>
+                              {navProjects
+                                .filter((p) => p.group === group)
+                                .map((p) => (
+                                  <Link
+                                    key={p.slug}
+                                    href={`/projects/${p.slug}`}
+                                    className="flex items-center justify-between rounded-2xl px-4 py-2.5 hover:bg-cream transition-colors"
+                                  >
+                                    <span>
+                                      <span className="block font-heading text-[16px] text-forest">{p.name}</span>
+                                      <span className="block text-[12px] text-forest/60">{p.note}</span>
+                                    </span>
+                                    <ArrowUpRight size={16} className="text-meadow" />
+                                  </Link>
+                                ))}
+                            </div>
+                          ))}
+                          <Link
+                            href="/projects"
+                            className="mt-2 block rounded-2xl bg-forest px-4 py-3 text-center text-[13px] font-semibold text-white hover:bg-forest-700 transition-colors"
+                          >
+                            View all projects
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
                 <Link
                   key={link.name}
                   href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-[#1a1a1a] hover:text-[#C0392B] text-base font-medium uppercase tracking-wider transition-colors"
+                  className={`rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${textTone} ${
+                    isActive(link.href) ? 'bg-meadow/15' : 'hover:bg-meadow/10'
+                  }`}
                 >
                   {link.name}
                 </Link>
+              )
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href={`tel:${SITE_PHONE_TEL}`}
+              aria-label="Call us"
+              className="hidden md:inline-flex lg:hidden xl:inline-flex h-11 w-11 items-center justify-center rounded-full border border-forest/20 text-forest transition-colors hover:bg-forest hover:text-white"
+            >
+              <Phone size={17} />
+            </a>
+            <button
+              onClick={() => setEnquireOpen(true)}
+              className="btn btn-primary !px-5 !py-2.5 text-[13px]"
+            >
+              Enquire
+              <span className="hidden sm:inline"> Now</span>
+            </button>
+            <button
+              className={`lg:hidden ml-1 flex h-11 w-11 items-center justify-center rounded-full ${textTone}`}
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.22 }}
+            className="lg:hidden fixed inset-x-0 top-[64px] bottom-0 overflow-y-auto bg-petal px-6 pb-10 pt-4"
+          >
+            <ul className="flex flex-col">
+              {navLinks.map((link) => (
+                <li key={link.name} className="border-b border-forest/10">
+                  <Link
+                    href={link.href}
+                    className={`flex items-center justify-between py-4 font-heading text-2xl ${
+                      isActive(link.href) ? 'text-meadow-600' : 'text-forest'
+                    }`}
+                  >
+                    {link.name}
+                    <ArrowUpRight size={20} className="text-meadow" />
+                  </Link>
+                  {'dropdown' in link && link.dropdown && (
+                    <div className="pb-4 pl-1 grid gap-2">
+                      {navProjects.map((p) => (
+                        <Link
+                          key={p.slug}
+                          href={`/projects/${p.slug}`}
+                          className="flex items-center justify-between rounded-xl bg-cream px-4 py-3 text-[15px] text-forest"
+                        >
+                          <span>{p.name}</span>
+                          <span className="text-[11px] uppercase tracking-wider text-meadow-600">{p.group}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </li>
               ))}
-
-
-              {/* Mobile Social Links */}
-              <div className="flex justify-center gap-8 pt-6 mt-2 border-t border-slate-100">
-                <a 
-                  href="https://www.instagram.com/vgrandinfra?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-slate-600 hover:text-[#C0392B] transition-colors"
-                  aria-label="Instagram"
-                >
-                  <InstagramIcon size={24} />
-                </a>
-                <a 
-                  href="https://www.facebook.com/VGrandInfra/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-slate-600 hover:text-[#C0392B] transition-colors"
-                  aria-label="Facebook"
-                >
-                  <FacebookIcon size={24} />
-                </a>
-              </div>
+            </ul>
+            <div className="mt-8 grid gap-3">
+              <a href={`tel:${SITE_PHONE_TEL}`} className="btn btn-dark w-full"><Phone size={16} /> {SITE_PHONE_DISPLAY}</a>
+              <a href={`mailto:${SITE_EMAIL}`} className="btn btn-ghost w-full"><Mail size={16} /> {SITE_EMAIL}</a>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <EnquireModal 
-        isOpen={isEnquireModalOpen} 
-        onClose={() => setIsEnquireModalOpen(false)} 
-      />
-    </nav>
+      <EnquireModal isOpen={enquireOpen} onClose={() => setEnquireOpen(false)} />
+    </header>
   );
 };
 

@@ -44,7 +44,7 @@ function ChapterBlock({ progress, chapter, last, first, calm, children }: {
   );
 }
 
-const eyebrow = "text-[11px] md:text-xs tracking-[4px] uppercase font-bold text-white mb-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] before:content-[''] before:inline-block before:w-8 before:h-[2px] before:bg-[#C0392B] before:align-middle before:mr-3";
+const eyebrow = "text-[11px] md:text-xs tracking-[4px] uppercase font-bold text-white mb-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] before:content-[''] before:inline-block before:w-8 before:h-[2px] before:bg-[#3b7122] before:align-middle before:mr-3";
 const headline = 'font-heading font-extrabold text-white leading-[1.02] tracking-tight text-[clamp(34px,5.4vw,76px)] max-w-[14ch] drop-shadow-[0_4px_30px_rgba(0,0,0,0.65)]';
 const sub = 'mt-5 text-white/90 text-[15px] md:text-lg leading-relaxed max-w-[44ch] drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]';
 
@@ -139,7 +139,7 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
                 <a
                   href={tour.ctaHref}
-                  className="bg-[#C0392B] hover:bg-[#a93226] text-white py-4 px-9 rounded-md font-bold text-[15px] no-underline transition-colors"
+                  className="bg-[#3b7122] hover:bg-[#2f5d1e] text-white py-4 px-9 rounded-md font-bold text-[15px] no-underline transition-colors"
                 >
                   {tour.ctaLabel}
                 </a>
@@ -161,7 +161,7 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
         </motion.div>
 
         <div className="hidden md:block absolute right-6 top-1/2 -translate-y-1/2 h-40 w-px bg-white/20 overflow-hidden">
-          <motion.div style={{ scaleY: railScale }} className="origin-top h-full w-full bg-[#C0392B]" />
+          <motion.div style={{ scaleY: railScale }} className="origin-top h-full w-full bg-[#3b7122]" />
         </div>
       </div>
     </section>

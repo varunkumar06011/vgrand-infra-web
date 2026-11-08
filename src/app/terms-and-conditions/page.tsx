@@ -222,17 +222,17 @@ function renderContent(content: ContentItem[]) {
 
 export default function TermsAndConditionsPage() {
   return (
-    <main style={{ background: '#fff5f5', minHeight: '100vh', paddingTop: 80 }}>
-      <div style={{ background: '#1a1a1a', padding: '80px 24px' }}>
+    <main style={{ background: '#fbf7ee', minHeight: '100vh', paddingTop: 'var(--page-top)' }}>
+      <div style={{ background: '#14301c', padding: '80px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 16 }}>Legal</p>
+          <p style={{ color: '#3b7122', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 16 }}>Legal</p>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px, 5vw, 52px)', color: '#fff', fontWeight: 700, lineHeight: 1.2, marginBottom: 16 }}>Terms &amp; Conditions</h1>
           <p style={{ color: '#ccc', fontSize: 16, lineHeight: 1.7 }}>Last updated: 10 August 2026</p>
         </div>
       </div>
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '60px 24px' }}>
-        <div style={{ background: '#fff', borderRadius: 8, padding: '40px 32px', border: '1px solid #e8d5d5' }}>
+        <div style={{ background: '#fff', borderRadius: 8, padding: '40px 32px', border: '1px solid #dfe5d6' }}>
           <div style={{ marginBottom: 32 }}>
             <p style={{ color: '#555', fontSize: 15, lineHeight: 1.85, margin: '0 0 12px 0' }}>
               Welcome to Vgrand Infra (&ldquo;Company&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;, &ldquo;us&rdquo;). These Terms &amp; Conditions (&ldquo;Terms&rdquo;) govern your use of our website www.vgrandgroup.com (&ldquo;Website&rdquo;) and our services across India.
@@ -243,7 +243,7 @@ export default function TermsAndConditionsPage() {
           </div>
           {sections.map((section) => (
             <div key={section.title} style={{ marginBottom: 32 }}>
-              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, color: '#1a1a1a', fontWeight: 700, marginBottom: 12 }}>{section.title}</h2>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, color: '#14301c', fontWeight: 700, marginBottom: 12 }}>{section.title}</h2>
               {renderContent(section.content)}
             </div>
           ))}

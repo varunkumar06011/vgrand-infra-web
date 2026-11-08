@@ -113,7 +113,7 @@ export function ModeChooser({
           <button
             ref={firstRef}
             onClick={onGuided}
-            className="w-full inline-flex items-center justify-center gap-2.5 bg-[#C0392B] hover:bg-[#a93226] text-white px-5 py-3.5 rounded-xl font-semibold text-sm transition-colors cursor-pointer border-none"
+            className="w-full inline-flex items-center justify-center gap-2.5 bg-[#3b7122] hover:bg-[#2f5d1e] text-white px-5 py-3.5 rounded-xl font-semibold text-sm transition-colors cursor-pointer border-none"
           >
             <Play size={16} /> {ui.guidedTour}
           </button>
@@ -225,7 +225,7 @@ export function GuidedBar({
         aria-label={ui.guidedTag}
       >
         <div
-          className="h-full bg-[#C0392B] transition-[width] duration-300"
+          className="h-full bg-[#3b7122] transition-[width] duration-300"
           style={{ width: `${Math.min(100, progress * 100)}%` }}
         />
       </div>
@@ -236,7 +236,7 @@ export function GuidedBar({
         </button>
         <button
           onClick={onPlayPause}
-          className={`${gBtn} !w-11 !h-11 md:!w-12 md:!h-12 ${playing ? '!bg-[#C0392B]/85' : ''}`}
+          className={`${gBtn} !w-11 !h-11 md:!w-12 md:!h-12 ${playing ? '!bg-[#3b7122]/85' : ''}`}
           aria-label={playing ? ui.pause : ui.play}
         >
           {playing ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
@@ -263,7 +263,7 @@ export function GuidedBar({
         </button>
         <button
           onClick={onCc}
-          className={`${gBtn} ${ccOn ? '!bg-[#C0392B]/80' : ''}`}
+          className={`${gBtn} ${ccOn ? '!bg-[#3b7122]/80' : ''}`}
           aria-label={ccOn ? ui.captionsOn : ui.captionsOff}
           aria-pressed={ccOn}
         >

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Inter, Noto_Sans_Telugu } from 'next/font/google'
+import { Fraunces, Inter, Noto_Sans_Telugu } from 'next/font/google'
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import RouteHandler from '@/components/RouteHandler';
@@ -8,9 +8,10 @@ import "./globals.css";
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const montserrat = Montserrat({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-heading',
   display: 'swap'
 })
@@ -152,6 +153,7 @@ export default async function RootLayout({
     alternateName: 'VGrand Infra',
     url: siteUrl,
     logo: `${siteUrl}/icon.io/android-chrome-512x512.png`,
+    email: 'vgrandinfra@gmail.com',
     sameAs: [
       'https://www.facebook.com/vgrandinfra',
       'https://www.instagram.com/vgrandinfra',
@@ -191,8 +193,8 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${montserrat.variable} ${inter.variable} ${notoTelugu.variable}`} suppressHydrationWarning>
-      <body className={`${inter.className} ${montserrat.className}`} suppressHydrationWarning>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${notoTelugu.variable}`} suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         {!isAdmin && (
           <>
             <script

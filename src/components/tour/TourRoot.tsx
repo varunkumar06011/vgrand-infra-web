@@ -87,7 +87,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
     <div ref={wrapRef}>
       {/* poster card — reserves its aspect ratio, no layout shift */}
       <div
-        className="relative w-full overflow-hidden rounded-xl border border-[#e8d5d5] shadow-lg group cursor-pointer"
+        className="relative w-full overflow-hidden rounded-xl border border-[#dfe5d6] shadow-lg group cursor-pointer"
         style={{ aspectRatio: '16 / 9' }}
         onClick={() => openAt(0)}
         role="button"
@@ -121,7 +121,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
         </div>
 
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="flex items-center gap-3 rounded-full bg-[#C0392B] hover:bg-[#a93226] text-white pl-5 pr-6 py-3.5 font-semibold shadow-2xl transition-transform group-hover:scale-105">
+          <span className="flex items-center gap-3 rounded-full bg-[#3b7122] hover:bg-[#2f5d1e] text-white pl-5 pr-6 py-3.5 font-semibold shadow-2xl transition-transform group-hover:scale-105">
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
               <Play size={15} className="ml-0.5" />
             </span>
@@ -140,7 +140,7 @@ export default function TourRoot({ tour }: { tour: TourConfig }) {
           <button
             key={s.id}
             onClick={() => openAt(i)}
-            className="group relative rounded-lg overflow-hidden border border-[#e8d5d5] text-left cursor-pointer bg-white"
+            className="group relative rounded-lg overflow-hidden border border-[#dfe5d6] text-left cursor-pointer bg-white"
             aria-label={fmt(text.ui.openAtRoom, { room: text.scenes[s.id]?.room ?? s.id })}
           >
             <img

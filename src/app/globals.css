@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --forest: #14301c;
+  --meadow: #4a8a2a;
+  --sky: #2f6fdc;
+  --sky-50: #eef4fb;
+  --cream: #f6f3e8;
+  --petal: #fbf7ee;
+  --ink: #1d2a20;
+  --nav-h: 76px;
+  /* Space a page needs at the top to clear the fixed navbar (+ utility bar on desktop). */
+  --page-top: 116px;
+}
+
+@media (max-width: 1023px) {
+  :root { --page-top: 64px; }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -18,90 +35,102 @@ body {
   font-family: var(--font-body), 'Inter', sans-serif;
   font-size: 16px;
   line-height: 1.75;
-  color: #1a1a1a;
-  background: #fff5f5;
+  color: var(--ink);
+  background: var(--petal);
   overflow-x: hidden;
-  text-rendering: optimizeSpeed;
 }
 
-/* Rendering performance optimizations */
-section {
-  will-change: transform;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
-.gpu-accelerated {
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading), 'Montserrat', sans-serif;
-  font-weight: 700;
-}
-
-h1 {
-  font-size: clamp(32px, 5vw, 60px);
-}
-
-h2 {
-  font-size: clamp(26px, 4vw, 42px);
-}
-
-h3 {
-  font-size: clamp(20px, 3vw, 28px);
-}
+h1 { font-size: clamp(36px, 6vw, 72px); }
+h2 { font-size: clamp(28px, 4vw, 48px); }
+h3 { font-size: clamp(20px, 2.4vw, 28px); }
 
 p {
   font-family: var(--font-body), 'Inter', sans-serif;
   font-size: 16px;
   line-height: 1.8;
-  color: #444;
+  color: #3d4a40;
 }
 
-a {
-  text-decoration: none;
-}
+a { text-decoration: none; }
 
-button,
-input,
-select,
-textarea,
-label {
+button, input, select, textarea, label {
   font-family: var(--font-body), 'Inter', sans-serif;
 }
 
-nav,
-.nav-link {
-  font-family: var(--font-heading), 'Montserrat', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+canvas { display: block; max-width: 100vw; }
+img { max-width: 100%; display: block; }
+
+::selection { background: var(--meadow); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--sky);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
-.section-label {
-  font-family: var(--font-heading), 'Montserrat', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #C0392B;
+@layer components {
+  /* Small uppercase label that sits above section headings */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-body), sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--meadow);
+  }
+  .eyebrow::before {
+    content: '';
+    width: 28px;
+    height: 1px;
+    background: currentColor;
+  }
+
+  .section { @apply px-5 py-20 md:px-8 md:py-28; }
+  .container-x { @apply mx-auto w-full max-w-[1200px]; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-all duration-300;
+  }
+  .btn-primary { @apply bg-meadow-600 text-white hover:bg-meadow-700 hover:-translate-y-0.5 hover:shadow-lift; }
+  .btn-dark    { @apply bg-forest text-white hover:bg-forest-700 hover:-translate-y-0.5; }
+  .btn-ghost   { @apply border border-forest/25 text-forest hover:bg-forest hover:text-white; }
+  .btn-light   { @apply bg-white text-forest hover:bg-cream hover:-translate-y-0.5; }
+
+  .card {
+    @apply rounded-[1.5rem] bg-white shadow-soft border border-forest/5;
+  }
+
+  /* Soft organic edge that sits between two sections */
+  .wave-top { position: relative; }
+  .wave-top::before {
+    content: '';
+    position: absolute;
+    inset: -1px 0 auto 0;
+    height: 48px;
+    background: inherit;
+    clip-path: ellipse(60% 100% at 50% 100%);
+    transform: translateY(-99%);
+  }
 }
 
-canvas {
-  display: block;
-  max-width: 100vw;
+/* Dot-grid texture — the subtle dither accent used on section backgrounds */
+.dither-bg {
+  background-image: radial-gradient(circle, rgba(47, 111, 220, 0.22) 1px, transparent 1.6px);
+  background-size: 14px 14px;
 }
-
-img {
-  max-width: 100%;
-  display: block;
+.dither-bg-dark {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.10) 1px, transparent 1.6px);
+  background-size: 14px 14px;
 }
 
 @keyframes marquee {
@@ -110,15 +139,28 @@ img {
 }
 
 .marquee-mask {
-  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
 }
 
 .marquee-track {
   display: inline-block;
-  animation: marquee 30s linear infinite;
+  animation: marquee 40s linear infinite;
   white-space: nowrap;
 }
+
+@keyframes drift {
+  0%   { transform: translate3d(0, 0, 0); }
+  50%  { transform: translate3d(24px, -10px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+.drift-slow { animation: drift 18s ease-in-out infinite; }
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.floaty { animation: floaty 6s ease-in-out infinite; }
 
 /* Virtual tour — slow drift so still photos feel like moving through
    the room (Ken Burns). Applied to the inner photo layer in PhotoStage. */
@@ -126,141 +168,37 @@ img {
   0% { transform: scale(1.001) translate(0, 0); }
   100% { transform: scale(1.085) translate(-1.2%, -0.9%); }
 }
-
 .tour-drift {
   animation: tourDrift 24s ease-in-out infinite alternate;
   will-change: transform;
 }
 
-/* Hero carousel — gentle zoom while a slide is visible */
+/* Legacy hero carousel zoom (kept for any remaining users of .hero-drift) */
 @keyframes heroDrift {
   0% { transform: scale(1); }
   100% { transform: scale(1.05); }
 }
-
-.hero-drift {
-  animation: heroDrift 8s ease-in-out infinite alternate;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tour-drift,
-  .hero-drift {
-    animation: none;
-  }
-}
-
-@media (max-width: 768px) {
-  body {
-    font-size: 15px;
-  }
-
-  .desktop-nav {
-    display: none !important;
-  }
-
-  .mobile-menu-btn {
-    display: flex !important;
-  }
-
-  section {
-    padding: 48px 16px !important;
-  }
-
-  h1 {
-    font-size: clamp(28px, 8vw, 40px) !important;
-  }
-
-  h2 {
-    font-size: clamp(22px, 6vw, 32px) !important;
-  }
-
-  /* Project cards — 1 column on mobile */
-  .projects-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* About strip — stack vertically */
-  .about-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* CTA buttons — stack */
-  .cta-buttons {
-    flex-direction: column !important;
-    align-items: center !important;
-  }
-
-  /* Filter bar — 2 column grid on mobile */
-  .filter-bar {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 16px !important;
-  }
-
-  /* Footer — single column */
-  .footer-grid {
-    grid-template-columns: 1fr !important;
-    text-align: center !important;
-  }
-
-  /* Marquee — smaller text */
-  .marquee-track span {
-    font-size: 11px !important;
-    margin-right: 24px !important;
-  }
-
-  /* Navbar height compensation */
-  main>*:first-child {
-    padding-top: 64px;
-  }
-}
-
-@media (max-width: 480px) {
-  .filter-bar {
-    grid-template-columns: 1fr !important;
-  }
-
-  h1 {
-    font-size: 26px !important;
-  }
-
-  .consent-popup-card {
-    max-width: calc(100vw - 16px) !important;
-  }
-}
-
-/* Performance Optimization: GPU Layer Promotion */
-.hero-container,
-.hero-image,
-[data-next-image] {
-  will-change: opacity, transform !important;
-  transform: translate3d(0, 0, 1px) !important;
-  -webkit-backface-visibility: hidden !important;
-  backface-visibility: hidden !important;
-  perspective: 1000px !important;
-  contain: strict !important;
-  content-visibility: auto !important;
-  -webkit-transform-style: preserve-3d !important;
-  isolation: isolate !important;
-}
-
-/* Eliminate scroll-anchoring behavior that can cause jumps during frame swaps */
-.hero-container {
-  overflow-anchor: none;
-  overscroll-behavior-y: none;
-  touch-action: pan-y;
-  contain: paint;
-}
-
-/* Site-wide Scrolling Performance Hardening */
-.projects-grid > * {
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
+.hero-drift { animation: heroDrift 8s ease-in-out infinite alternate; }
 
 .motion-safe-gpu {
   transform: translateZ(0);
   will-change: transform, opacity;
   backface-visibility: hidden;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-drift, .hero-drift, .drift-slow, .floaty, .marquee-track {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  body { font-size: 15px; }
+  :root { --nav-h: 64px; }
 }

@@ -96,7 +96,7 @@ export default function VariantBar({
           aria-label={comparing ? ui.exitCompare : ui.compare}
           className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-semibold tracking-wide border backdrop-blur-md shadow-lg transition-colors cursor-pointer ${
             comparing
-              ? 'bg-[#C0392B] border-[#C0392B] text-white'
+              ? 'bg-[#3b7122] border-[#3b7122] text-white'
               : 'bg-black/50 border-white/15 text-white/85 hover:bg-black/65'
           }`}
         >

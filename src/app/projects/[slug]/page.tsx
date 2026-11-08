@@ -1,36 +1,43 @@
-import { getAdminClient } from '@/lib/supabaseAdmin'
-import { notFound } from 'next/navigation'
-import Image from 'next/image'
+import { notFound } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
 import Script from 'next/script';
+import { MapPin, Phone, ShieldCheck, Calculator, CalendarCheck, Check } from 'lucide-react';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
 import BrochureDownload from '@/components/BrochureDownload';
 import ProjectTour from '@/components/tour/ProjectTour';
 import ScrollFlatHero from '@/components/home/ScrollFlatHero';
+import Reveal from '@/components/ui/Reveal';
 import { getFlatTour } from '@/data/flatTours';
+import { getProject } from '@/lib/getProject';
+import { getAdminClient } from '@/lib/supabaseAdmin';
+import { SITE_WHATSAPP_NUMBER, SITE_PHONE_TEL } from '@/lib/site';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const supabase = getAdminClient()
-  const { data: project } = await supabase.from('projects').select('*').eq('slug', slug).single()
-  
-  if (!project) return {}
+  const { slug } = await params;
+  const project = await getProject(slug);
+  if (!project) return {};
   return {
     title: `${project.name} | ${project.type} in ${project.location} | V Grand Infra`,
-    description: `Explore ${project.name}, a premium ${project.type} project in ${project.location} by V Grand Infra. Top quality construction, gated community amenities, and high land value.`,
-    keywords: `${project.name.toLowerCase()}, flats in ongole, apartments in ${project.location.toLowerCase()}, luxury flats in ongole, best real estate in prakasam, ready to move apartments`
-  }
+    description: `Explore ${project.name}, a ${project.type} project in ${project.location} by V Grand Infra. RERA registered, quality construction and transparent pricing.`,
+    keywords: `${project.name.toLowerCase()}, flats in ongole, apartments in ${project.location.toLowerCase()}, real estate in prakasam`,
+    alternates: { canonical: `https://vgrandgroup.com/projects/${slug}` },
+  };
 }
 
-export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const supabase = getAdminClient()
-  const { data: project, error } = await supabase.from('projects').select('*').eq('slug', slug).single()
-  
-  if (!project || error) return notFound()
+const statusTone: Record<string, string> = {
+  Ongoing: 'bg-meadow-600 text-white',
+  Upcoming: 'bg-sky text-white',
+  Completed: 'bg-forest text-white',
+};
 
-  // Static local construction update images (already in /public/images)
-  // Mapped by slug keyword — no database needed for these
+export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const project = await getProject(slug);
+  if (!project) return notFound();
+
+  // Local construction-update media (already in /public/images), matched by slug keyword.
   const staticImageMap: Record<string, { id: number; image_url: string; label: string; created_at: string }[]> = {
     elite: [
       { id: -1, image_url: '/images/elite%20construction%20update%201%20.jpeg', label: 'Elite Homes – Construction Update 1', created_at: '' },
@@ -41,216 +48,210 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       { id: -2, image_url: '/images/WhatsApp%20Video%202026-07-09%20at%2011.45.24.mp4', label: 'Tripura – Construction Update Video', created_at: '' },
     ],
   };
-
-  // Find which static set matches by checking if slug contains the keyword
   const matchedKey = Object.keys(staticImageMap).find((key) => slug.toLowerCase().includes(key));
   const staticImages = matchedKey ? staticImageMap[matchedKey] : [];
 
-  // Also try to fetch any admin-uploaded images from Supabase (optional — gracefully skipped if table doesn't exist)
   let dbImages: { id: number; image_url: string; label?: string; created_at: string }[] = [];
-  try {
-    const { data } = await supabase
-      .from('construction_updates')
-      .select('*')
-      .eq('project_id', project.id)
-      .order('created_at', { ascending: true });
-    if (Array.isArray(data)) dbImages = data;
-  } catch {
-    // Table may not exist yet — that's fine
+  if (project.fromDb && project.id) {
+    try {
+      const supabase = getAdminClient();
+      const { data } = await supabase
+        .from('construction_updates')
+        .select('*')
+        .eq('project_id', project.id)
+        .order('created_at', { ascending: true });
+      if (Array.isArray(data)) dbImages = data;
+    } catch {
+      // Table may not exist yet — fine
+    }
   }
-
-  // Merge: static images first, then any admin-uploaded ones
   const constructionImages = [...staticImages, ...dbImages];
 
-
-  // Map database fields to UI keys (handling snake_case conversion if needed)
-  const uiProject = {
-    ...project,
-    image: project.images?.[0] || '/images/ban a.png',
-    startingPrice: project.starting_price || 'Contact for details',
-    brochure: project.brochure_url || '#',
-    highlights: project.highlights || [],
-    amenities: project.amenities || [],
-    specs: project.specs || {},
-  }
-
   const siteUrl = 'https://vgrandgroup.com';
-  const projectUrl = `${siteUrl}/projects/${slug}`;
-
   const realEstateSchema = {
     '@context': 'https://schema.org',
     '@type': 'RealEstateListing',
-    name: uiProject.name,
-    description: uiProject.description,
-    url: projectUrl,
-    image: uiProject.image?.startsWith('http') ? uiProject.image : `${siteUrl}${uiProject.image}`,
+    name: project.name,
+    description: project.description,
+    url: `${siteUrl}/projects/${slug}`,
+    image: project.image?.startsWith('http') ? project.image : `${siteUrl}${project.image}`,
     address: {
       '@type': 'PostalAddress',
-      streetAddress: uiProject.location,
+      streetAddress: project.location,
       addressLocality: 'Ongole',
       addressRegion: 'Andhra Pradesh',
-      addressCountry: 'IN'
+      addressCountry: 'IN',
     },
-    price: uiProject.startingPrice?.replace(/[^0-9]/g, '') || undefined,
-    priceCurrency: 'INR',
-    numberOfRooms: uiProject.type?.includes('2') ? '2' : uiProject.type?.includes('3') ? '3' : undefined,
-    accommodationCategory: uiProject.type,
-    offer: uiProject.startingPrice ? {
-      '@type': 'Offer',
-      price: uiProject.startingPrice.replace(/[^0-9]/g, '') || '0',
-      priceCurrency: 'INR',
-      availability: 'https://schema.org/InStock',
-      validFrom: new Date().toISOString().split('T')[0]
-    } : undefined,
-    status: uiProject.status === 'ongoing' ? 'https://schema.org/ActiveActionStatus' : 'https://schema.org/PotentialActionStatus'
+    accommodationCategory: project.type,
   };
 
   const flatTour = getFlatTour(slug);
+  const inKoppolu = /koppolu/i.test(project.location || '');
+  const hasRera = !!project.rera && !/to be added|applied/i.test(project.rera);
+
+  const facts: [string, string][] = [
+    ['Location', project.location],
+    ['Type', project.type],
+    ['Area', project.area],
+    ['Handover', project.handover],
+    ['Price', project.startingPrice],
+  ].filter(([, v]) => !!v) as [string, string][];
+
   const staticHero = (
-    <>
-      <div className="relative w-full flex flex-col lg:block overflow-hidden bg-black">
-        {/* Image Part */}
-        <div className="relative w-full aspect-[2/1] md:aspect-[16/10] lg:aspect-auto lg:h-[70vh] min-h-[240px] md:min-h-[420px] lg:min-h-[500px] overflow-hidden bg-[#0a0a0a]">
-          <Image 
-            src={uiProject.image} 
-            alt={uiProject.name}
-            fill
-            priority
-            sizes="100vw"
-            className="object-contain md:object-cover object-center"
-            quality={95}
-          />
-          {/* Gradient Overlay - Desktop Only */}
-          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-[1]" />
+    <div className="relative h-[78vh] min-h-[520px] w-full overflow-hidden bg-forest">
+      <Image src={project.image} alt={project.name} fill priority sizes="100vw" className="object-cover" quality={90} />
+      <div className="absolute inset-0 bg-gradient-to-t from-forest via-forest/35 to-forest/10" />
+      <div className="absolute inset-0 dither-bg-dark opacity-40" aria-hidden />
+      <div className="container-x absolute inset-x-0 bottom-0 px-5 pb-14 md:px-8 md:pb-20">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className={`rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${statusTone[project.status] ?? 'bg-forest text-white'}`}>
+            {project.status}
+          </span>
+          {hasRera && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur">
+              <ShieldCheck size={13} /> RERA registered
+            </span>
+          )}
         </div>
-        
-        {/* Title & Location - Adaptive Layout */}
-        <div className="relative lg:absolute lg:bottom-16 lg:left-16 z-[2] p-8 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none lg:bg-gradient-to-t lg:from-black/40 lg:to-transparent lg:px-8 lg:py-4 lg:rounded-lg">
-          <p className="text-[#C0392B] lg:text-white/80 tracking-[4px] text-[10px] lg:text-[12px] font-bold uppercase mb-2">
-            V Grand Infra
-          </p>
-          <h1 className="text-[#1a1a1a] lg:text-white font-bold leading-tight text-3xl lg:text-5xl lg:text-7xl mb-2 drop-shadow-none lg:drop-shadow-lg">
-            {uiProject.name}
-          </h1>
-          <p className="text-slate-600 lg:text-gray-200 text-sm lg:text-lg font-medium drop-shadow-none lg:drop-shadow-md">
-            {uiProject.location}
-          </p>
+        <h1 className="mt-5 max-w-4xl font-heading text-white">{project.name}</h1>
+        <p className="mt-3 flex items-center gap-2 text-[17px] !text-white/85">
+          <MapPin size={18} className="text-meadow-400" /> {project.location}
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href={`/site-visit`} className="btn btn-primary">Book a site visit</Link>
+          <a href={`tel:${SITE_PHONE_TEL}`} className="btn border border-white/40 text-white hover:bg-white hover:text-forest">
+            <Phone size={16} /> Call us
+          </a>
         </div>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
-      <Script
-        id="schema-realestate"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(realEstateSchema) }}
-      />
+    <div className="bg-petal">
+      <Script id="schema-realestate" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(realEstateSchema) }} />
+
       {flatTour ? (
-        <ScrollFlatHero tour={flatTour} projectName={uiProject.name} fallback={staticHero} />
+        <ScrollFlatHero tour={flatTour} projectName={project.name} fallback={staticHero} />
       ) : (
         staticHero
       )}
 
+      <div className="container-x px-5 py-16 md:px-8 md:py-24">
+        <div className="grid gap-12 lg:grid-cols-[1.5fr_0.9fr]">
+          {/* Main column */}
+          <div className="min-w-0">
+            <Reveal>
+              <p className="eyebrow">About the project</p>
+              <p className="mt-5 !text-[18px] !leading-[1.85]">{project.description}</p>
+            </Reveal>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 5vw, 64px) 24px' }}>
-
-        {/* RERA Badge */}
-        {uiProject.rera && (
-          <div style={{
-            background: '#fff',
-            border: '1.5px solid #C0392B',
-            borderRadius: 6,
-            padding: '10px 20px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 32
-          }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B' }}>RERA Registered</span>
-            <span style={{ width: 1, height: 16, background: '#e0d0d0' }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', fontFamily: 'monospace' }}>{uiProject.rera}</span>
-          </div>
-        )}
-
-        {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 56 }}>
-          {[['Location', uiProject.location], ['Type', uiProject.type], ['Area', uiProject.area], ['Status', uiProject.status], ['Handover', uiProject.handover], ['Price', uiProject.startingPrice], ['RERA No.', uiProject.rera || 'Applied']].map(([label, value]) => (
-            <div key={label} style={{ background: '#fff', border: '1px solid #e8d5d5', borderRadius: 8, padding: '16px 20px' }}>
-              <p style={{ color: '#C0392B', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, margin: '0 0 6px' }}>{label}</p>
-              <p style={{ color: '#1a1a1a', fontWeight: 600, fontSize: 14, margin: 0, lineHeight: 1.4 }}>{value}</p>
+            {/* Virtual tour — renders only for slugs with a tour config */}
+            <div className="mt-16">
+              <ProjectTour slug={slug} />
             </div>
-          ))}
-        </div>
 
-        {/* Description */}
-        <p style={{ fontSize: 17, lineHeight: 1.9, color: '#444', marginBottom: 56 }}>{uiProject.description}</p>
+            {project.highlights.length > 0 && (
+              <section className="mt-16">
+                <Reveal>
+                  <h2 className="font-heading text-forest">Key highlights</h2>
+                </Reveal>
+                <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+                  {project.highlights.map((h: string, i: number) => (
+                    <Reveal key={i} delay={(i % 2) * 0.05}>
+                      <li className="flex h-full gap-3 rounded-2xl border border-forest/10 bg-white p-5 text-[15px]">
+                        <Check size={18} className="mt-0.5 shrink-0 text-meadow-600" />
+                        <span>{h}</span>
+                      </li>
+                    </Reveal>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-        {/* Virtual tour — renders only for slugs with a tour config */}
-        <ProjectTour slug={slug} />
+            {project.amenities.length > 0 && (
+              <section className="mt-16">
+                <Reveal><h2 className="font-heading text-forest">Amenities</h2></Reveal>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  {project.amenities.map((a: string) => (
+                    <span key={a} className="rounded-full border border-meadow/30 bg-meadow/10 px-5 py-2.5 text-[14px] text-forest">{a}</span>
+                  ))}
+                </div>
+              </section>
+            )}
 
-        {/* Highlights */}
-        <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Key Highlights</h2>
-        <div style={{ marginBottom: 56 }}>
-          {uiProject.highlights.map((h: string, i: number) => (
-            <div key={i} style={{ borderLeft: '3px solid #C0392B', paddingLeft: 18, marginBottom: 16, color: '#333', fontSize: 15, lineHeight: 1.7 }}>{h}</div>
-          ))}
-        </div>
+            {Object.keys(project.specs).length > 0 && (
+              <section className="mt-16">
+                <Reveal><h2 className="font-heading text-forest">Specifications &amp; materials</h2></Reveal>
+                <div className="mt-8 overflow-hidden rounded-3xl border border-forest/10 bg-white">
+                  {Object.entries(project.specs).map(([key, val], i) => (
+                    <div key={key} className={`grid gap-1 px-6 py-4 sm:grid-cols-[200px_1fr] sm:gap-6 ${i % 2 ? 'bg-cream/50' : ''}`}>
+                      <dt className="font-heading text-[16px] text-forest">{key}</dt>
+                      <dd className="text-[15px] text-forest/75">{val as string}</dd>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-        {/* Amenities */}
-        <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Amenities</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 56 }}>
-          {uiProject.amenities.map((a: string, i: number) => (
-            <div key={i} style={{ border: '1px solid #e8d5d5', borderRadius: 6, padding: '12px 16px', color: '#333', fontSize: 14, background: '#fff', textAlign: 'center' }}>{a}</div>
-          ))}
-        </div>
+            {constructionImages.length > 0 || (project.fromDb && project.id) ? (
+              <section className="mt-16">
+                <ConstructionUpdateSlideshow projectId={project.id ?? 0} initialImages={constructionImages} />
+              </section>
+            ) : null}
 
-        {/* Specs */}
-        {Object.keys(uiProject.specs).length > 0 && (
-          <>
-            <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Specifications & Materials</h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 56 }}>
-              <tbody>
-                {Object.entries(uiProject.specs).map(([key, val], i) => (
-                  <tr key={i} style={{ background: i % 2 === 0 ? '#fff5f5' : '#fff' }}>
-                    <td style={{ padding: '14px 18px', fontWeight: 700, color: '#C0392B', width: '28%', fontSize: 14, borderBottom: '1px solid #f0e0e0' }}>{key}</td>
-                    <td style={{ padding: '14px 18px', color: '#333', fontSize: 14, borderBottom: '1px solid #f0e0e0', lineHeight: 1.6 }}>{val as string}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-
-        {/* Construction Update Slideshow */}
-        <ConstructionUpdateSlideshow
-          projectId={project.id}
-          initialImages={constructionImages || []}
-        />
-
-        {/* Location */}
-        <h2 style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', fontSize: 28, marginBottom: 24, fontWeight: 700 }}>Location</h2>
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3841.123!2d80.0537!3d15.5135!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a4b23456789abcd%3A0x0!2zS29wcG9sdSwgT25nb2xl!5e0!3m2!1sen!2sin!4v1"
-          width="100%" height="400"
-          style={{ border: 0, borderRadius: 8, marginBottom: 56, display: 'block' }}
-          allowFullScreen loading="lazy"
-        />
-
-        {/* CTAs */}
-        <div className="space-y-6">
-          <WhatsAppButton 
-            variant="banner" 
-            projectName={uiProject.name} 
-            phoneNumber="919030143333"
-          />
-          
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 80 }}>
-            <BrochureDownload brochureUrl={uiProject.brochure} projectName={uiProject.name} />
+            {inKoppolu && (
+              <section className="mt-16">
+                <Reveal><h2 className="font-heading text-forest">Location</h2></Reveal>
+                <iframe
+                  title={`${project.name} location map`}
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3841.123!2d80.0537!3d15.5135!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a4b23456789abcd%3A0x0!2zS29wcG9sdSwgT25nb2xl!5e0!3m2!1sen!2sin!4v1"
+                  width="100%"
+                  height="420"
+                  className="mt-8 block rounded-3xl border-0"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </section>
+            )}
           </div>
+
+          {/* Sticky sidebar */}
+          <aside className="lg:sticky lg:top-[104px] lg:self-start">
+            <Reveal>
+              <div className="card p-7">
+                <p className="text-[12px] uppercase tracking-[0.18em] text-forest/50">Starting price</p>
+                <p className="mt-2 font-heading text-[28px] leading-tight text-forest">{project.startingPrice}</p>
+
+                <dl className="mt-6 divide-y divide-forest/10 text-[14px]">
+                  {facts.filter(([k]) => k !== 'Price').map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-4 py-3">
+                      <dt className="text-forest/55">{k}</dt>
+                      <dd className="text-right font-medium text-forest">{v}</dd>
+                    </div>
+                  ))}
+                  <div className="flex justify-between gap-4 py-3">
+                    <dt className="text-forest/55">RERA</dt>
+                    <dd className="text-right font-mono text-[13px] text-forest">
+                      {hasRera ? project.rera : <Link href="/approvals" className="font-sans font-medium text-meadow-600 underline underline-offset-4">View on approvals</Link>}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-6 grid gap-3">
+                  <Link href="/site-visit" className="btn btn-primary w-full"><CalendarCheck size={16} /> Book a site visit</Link>
+                  <Link href="/emi-calculator" className="btn btn-ghost w-full"><Calculator size={16} /> Calculate EMI</Link>
+                  {project.brochure && <BrochureDownload brochureUrl={project.brochure} projectName={project.name} />}
+                </div>
+              </div>
+            </Reveal>
+          </aside>
+        </div>
+
+        <div className="mt-20">
+          <WhatsAppButton variant="banner" projectName={project.name} phoneNumber={SITE_WHATSAPP_NUMBER} />
         </div>
       </div>
-    </main>
-  )
+    </div>
+  );
 }

@@ -117,8 +117,8 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
         style={{
           flex: 1,
           textAlign: 'center',
-          border: '2px solid #C0392B',
-          color: '#C0392B',
+          border: '2px solid #3b7122',
+          color: '#3b7122',
           padding: '14px 32px',
           borderRadius: 6,
           textDecoration: 'none',
@@ -133,12 +133,12 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
           transition: 'background 0.2s, color 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#C0392B';
+          e.currentTarget.style.background = '#3b7122';
           e.currentTarget.style.color = '#fff';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = '#C0392B';
+          e.currentTarget.style.color = '#3b7122';
         }}
       >
         <Download size={18} /> Download Brochure
@@ -234,7 +234,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
                           type="text"
                           id="bd-name"
                           required
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#C0392B] focus:border-transparent outline-none transition-all text-slate-800 text-sm"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3b7122] focus:border-transparent outline-none transition-all text-slate-800 text-sm"
                           placeholder="Enter your full name"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -251,7 +251,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
                         id="bd-phone"
                         required
                         maxLength={10}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#C0392B] focus:border-transparent outline-none transition-all text-slate-800 text-sm"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3b7122] focus:border-transparent outline-none transition-all text-slate-800 text-sm"
                         placeholder="10 digit mobile number"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
@@ -266,7 +266,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
                         <input
                           type="email"
                           id="bd-email"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#C0392B] focus:border-transparent outline-none transition-all text-slate-800 text-sm"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3b7122] focus:border-transparent outline-none transition-all text-slate-800 text-sm"
                           placeholder="your@email.com"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -283,7 +283,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3.5 bg-[#C0392B] text-white font-bold rounded-xl shadow-lg shadow-red-900/20 hover:bg-[#a93226] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm"
+                      className="w-full py-3.5 bg-[#3b7122] text-white font-bold rounded-xl shadow-lg shadow-red-900/20 hover:bg-[#2f5d1e] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm"
                     >
                       {loading ? (
                         <Loader2 className="animate-spin" size={18} />

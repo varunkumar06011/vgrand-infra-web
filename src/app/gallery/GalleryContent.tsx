@@ -49,12 +49,12 @@ export default function GalleryContent() {
 
   return (
     <>
-      <main style={{ background: '#fff5f5', minHeight: '100vh', paddingTop: 100 }}>
+      <main style={{ background: '#fbf7ee', minHeight: '100vh', paddingTop: 'calc(var(--page-top) + 40px)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
           {/* Header */}
           <div style={{ marginBottom: 48 }}>
-            <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 12 }}>Visual Journey</p>
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px, 5vw, 44px)', color: '#1a1a1a', marginBottom: 16, fontWeight: 700 }}>Gallery</h1>
+            <p style={{ color: '#3b7122', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 12 }}>Visual Journey</p>
+            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px, 5vw, 44px)', color: '#14301c', marginBottom: 16, fontWeight: 700 }}>Gallery</h1>
             <p style={{ color: '#555', fontSize: 15, lineHeight: 1.6, maxWidth: 650 }}>
               Stay updated with our latest project milestones and construction progress directly from our site.
             </p>
@@ -183,7 +183,7 @@ export default function GalleryContent() {
                     fontSize: 15,
                     fontWeight: 700,
                     margin: '0 0 5px',
-                    color: '#1a1a1a',
+                    color: '#14301c',
                     lineHeight: 1.3,
                   }}>{item.title}</h3>
                   <p style={{
@@ -283,7 +283,7 @@ export default function GalleryContent() {
                 maxHeight: '85vh',
                 borderRadius: 12,
                 overflow: 'hidden',
-                background: '#1a1a1a',
+                background: '#14301c',
                 boxShadow: '0 20px 80px rgba(0,0,0,0.5)',
               }}
             >
@@ -297,7 +297,7 @@ export default function GalleryContent() {
                   display: 'block',
                 }}
               />
-              <div style={{ padding: '20px 28px', background: '#1a1a1a' }}>
+              <div style={{ padding: '20px 28px', background: '#14301c' }}>
                 <h3 style={{ fontFamily: 'var(--font-heading)', color: '#fff', fontSize: 18, fontWeight: 700, margin: '0 0 6px' }}>
                   {imageItems[lightboxIndex].title}
                 </h3>

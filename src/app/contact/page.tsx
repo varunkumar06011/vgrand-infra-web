@@ -1,79 +1,83 @@
-import Link from 'next/link'
+import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import PageHero from '@/components/ui/PageHero';
+import Reveal from '@/components/ui/Reveal';
+import LeadForm from '@/components/ui/LeadForm';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import {
+  SITE_PHONE_DISPLAY, SITE_PHONE_TEL, SITE_EMAIL, SITE_ADDRESS_LINES, SITE_MAPS_URL,
+  SITE_HOURS, SITE_WHATSAPP_NUMBER,
+} from '@/lib/site';
 
 export const metadata = {
   title: 'Contact V Grand Infra | Book Site Visit | Ongole',
-  description: 'Contact V Grand Infra to book a free site visit for Elite Homes, Tripura, or V Grand Gateway in Koppolu, Ongole. Call +91 90301 43333 or WhatsApp us.',
-  keywords: 'contact v grand infra, book site visit ongole, flat enquiry ongole, apartment booking ongole, v grand infra phone number'
-}
+  description: 'Contact V Grand Infra to book a free site visit for Elite Homes, Tripura, V Grand Gateway or V Grand Healthcare in Ongole. Call +91 90301 43333 or WhatsApp us.',
+  keywords: 'contact v grand infra, book site visit ongole, flat enquiry ongole, apartment booking ongole, v grand infra phone number',
+  alternates: { canonical: 'https://vgrandgroup.com/contact' },
+};
 
 export default function ContactPage() {
+  const rows = [
+    { icon: MapPin, label: 'Address', node: <a href={SITE_MAPS_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white">{SITE_ADDRESS_LINES.join(', ')}</a> },
+    { icon: Phone, label: 'Phone', node: <a href={`tel:${SITE_PHONE_TEL}`} className="hover:text-white">{SITE_PHONE_DISPLAY}</a> },
+    { icon: Mail, label: 'Email', node: <a href={`mailto:${SITE_EMAIL}`} className="break-all hover:text-white">{SITE_EMAIL}</a> },
+    { icon: Clock, label: 'Hours', node: <span>{SITE_HOURS}</span> },
+  ];
+
   return (
-    <main style={{ background: '#fff5f5', minHeight: '100vh', paddingTop: 80 }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '60px 24px' }}>
+    <>
+      <PageHero
+        eyebrow="Get in touch"
+        title={<>Let's talk about <span className="italic text-meadow-600">your home.</span></>}
+        intro="Whether you have a question about our projects, pricing, or locations, our team is ready to help."
+      />
 
-        <p style={{ color: '#C0392B', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 700, marginBottom: 12 }}>Get In Touch</p>
-        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px, 5vw, 52px)', color: '#1a1a1a', marginBottom: 16, fontWeight: 700 }}>Contact Us</h1>
-        <p style={{ color: '#555', fontSize: 16, marginBottom: 56, lineHeight: 1.7 }}>Whether you have a question about our projects, pricing, or locations, our team is ready to help.</p>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40 }}>
-
-          {/* Form */}
-          <div style={{ background: '#fff', borderRadius: 8, padding: 32, border: '1px solid #e8d5d5' }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, color: '#1a1a1a', marginBottom: 24, fontWeight: 700 }}>Send us a Message</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Full Name</label>
-                <input placeholder="Your name" style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Phone Number</label>
-                <input placeholder="+91 XXXXX XXXXX" style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+      <section className="section !pt-10">
+        <div className="container-x grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <Reveal>
+            <div className="card p-6 md:p-10">
+              <h2 className="mb-8 font-heading !text-[30px] text-forest">Send us a message</h2>
+              <LeadForm source="contact_page" submitLabel="Send message" />
+              <div className="mt-8 border-t border-forest/10 pt-6">
+                <p className="mb-3 text-[13px] text-forest/60">Prefer WhatsApp?</p>
+                <WhatsAppButton variant="pill" phoneNumber={SITE_WHATSAPP_NUMBER} showText={true} />
               </div>
             </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Project of Interest</label>
-              <select style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
-                <option>★ Elite Homes — Koppolu, Ongole</option>
-                <option>V Grand Gateway — Koppolu, Ongole</option>
-                <option>Tripura — Koppolu, Ongole</option>
-                <option>Green Valley — Ongole</option>
-                <option>General Enquiry</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#C0392B', fontWeight: 700, marginBottom: 8 }}>Message</label>
-              <textarea placeholder="Tell us what you are looking for..." rows={4} style={{ width: '100%', border: '1px solid #e0d0d0', borderRadius: 6, padding: '12px 14px', fontSize: 15, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
-            </div>
-            <WhatsAppButton variant="pill" phoneNumber="919030143333" showText={true} />
-          </div>
+          </Reveal>
 
-          {/* Info */}
-          <div>
-            <div style={{ background: '#1a1a1a', borderRadius: 8, padding: 32, marginBottom: 24 }}>
-              <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 20, color: '#fff', marginBottom: 24, fontWeight: 700 }}>Our Office</h2>
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ color: '#C0392B', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>Address</p>
-                <p style={{ color: '#ddd', fontSize: 14, lineHeight: 1.7 }}>V Grand Lounge, 2nd Floor, Guntur Road, Ongole, Andhra Pradesh</p>
+          <div className="grid content-start gap-6">
+            <Reveal delay={0.08}>
+              <div className="relative overflow-hidden rounded-[1.5rem] bg-forest p-8 text-white">
+                <div className="dither-bg-dark absolute inset-0 opacity-70" aria-hidden />
+                <div className="relative">
+                  <h2 className="font-heading !text-[26px] text-white">Our office</h2>
+                  <ul className="mt-6 grid gap-5">
+                    {rows.map((r) => (
+                      <li key={r.label} className="flex gap-4">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-meadow-400"><r.icon size={18} /></span>
+                        <span>
+                          <span className="block text-[11px] uppercase tracking-[0.18em] text-white/50">{r.label}</span>
+                          <span className="block text-[15px] text-white/90">{r.node}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ color: '#C0392B', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>Phone</p>
-                <a href="tel:+919030143333" style={{ color: '#ddd', fontSize: 15, textDecoration: 'none' }}>+91 90301 43333</a>
-              </div>
-              <div>
-                <p style={{ color: '#C0392B', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>Email</p>
-                <a href="mailto:vgrandinfra@gmail.com" style={{ color: '#ddd', fontSize: 15, textDecoration: 'none' }}>vgrandinfra@gmail.com</a>
-              </div>
-            </div>
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3841.5!2d80.0476!3d15.5057!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a4b6a6b6a6b6a6b%3A0x0!2zT25nb2xl!5e0!3m2!1sen!2sin!4v1"
-              width="100%" height="280"
-              style={{ border: 0, borderRadius: 8, display: 'block' }}
-              allowFullScreen loading="lazy"
-            />
+            </Reveal>
+            <Reveal delay={0.14}>
+              <iframe
+                title="V Grand Infra office location"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3841.5!2d80.0476!3d15.5057!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a4b6a6b6a6b6a6b%3A0x0!2zT25nb2xl!5e0!3m2!1sen!2sin!4v1"
+                width="100%"
+                height="300"
+                className="block rounded-[1.5rem] border-0"
+                allowFullScreen
+                loading="lazy"
+              />
+            </Reveal>
           </div>
         </div>
-      </div>
-    </main>
-  )
+      </section>
+    </>
+  );
 }

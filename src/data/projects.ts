@@ -114,6 +114,23 @@ export const projects = [
     brochure: '/brochures/VGrand Gatway_Brochure.pdf'
   },
   {
+    slug: 'v-grand-healthcare',
+    name: 'V Grand Healthcare',
+    location: 'Ongole, Andhra Pradesh',
+    type: 'Hospital',
+    area: 'Details coming soon',
+    status: 'Ongoing',
+    handover: 'To be announced',
+    startingPrice: 'Details coming soon',
+    rera: 'RERA registered — number to be added',
+    description: 'V Grand Healthcare Pvt Ltd is building a hospital in Ongole — bringing quality healthcare closer to families in Prakasam district. Full project details and images will be published soon.',
+    highlights: ['Hospital project by V Grand Healthcare Pvt Ltd','RERA registered','Under construction in Ongole'],
+    amenities: [],
+    specs: {},
+    image: '/images/earth/hills.webp',
+    brochure: ''
+  },
+  {
     slug: 'green-valley',
     name: 'Green Valley',
     location: 'Ongole',

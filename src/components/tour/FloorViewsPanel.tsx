@@ -169,7 +169,7 @@ export default function FloorViewsPanel({ config, ui, lang, onClose }: Props) {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className="absolute right-2 inset-y-3 w-8 z-10 outline-none focus-visible:ring-2 focus-visible:ring-[#C0392B] rounded-full"
+          className="absolute right-2 inset-y-3 w-8 z-10 outline-none focus-visible:ring-2 focus-visible:ring-[#3b7122] rounded-full"
           style={{ touchAction: 'none' }}
         >
           {/* track */}
@@ -181,7 +181,7 @@ export default function FloorViewsPanel({ config, ui, lang, onClose }: Props) {
               <div key={f.floor} className="absolute right-0 w-8 h-8" style={{ top: `calc(${top}% - 16px)` }}>
                 <span
                   className={`absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full transition-all ${
-                    isOn ? 'w-4 h-4 bg-[#C0392B] border-2 border-white shadow' : 'w-2 h-2 bg-white/70'
+                    isOn ? 'w-4 h-4 bg-[#3b7122] border-2 border-white shadow' : 'w-2 h-2 bg-white/70'
                   }`}
                 />
               </div>

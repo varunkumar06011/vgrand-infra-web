@@ -61,7 +61,7 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump, planLa
       {/* entry marker on the east (top) edge */}
       <path
         d={`M ${w * 0.27} 2 l 3 -0 l -1.5 3 z`}
-        fill="#C0392B"
+        fill="#3b7122"
       />
       <text x={w * 0.27 + 4} y={4.5} fontSize={3.4} fill="rgba(255,255,255,0.55)" fontFamily="inherit">
         ENTRY · EAST
@@ -126,10 +126,10 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump, planLa
             const py = d.x;
             return (
               <>
-                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#C0392B" strokeWidth={1.3} strokeLinecap="round" />
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#3b7122" strokeWidth={1.3} strokeLinecap="round" />
                 <path
                   d={`M ${ex} ${ey} L ${bx + px * 2.1} ${by + py * 2.1} L ${bx - px * 2.1} ${by - py * 2.1} Z`}
-                  fill="#C0392B"
+                  fill="#3b7122"
                 />
               </>
             );
@@ -159,7 +159,7 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump, planLa
               cx={s.minimap.x}
               cy={s.minimap.y}
               r={2.1}
-              fill={active ? '#C0392B' : 'rgba(255,255,255,0.85)'}
+              fill={active ? '#3b7122' : 'rgba(255,255,255,0.85)'}
               stroke={active ? '#fff' : 'rgba(0,0,0,0.35)'}
               strokeWidth={0.7}
             />
@@ -171,7 +171,7 @@ export default function FloorplanMinimap({ tour, scenes, current, onJump, planLa
       <g transform={`translate(${w - 7} ${h - 8})`}>
         <circle r={4.4} fill="rgba(0,0,0,0.45)" stroke="rgba(255,255,255,0.3)" strokeWidth={0.4} />
         <path d="M -2.6 0 L 0 0 M 0 0 L 0 0" stroke="none" />
-        <path d="M 0 0 L -2.7 1.1 L -2.7 -1.1 Z" fill="#C0392B" transform="rotate(0)" />
+        <path d="M 0 0 L -2.7 1.1 L -2.7 -1.1 Z" fill="#3b7122" transform="rotate(0)" />
         <text x={-5.4} y={1.1} fontSize={3} fill="#fff" textAnchor="middle" fontFamily="inherit">
           N
         </text>
