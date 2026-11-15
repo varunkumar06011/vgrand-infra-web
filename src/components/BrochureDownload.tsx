@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { X, Loader2, CheckCircle2, Download } from 'lucide-react';
+import { trackFb } from '@/lib/fbq';
 
 interface BrochureDownloadProps {
   brochureUrl: string;
@@ -83,6 +84,7 @@ export default function BrochureDownload({ brochureUrl, projectName }: BrochureD
       const result = await response.json();
 
       if (result.success) {
+        trackFb('Lead', { content_name: projectName, content_category: 'brochure_download' });
         setSuccess(true);
         setTimeout(() => {
           const link = document.createElement('a');

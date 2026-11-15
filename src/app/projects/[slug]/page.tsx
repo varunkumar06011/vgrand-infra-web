@@ -5,6 +5,7 @@ import Script from 'next/script';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import ConstructionUpdateSlideshow from '@/components/ConstructionUpdateSlideshow';
 import BrochureDownload from '@/components/BrochureDownload';
+import FbViewContent from '@/components/FbViewContent';
 import ProjectTour from '@/components/tour/ProjectTour';
 import ScrollFlatHero from '@/components/home/ScrollFlatHero';
 import { getFlatTour } from '@/data/flatTours';
@@ -142,6 +143,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
   return (
     <main style={{ background: '#fff5f5', minHeight: '100vh', marginTop: '84px' }}>
+      <FbViewContent id={slug} name={project.name} category={project.type} />
       <Script
         id="schema-realestate"
         type="application/ld+json"

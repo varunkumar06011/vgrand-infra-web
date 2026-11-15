@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { trackFb } from '@/lib/fbq';
 
 interface WhatsAppButtonProps {
   phoneNumber?: string;
@@ -42,6 +43,7 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
 
   const handleCapture = async (e: React.MouseEvent) => {
     e.preventDefault();
+    trackFb('Contact', { content_name: leadProject || projectName || 'General Interest', content_category: 'whatsapp' });
     
     // Capture the lead "silently" in the background
     try {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
+import { trackFb } from '@/lib/fbq';
 
 interface EnquireModalProps {
   isOpen: boolean;
@@ -55,6 +56,7 @@ const EnquireModal: React.FC<EnquireModalProps> = ({ isOpen, onClose }) => {
       const result = await response.json();
 
       if (result.success) {
+        trackFb('Lead', { content_name: formData.interested_flat || undefined, content_category: 'enquire_now' });
         setSuccess(true);
         setTimeout(() => {
           onClose();

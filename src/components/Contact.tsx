@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
+import { trackFb } from '@/lib/fbq';
 
 const Contact = () => {
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,7 @@ const Contact = () => {
         body: JSON.stringify(formData)
       });
       if (res.ok) {
+        trackFb('Lead', { content_category: 'contact_form' });
         setSuccess(true);
         setFormData({ name: '', email: '', message: '' });
       }
