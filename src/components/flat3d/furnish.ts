@@ -311,20 +311,21 @@ function diningSet(k: Kit, w = 1.68, d = 0.95) {
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) k.cyl('wood', 0.04, 0.024, 0.7, sx * (w / 2 - 0.12), 0, sz * (d / 2 - 0.12), { seg: 8 });
   k.box('linen', w * 0.86, 0.004, 0.3, 0, 0.746, 0);
   const top = 0.75;
-  const seat = (x: number, z: number, ry: number) => {
+  // end seats keep their glass tucked in, clear of the place settings along the sides
+  const seat = (x: number, z: number, ry: number, gx = 0.1, gz = 0.52) => {
     k.at(x, z, ry, () => {
       chair(k);
-      // a place setting in front of each chair
-      k.cyl('ceramic', 0.135, 0.1, 0.014, 0, top, 0.53, { seg: 20 });
-      k.cyl('ceramic', 0.085, 0.07, 0.012, 0, top + 0.014, 0.53, { seg: 16 });
-      k.cyl('glass', 0.034, 0.027, 0.11, 0.17, top, 0.6, { seg: 10 });
-      k.box('cushionB', 0.05, 0.008, 0.17, -0.19, top, 0.53);
+      // a place setting in front of each chair, 0.37 m out: clear of its neighbours and the candles
+      k.cyl('ceramic', 0.135, 0.1, 0.014, 0, top, 0.37, { seg: 20 });
+      k.cyl('ceramic', 0.085, 0.07, 0.012, 0, top + 0.014, 0.37, { seg: 16 });
+      k.cyl('glass', 0.034, 0.027, 0.11, gx, top, gz, { seg: 10 });
+      k.box('cushionB', 0.05, 0.008, 0.17, -0.19, top, 0.37);
     });
   };
   for (const sx of [-1, 1]) {
     seat(sx * w * 0.24, d / 2 + 0.17, U);
     seat(sx * w * 0.24, -d / 2 - 0.17, D);
-    seat(sx * (w / 2 + 0.17), 0, sx > 0 ? L : R);
+    seat(sx * (w / 2 + 0.17), 0, sx > 0 ? L : R, 0.12, 0.5);
   }
   vase(k, 0, top, 0, 0.24, 'decorB');
   for (const sx of [-1, 1]) {
@@ -385,10 +386,11 @@ function sideboard(k: Kit, w: number, lamp = true) {
  * tops, a padded base, a plump mattress, and bedding that drapes over the sides and foot.
  */
 function bed(k: Kit, w: number, len = 2.0, wing = 0) {
-  const hw = w + 0.14 + wing * 2;
+  // without wings the headboard stops short of the bedside tables; with wings it runs behind them
+  const hw = w + 0.1 + wing * 2;
   // headboard: pill-shaped channels standing proud of a timber back
   const n = Math.max(3, Math.round(hw / 0.3)), cw = hw / n, bot = 0.12, ch = 1.2 - bot;
-  k.box('wood2', hw + 0.04, 0.9, 0.045, 0, 0.06, 0.0225, { r: 0.012 });
+  k.box('wood2', hw, 0.9, 0.045, 0, 0.06, 0.0225, { r: 0.012 });
   for (let i = 0; i < n; i++) {
     k.soft('fabric2', cw - 0.012, 0.11, ch, -hw / 2 + cw * (i + 0.5), bot + ch / 2, 0.105, { rx: -Math.PI / 2, corner: cw / 2 - 0.007, side: 3.4, puff: 0.012, step: 0.06 });
   }
@@ -423,7 +425,12 @@ function bed(k: Kit, w: number, len = 2.0, wing = 0) {
   k.shadow(w + 0.22, len + 0.24, 0, (len + 0.24) / 2, 0.44, 0.3);
 }
 
-function nightstand(k: Kit, lamp = true) {
+/** wall-origin; `off` brings it forward, clear of a headboard that runs behind it */
+function nightstand(k: Kit, lamp = true, off = 0) {
+  k.at(0, off, 0, () => nightstandBody(k, lamp));
+}
+
+function nightstandBody(k: Kit, lamp: boolean) {
   for (const sx of [-1, 1]) for (const sz of [0.06, 0.38]) k.box('metal', 0.022, 0.12, 0.022, sx * 0.2, 0, sz);
   k.box('wood', 0.5, 0.34, 0.42, 0, 0.12, 0.22, { r: 0.008, sw: true });
   k.box('black', 0.46, 0.004, 0.004, 0, 0.29, 0.432);
@@ -579,13 +586,14 @@ function upperRun(k: Kit, x0: number, x1: number, gap?: number) {
   if (gap === undefined) seg(x0, x1); else { seg(x0, gap - 0.32); seg(gap + 0.32, x1); }
 }
 
-function fridge(k: Kit) {
-  k.box('steel', 0.7, 1.82, 0.66, 0, 0.02, 0.34, { r: 0.018 });
-  k.box('black', 0.7, 0.006, 0.004, 0, 0.74, 0.672);
+/** wall-origin; w is the cabinet width */
+function fridge(k: Kit, w = 0.7) {
+  k.box('steel', w, 1.82, 0.66, 0, 0.02, 0.34, { r: 0.018 });
+  k.box('black', w, 0.006, 0.004, 0, 0.74, 0.672);
   k.box('black', 0.006, 1.06, 0.004, 0, 0.76, 0.672);
   for (const sx of [-1, 1]) k.box('chrome', 0.016, 0.5, 0.022, sx * 0.05, 0.98, 0.685);
   k.box('chrome', 0.3, 0.016, 0.022, 0, 0.62, 0.685);
-  k.foot(0.7, 0.7, 0, 0.35, 0.42, 0.22);
+  k.foot(w, 0.7, 0, 0.35, 0.42, 0.22);
 }
 
 /** wall-origin puja mandir */
@@ -705,7 +713,7 @@ function bistroTable(k: Kit) {
 }
 
 function washer(k: Kit) {
-  k.box('white', 0.6, 0.85, 0.58, 0, 0, 0.3, { r: 0.02 });
+  k.box('white', 0.58, 0.85, 0.58, 0, 0, 0.3, { r: 0.02 });
   k.cyl('chrome', 0.19, 0.19, 0.02, 0, 0.44, 0.59, { seg: 26, rx: Math.PI / 2 });
   k.cyl('screen', 0.16, 0.16, 0.024, 0, 0.44, 0.594, { seg: 24, rx: Math.PI / 2 });
   k.box('black', 0.5, 0.07, 0.006, 0, 0.74, 0.583);
@@ -714,8 +722,8 @@ function washer(k: Kit) {
 }
 
 function utilitySink(k: Kit) {
-  k.box('steel', 0.52, 0.24, 0.42, 0, 0.62, 0.22, { r: 0.012 });
-  for (const sx of [-1, 1]) for (const sz of [0.04, 0.4]) k.box('steel', 0.03, 0.62, 0.03, sx * 0.23, 0, sz);
+  k.box('steel', 0.5, 0.24, 0.42, 0, 0.62, 0.22, { r: 0.012 });
+  for (const sx of [-1, 1]) for (const sz of [0.04, 0.4]) k.box('steel', 0.03, 0.62, 0.03, sx * 0.22, 0, sz);
   k.cyl('chrome', 0.012, 0.012, 0.2, 0, 0.86, 0.04, { seg: 8 });
   k.box('chrome', 0.02, 0.02, 0.14, 0, 1.05, 0.1);
   k.foot(0.52, 0.44, 0, 0.22, 0.32, 0.16);
@@ -744,7 +752,7 @@ export function furnish(k: Kit, plan: PlanDef) {
   if (plan.id === 'east') {
     /* living — L-sofa along the north and west walls, TV on the kitchen wall, as drawn */
     P(0, 7.85, R, () => sofa(k, 8.5 * FT, false, true));
-    P(5.45, 12.417, U, () => sofa(k, 4.7 * FT, true, false, true));
+    P(5.92, 12.417, U, () => sofa(k, 4.7 * FT, true, false, true));
     P(6.2, 7.5, R, () => rug(k, 'rugA', 2.75, 2.15));
     P(5.95, 7.1, R, () => coffeeTable(k, 1.1, 0.6));
     P(16.75, 5.9, L, () => tvUnit(k, 1.9));
@@ -761,12 +769,13 @@ export function furnish(k: Kit, plan: PlanDef) {
       upperRun(k, -0.06, 9.25 * FT / 2, 0.72);
     });
     P(17.167, 4.9, R, () => { counterRun(k, 5.8 * FT); upperRun(k, -2.9 * FT, 2.9 * FT); });
-    P(17.167, 8.9, R, () => fridge(k));
+    // a 66 cm fridge: the gap between the counter and the mandir is 67 cm
+    P(17.167, 8.9, R, () => fridge(k, 0.66));
     P(18.5, 10, D, () => mandir(k, 0.7));
 
     /* service balcony */
-    P(27.95, -0.42, D, () => washer(k));
-    P(29.6, -0.42, D, () => utilitySink(k));
+    P(27.8, -0.42, D, () => washer(k));
+    P(29.62, -0.42, D, () => utilitySink(k));
     P(30.5, 4.2, L, () => dryingRack(k));
     P(29.2, 11.7, D, () => planter(k, 0.8));
 
@@ -777,9 +786,9 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(11.667, 20.2, R, () => { art(k, 0.55, 0.75, 4, -0.36, 1.5); art(k, 0.55, 0.75, 5, 0.36, 1.5); });
 
     /* balcony */
-    P(28.3, 19.3, R, () => loungeChair(k));
-    P(28.3, 22.2, R, () => loungeChair(k));
-    P(28.7, 20.75, D, () => bistroTable(k));
+    P(28.3, 18.5, R, () => loungeChair(k));
+    P(28.3, 22.65, R, () => loungeChair(k));
+    P(28.7, 20.6, D, () => bistroTable(k));
     P(28.9, 13.5, D, () => planter(k, 0.9));
 
     /* bedroom 1 */
@@ -807,9 +816,8 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(4.7, 35.2, D, () => rug(k, 'rugB', 2.35, 1.6));
 
     /* bedroom balcony */
-    P(6.4, 43.55, D, () => planter(k, 1.1));
-    P(9.7, 43.55, D, () => planter(k, 0.7));
-    P(8.2, 42.6, L, () => loungeChair(k));
+    P(9.6, 43.75, D, () => planter(k, 0.9));
+    P(5.6, 42.83, L, () => loungeChair(k));
 
     /* passage */
     P(13.667, 28.6, R, () => rug(k, 'rugR', 2.5, 0.78));
@@ -818,7 +826,7 @@ export function furnish(k: Kit, plan: PlanDef) {
 
     /* common bathroom */
     P(11.667, 40.2, R, () => wc(k));
-    P(15.667, 37.2, L, () => vanity(k, 0.6));
+    P(15.667, 37.4, L, () => vanity(k, 0.6));
     P(15.667, 34.75, L, () => shower(k));
 
     /* master bathroom */
@@ -831,8 +839,8 @@ export function furnish(k: Kit, plan: PlanDef) {
     /* master bedroom — bed on the south wall, window seat between wardrobes on the west wall */
     accent('master', 'right', 'panel');
     P(30.083, 36.3, L, () => { bed(k, 1.83, 2.0, 0.55); art(k, 1.5, 0.55, 10, 0, 1.85); });
-    P(30.083, 32.3, L, () => nightstand(k));
-    P(30.083, 40.3, L, () => nightstand(k));
+    P(30.083, 32.3, L, () => nightstand(k, true, 0.18));
+    P(30.083, 40.3, L, () => nightstand(k, true, 0.18));
     P(25.1, 36.3, R, () => rug(k, 'rugB', 2.9, 2.1));
     P(21.9, 36.3, L, () => bench(k, 1.4));
     P(16.083, 37.3, R, () => tvUnit(k, 1.5, 1));
@@ -845,7 +853,7 @@ export function furnish(k: Kit, plan: PlanDef) {
       cushion(k, 'cushionB', 0.55, 0.5, 0.2, -0.2);
       k.foot(5.3 * FT, 0.54, 0, 0.27, 0.36, 0.22);
     });
-    P(26.9, 31.6, D, () => k.at(0, 0, -0.5, () => armchair(k)));
+    P(26.35, 31.25, D, () => k.at(0, 0, -0.3, () => armchair(k)));
     floorLamp(k, 29.3 * FT, 30.5 * FT);
 
     /* corridor outside the front door */
@@ -854,12 +862,12 @@ export function furnish(k: Kit, plan: PlanDef) {
   } else {
     /* living — L-sofa in the north-east corner, TV on the master-bedroom wall, as drawn */
     P(0, 35.9, R, () => sofa(k, 8 * FT, true, false));
-    P(5.45, 31.667, D, () => sofa(k, 4.7 * FT, false, true, true));
+    P(5.92, 31.667, D, () => sofa(k, 4.7 * FT, false, true, true));
     P(6.2, 36.9, R, () => rug(k, 'rugA', 2.75, 2.15));
     P(5.95, 37.1, R, () => coffeeTable(k, 1.1, 0.6));
     P(15.583, 36.8, L, () => tvUnit(k, 1.9));
     P(8.2, 43.667, U, () => entryConsole(k, 1.15));
-    sideTable(k, 8.9 * FT, 32.7 * FT);
+    sideTable(k, 9.25 * FT, 32.7 * FT);
     plant(k, 14.3 * FT, 42.4 * FT, 1.65);
     P(5.2, 31.667, D, () => art(k, 1.3, 0.85, 0, 0, 1.62));
     P(12.3, 43.667, U, () => art(k, 0.6, 0.8, 3, 0, 1.55));
@@ -883,14 +891,14 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(20.65, 7.5, U, () => fridge(k));
 
     /* service balcony */
-    P(27.95, -0.42, D, () => washer(k));
-    P(29.5, -0.42, D, () => utilitySink(k));
+    P(27.8, -0.42, D, () => washer(k));
+    P(29.62, -0.42, D, () => utilitySink(k));
     // narrower here: it has to fit between the folded-back door and the far wall
     P(28.83, 7.5, U, () => dryingRack(k, 0.9));
 
     /* east balcony */
-    P(1.3, 1.5, R, () => loungeChair(k));
-    P(5.3, 1.5, L, () => loungeChair(k));
+    P(1.1, 1.5, R, () => loungeChair(k));
+    P(5.5, 1.5, L, () => loungeChair(k));
     P(3.3, 1.3, D, () => bistroTable(k));
     P(10.2, 0.45, D, () => planter(k, 0.6));
 
@@ -899,7 +907,7 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(22.4, 7.917, D, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); });
     P(18.9, 7.917, D, () => nightstand(k));
     P(25.9, 7.917, D, () => nightstand(k, false));
-    P(30, 10.1, L, () => desk(k, 1.05));
+    P(30, 10.6, L, () => desk(k, 1.05));
     P(30, 14.9, L, () => wardrobe(k, 4.8 * FT, 1));
     P(22.4, 13.5, D, () => rug(k, 'rugB', 2.35, 1.5));
 
@@ -939,8 +947,8 @@ export function furnish(k: Kit, plan: PlanDef) {
     /* master bedroom — bed on the south wall between two slim windows, wardrobe along the west wall */
     accent('master', 'right', 'panel');
     P(30, 35.3, L, () => { bed(k, 1.83, 2.0, 0.1); art(k, 1.5, 0.55, 10, 0, 1.85); });
-    P(30, 31.3, L, () => nightstand(k));
-    P(30, 39.3, L, () => nightstand(k));
+    P(30, 31.3, L, () => nightstand(k, true, 0.18));
+    P(30, 39.3, L, () => nightstand(k, true, 0.18));
     P(25.1, 35.3, R, () => rug(k, 'rugB', 2.9, 2.1));
     P(21.9, 35.3, L, () => bench(k, 1.4));
     P(16, 35.8, R, () => tvUnit(k, 1.5, 1));
