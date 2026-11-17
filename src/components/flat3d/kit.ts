@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ALL_STYLES, SLOT_FLAGS, matSpec, type MatSpec, type StyleId, type TexSpec } from './styles';
 import * as TX from './textures';
 
@@ -175,6 +175,35 @@ export type Fixture = {
 
 export type GlowSpot = { x: number; y: number; z: number; r: number; up: boolean; k: number };
 
+/** cloth lying on something and falling over its edges, measured from the soft piece's centre */
+export type Drape = {
+  /** half-width of the flat top the cloth lies on; beyond it the cloth folds down both sides (±x) */
+  hw: number;
+  /** the cloth also falls over the +z end beyond this local z */
+  end?: number;
+  /** radius of the fold over the edge */
+  bend: number;
+};
+
+export type SoftOpts = AddOpts & {
+  /** plan-view corner radius in metres (default: a third of the smaller half-size) */
+  corner?: number;
+  /** side-profile squareness: 2 = lens (a pillow), 4 = soft cushion, 8+ = firm mattress */
+  side?: number;
+  /** extra loft in the middle of the top and bottom faces, metres */
+  puff?: number;
+  /** a sat-in dip in the middle of the top face, metres */
+  sag?: number;
+  /** pinched-in corners, as on a stuffed pillow (0..1) */
+  pinch?: number;
+  /** soft creases across the surface, metres */
+  rumple?: number;
+  /** grid spacing in metres, before the device's detail factor */
+  step?: number;
+  drape?: Drape;
+  seed?: number;
+};
+
 type Batch = { slot: string; upper: boolean; style: StyleId | null; geos: THREE.BufferGeometry[] };
 
 export type BuiltGroup = { group: THREE.Group; upper: boolean; style: StyleId | null };
@@ -206,6 +235,21 @@ export class Kit {
   glows: GlowSpot[] = [];
   halos: { x: number; y: number; z: number }[] = [];
   tris = 0;
+  /** how many of the first `solids` are walls (set once the shell is built) */
+  walls = 0;
+
+  /** true when local point (x, z) is within `margin` metres of a wall */
+  nearWall(x: number, z: number, margin = 0.03) {
+    _v.set(x, 0, z).applyMatrix4(this.top);
+    for (let i = 0; i < this.walls; i++) {
+      const s = this.solids[i];
+      if (_v.x > s[0] - margin && _v.x < s[2] + margin && _v.z > s[1] - margin && _v.z < s[3] + margin) return true;
+    }
+    return false;
+  }
+
+  /** 1 on laptops; lower on phones, where soft furniture is built from a coarser mesh */
+  constructor(readonly detail = 1) {}
 
   private get top() { return this.stack[this.stack.length - 1]; }
 
@@ -285,6 +329,121 @@ export class Kit {
       for (let i = 0; i < a.count; i++) a.setXY(i, u0 + a.getX(i) * (u1 - u0), v0 + a.getY(i) * (v1 - v0));
     }
     this.push(slot, g, x, y, z, { ...o, keep: o.keep ?? true });
+  }
+
+  /**
+   * Upholstery, bedding and cloth, centred at (x, y, z): a w × h × d block rounded into a
+   * pillow / cushion / mattress shape (h is the thickness), optionally draped over an edge.
+   * Built from an evenly spaced grid so every surface bends smoothly and shades softly.
+   */
+  soft(slot: string, w: number, h: number, d: number, x = 0, y = 0, z = 0, o: SoftOpts = {}) {
+    const hw = w / 2, hh = h / 2, hd = d / 2;
+    const st = (o.step ?? 0.06) / this.detail;
+    const n = (len: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.ceil(len / st)));
+    let g: THREE.BufferGeometry = new THREE.BoxGeometry(2, 2, 2, n(w, 4, 44), n(h, 2, 22), n(d, 4, 44));
+    g.deleteAttribute('normal'); g.deleteAttribute('uv');
+    g = mergeVertices(g);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const cr = Math.min(o.corner ?? Math.min(hw, hd) / 3, hw - 1e-3, hd - 1e-3);
+    const ev = o.side ?? 6;
+    const seed = o.seed ?? (w * 37.1 + d * 91.7 + h * 13.3);
+    const dr = o.drape;
+    for (let i = 0; i < pos.count; i++) {
+      const sx = pos.getX(i), sy = pos.getY(i), sz = pos.getZ(i);
+      // plan: ray from the centre to the rounded-rectangle outline
+      const qx = sx * hw, qz = sz * hd, ql = Math.hypot(qx, qz);
+      const rho = Math.max(Math.abs(sx), Math.abs(sz));
+      let px = 0, pz = 0;
+      if (ql > 1e-9) {
+        const ux = qx / ql, uz = qz / ql;
+        let t = Math.min(Math.abs(ux) > 1e-9 ? hw / Math.abs(ux) : Infinity, Math.abs(uz) > 1e-9 ? hd / Math.abs(uz) : Infinity);
+        const cx = Math.sign(ux) * (hw - cr), cz = Math.sign(uz) * (hd - cr);
+        if (cr > 0 && Math.abs(ux * t) > hw - cr && Math.abs(uz * t) > hd - cr) {
+          const b = ux * cx + uz * cz;
+          t = b + Math.sqrt(Math.max(0, b * b - (cx * cx + cz * cz) + cr * cr));
+        }
+        // superellipse blend between plan radius and thickness rounds the top and bottom edges
+        const lam = 1 / Math.pow(Math.pow(rho, ev) + Math.pow(Math.abs(sy), ev), 1 / ev);
+        px = ux * t * rho * lam; pz = uz * t * rho * lam;
+        pos.setY(i, sy * lam * hh);
+      } else pos.setY(i, sy * hh);
+      let py = pos.getY(i);
+      const fu = Math.min(1, Math.abs(px) / hw), fv = Math.min(1, Math.abs(pz) / hd);
+      const mid = (1 - fu * fu) * (1 - fv * fv);
+      if (o.puff) py += Math.sign(py) * o.puff * mid;
+      if (o.sag && py > 0) py -= o.sag * mid * mid;
+      if (o.pinch) py *= 1 - o.pinch * Math.pow(fu * fv, 3);
+      if (o.rumple) {
+        const ru = Math.sin(px * 7.3 + seed) * Math.sin(pz * 5.9 + seed * 1.7) + 0.6 * Math.sin(px * 13.1 - pz * 10.7 + seed * 2.3) + 0.3 * Math.sin(pz * 23.0 + px * 4.1 + seed);
+        py += o.rumple * ru * (py > 0 ? 1 : 0.4);
+      }
+      if (dr) {
+        // fold the sheet down over the edges like a tablecloth; corners fall into soft cones
+        const ex = Math.max(0, Math.abs(px) - dr.hw);
+        const ez = dr.end !== undefined ? Math.max(0, pz - dr.end) : 0;
+        const dist = Math.hypot(ex, ez);
+        if (dist > 1e-9) {
+          const dx = (Math.sign(px) * ex) / dist, dz = ez / dist;
+          const r = dr.bend, arc = (r * Math.PI) / 2;
+          let horiz: number, vert: number;
+          if (dist < arc) { const a = dist / r; horiz = (r + py) * Math.sin(a); vert = (r + py) * Math.cos(a) - r; }
+          else { horiz = r + py; vert = -r - (dist - arc); }
+          px = (ex > 0 ? Math.sign(px) * dr.hw : px) + dx * horiz;
+          pz = (ez > 0 ? dr.end! : pz) + dz * horiz;
+          py = vert;
+        }
+      }
+      pos.setXYZ(i, px, py, pz);
+    }
+    g.computeVertexNormals();
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(pos.count * 2), 2));
+    this.push(slot, g, x, y, z, o);
+  }
+
+  /** a tapered rod from point a to point b: stems, branches, leaf stalks */
+  rod(slot: string, ax: number, ay: number, az: number, bx: number, by: number, bz: number, r0: number, r1 = r0, seg = 6) {
+    const dx = bx - ax, dy = by - ay, dz = bz - az, len = Math.hypot(dx, dy, dz);
+    if (len < 1e-4) return;
+    const g = new THREE.CylinderGeometry(r1, r0, len, seg, 1, true);
+    g.translate(0, len / 2, 0);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(dx / len, dy / len, dz / len)));
+    this.push(slot, g, ax, ay, az, { keep: true });
+  }
+
+  /**
+   * A leaf blade whose base sits exactly at (x, y, z) — put it on the end of a stalk and the two
+   * meet. It heads out at `yaw` (about +y, 0 = +z), rising at `pitch`, curling down by `droop`
+   * over its length, with the halves folded up along the midrib by `fold`.
+   */
+  leaf(slot: string, x: number, y: number, z: number, len: number, wid: number, yaw: number, pitch: number, o: { droop?: number; fold?: number; shape?: 'oval' | 'lance' | 'heart' | 'fiddle'; rows?: number } = {}) {
+    const rows = Math.max(3, Math.round((o.rows ?? (len > 0.12 ? 7 : 4)) * this.detail)), droop = o.droop ?? 0.8, fold = o.fold ?? 0.2, shape = o.shape ?? 'oval';
+    const across = [-1, -0.5, 0, 0.5, 1];
+    const pos: number[] = [];
+    let cy = 0, cz = 0;
+    for (let i = 0; i <= rows; i++) {
+      const t = i / rows;
+      if (i > 0) { const a = pitch - droop * (t - 0.5 / rows); cz += Math.cos(a) * (len / rows); cy += Math.sin(a) * (len / rows); }
+      // never quite zero at the base and tip, so every vertex keeps a proper normal
+      const half = wid * 0.03 + (wid / 2) * (
+        shape === 'lance' ? Math.pow(Math.sin(Math.PI * t), 1.3) :
+        shape === 'heart' ? Math.sin(Math.PI * Math.pow(t, 0.62)) :
+        shape === 'fiddle' ? Math.sin(Math.PI * Math.pow(t, 1.45)) :
+        Math.sin(Math.PI * Math.pow(t, 0.9)));
+      for (const s of across) pos.push(s * half, cy + Math.abs(s) * half * fold, cz);
+    }
+    const idx: number[] = [];
+    const C = across.length;
+    for (let i = 0; i < rows; i++) for (let j = 0; j < C - 1; j++) {
+      const a = i * C + j, b = a + 1, c = a + C, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array((pos.length / 3) * 2), 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    g.rotateY(yaw);
+    this.push(slot, g, x, y, z, { keep: true });
   }
 
   /** a geometry already in local metres */

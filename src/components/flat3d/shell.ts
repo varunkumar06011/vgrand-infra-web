@@ -312,4 +312,6 @@ export function buildShell(k: Kit, plan: PlanDef) {
     }
   });
   k.light('always', ecx, H - 0.4, ecz, 7, 0xffe2bd);
+  // everything solid so far is structure; furniture can ask the kit where the walls are
+  k.walls = k.solids.length;
 }

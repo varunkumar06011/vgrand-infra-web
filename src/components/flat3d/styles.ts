@@ -1,4 +1,4 @@
-import type { ArtKind, RugKind } from './textures';
+import type { ArtKind, RugKind, Weave } from './textures';
 
 /**
  * The three interiors. Every surface in the home belongs to a named "slot"; a style is just a
@@ -18,7 +18,7 @@ export type TexSpec =
   | { gen: 'tile'; n: number; base: string; veins: string[]; grout: string; vein: number; cloud: number; seed: number }
   | { gen: 'slab'; base: string; veins: string[]; vein: number; seed: number }
   | { gen: 'wood'; cols: number; base: string; dark: string; variance: number; gap: number; joints: boolean; seed: number }
-  | { gen: 'fabric'; base: string; contrast: number; scale: number; seed: number }
+  | { gen: 'fabric'; base: string; contrast: number; scale: number; seed: number; weave?: Weave }
   | { gen: 'plaster'; base: string; seed: number }
   | { gen: 'grid'; cols: number; rows: number; base: string; grout: string; variance: number; bond?: boolean; seed: number }
   | { gen: 'rug'; kind: RugKind; pal: string[]; seed: number; aspect: number }
@@ -70,7 +70,7 @@ export const SLOT_FLAGS: Record<string, SlotFlags> = {
 
 const wood = (base: string, dark: string, seed: number, cols = 1, variance = 0.25): TexSpec =>
   ({ gen: 'wood', cols, base, dark, variance, gap: 0, joints: false, seed });
-const cloth = (base: string, seed: number, contrast = 9, scale = 2): TexSpec => ({ gen: 'fabric', base, contrast, scale, seed });
+const cloth = (base: string, seed: number, contrast = 9, scale = 2, weave: Weave = 'plain'): TexSpec => ({ gen: 'fabric', base, contrast, scale, seed, weave });
 
 /** slots that look the same whatever the style */
 const COMMON: Record<string, MatSpec> = {
@@ -92,8 +92,8 @@ const COMMON: Record<string, MatSpec> = {
   downlight: { c: '#fbf6ea', e: '#ffe2b4', r: 0.5 },
   cove: { c: '#fbf3e2', e: '#ffd49a', r: 0.6 },
   diya: { c: '#ffb24d', e: '#ff9a2e', r: 0.5 },
-  linen: { tex: cloth('#f4f1ea', 11, 6), size: 0.5, r: 0.95 },
-  towel: { tex: cloth('#efe9df', 12, 12, 3), size: 0.25, r: 1 },
+  linen: { tex: cloth('#f4f1ea', 11, 6, 2, 'linen'), size: 0.5, r: 0.95, bump: 0.15 },
+  towel: { tex: cloth('#efe9df', 12, 10, 3, 'terry'), size: 0.25, r: 1, bump: 0.6 },
   floorHall: { tex: { gen: 'tile', n: 2, base: '#cfc8bb', veins: ['#b9b1a2', '#ddd7cb'], grout: '#aaa294', vein: 0.25, cloud: 0.14, seed: 91 }, size: 1.2192, r: 0.4 },
   hallWall: { c: '#e7e2d8', r: 0.95 },
   slabEdge: { c: '#d9d5cc', r: 0.9 },
@@ -123,13 +123,13 @@ const LUX: Record<string, MatSpec> = {
   doorMain: { tex: wood('#5b3a26', '#2a170d', 25, 3, 0.25), size: 1.1, r: 0.38, bump: 0.3 },
   frame: { tex: wood('#5b3a26', '#2a170d', 26), size: 0.8, r: 0.45 },
   metal: { c: '#b9985c', r: 0.3, m: 1, env: 1.3 },
-  fabric: { tex: cloth('#d6cab7', 31, 13, 3), size: 0.22, r: 0.98, bump: 0.5 },
-  fabric2: { tex: cloth('#8c6a4e', 32, 9), size: 0.3, r: 0.85, bump: 0.3 },
-  duvet: { tex: cloth('#f2ede4', 33, 6), size: 0.5, r: 0.97 },
-  throw: { tex: cloth('#a5673f', 34, 14, 3), size: 0.2, r: 1, bump: 0.5 },
-  cushionA: { tex: cloth('#a5673f', 35, 10), size: 0.25, r: 0.95 },
-  cushionB: { tex: cloth('#3f5a4a', 36, 10), size: 0.25, r: 0.95 },
-  curtain: { tex: cloth('#cdbfa6', 37, 7), size: 0.4, r: 0.95 },
+  fabric: { tex: cloth('#d6cab7', 31, 10, 3, 'boucle'), size: 0.22, r: 0.98, bump: 0.7 },
+  fabric2: { tex: cloth('#8c6a4e', 32, 9, 2, 'velvet'), size: 0.45, r: 0.78, bump: 0.15 },
+  duvet: { tex: cloth('#f2ede4', 33, 6, 2, 'linen'), size: 0.5, r: 0.97, bump: 0.15 },
+  throw: { tex: cloth('#a5673f', 34, 10, 3, 'knit'), size: 0.42, r: 1, bump: 0.9 },
+  cushionA: { tex: cloth('#a5673f', 35, 9, 2, 'velvet'), size: 0.4, r: 0.8 },
+  cushionB: { tex: cloth('#3f5a4a', 36, 8, 2, 'linen'), size: 0.3, r: 0.95, bump: 0.2 },
+  curtain: { tex: cloth('#cdbfa6', 37, 7, 2, 'linen'), size: 0.4, r: 0.95 },
   sheer: { c: '#fffaf0', r: 0.9, opacity: 0.42 },
   pot: { c: '#e7dfd0', r: 0.5 },
   decorA: { c: '#a5673f', r: 0.45 },
@@ -163,13 +163,13 @@ const MODERN: Record<string, MatSpec> = {
   doorMain: { tex: wood('#2c2c2e', '#131314', 125, 3, 0.2), size: 1.1, r: 0.38, bump: 0.3 },
   frame: { c: '#26272a', r: 0.45 },
   metal: { c: '#1b1b1d', r: 0.42, m: 0.9, env: 1.1 },
-  fabric: { tex: cloth('#94979b', 131, 11, 2), size: 0.22, r: 0.96, bump: 0.4 },
-  fabric2: { tex: cloth('#2d2f34', 132, 8), size: 0.3, r: 0.9, bump: 0.3 },
-  duvet: { tex: cloth('#f3f3f1', 133, 6), size: 0.5, r: 0.97 },
-  throw: { tex: cloth('#c9a227', 134, 14, 3), size: 0.2, r: 1, bump: 0.5 },
-  cushionA: { tex: cloth('#c9a227', 135, 10), size: 0.25, r: 0.95 },
-  cushionB: { tex: cloth('#202124', 136, 10), size: 0.25, r: 0.95 },
-  curtain: { tex: cloth('#b9bbbd', 137, 7), size: 0.4, r: 0.95 },
+  fabric: { tex: cloth('#94979b', 131, 9, 2), size: 0.22, r: 0.96, bump: 0.4 },
+  fabric2: { tex: cloth('#2d2f34', 132, 7, 2, 'velvet'), size: 0.45, r: 0.8, bump: 0.15 },
+  duvet: { tex: cloth('#f3f3f1', 133, 6, 2, 'linen'), size: 0.5, r: 0.97, bump: 0.15 },
+  throw: { tex: cloth('#c9a227', 134, 10, 3, 'knit'), size: 0.42, r: 1, bump: 0.9 },
+  cushionA: { tex: cloth('#c9a227', 135, 9, 2, 'velvet'), size: 0.4, r: 0.8 },
+  cushionB: { tex: cloth('#202124', 136, 8), size: 0.25, r: 0.95, bump: 0.2 },
+  curtain: { tex: cloth('#b9bbbd', 137, 7, 2, 'linen'), size: 0.4, r: 0.95 },
   sheer: { c: '#fbfcfd', r: 0.9, opacity: 0.4 },
   pot: { c: '#2a2b2e', r: 0.5 },
   decorA: { c: '#c9a227', r: 0.45 },
@@ -203,13 +203,13 @@ const SCANDI: Record<string, MatSpec> = {
   doorMain: { tex: wood('#c9ac82', '#94734c', 225, 3, 0.25), size: 1.1, r: 0.45, bump: 0.3 },
   frame: { c: '#fbfaf6', r: 0.5 },
   metal: { c: '#c3c5c8', r: 0.34, m: 1, env: 1.2 },
-  fabric: { tex: cloth('#ddd7cc', 231, 12, 3), size: 0.22, r: 0.98, bump: 0.5 },
-  fabric2: { tex: cloth('#9fb0b5', 232, 9), size: 0.3, r: 0.92, bump: 0.3 },
-  duvet: { tex: cloth('#fbfaf6', 233, 6), size: 0.5, r: 0.97 },
-  throw: { tex: cloth('#9fb0b5', 234, 14, 3), size: 0.2, r: 1, bump: 0.5 },
-  cushionA: { tex: cloth('#b9c4b2', 235, 10), size: 0.25, r: 0.95 },
-  cushionB: { tex: cloth('#d9b8a8', 236, 10), size: 0.25, r: 0.95 },
-  curtain: { tex: cloth('#f1eee7', 237, 7), size: 0.4, r: 0.95 },
+  fabric: { tex: cloth('#ddd7cc', 231, 10, 3, 'boucle'), size: 0.22, r: 0.98, bump: 0.7 },
+  fabric2: { tex: cloth('#9fb0b5', 232, 8, 2, 'linen'), size: 0.3, r: 0.92, bump: 0.25 },
+  duvet: { tex: cloth('#fbfaf6', 233, 6, 2, 'linen'), size: 0.5, r: 0.97, bump: 0.15 },
+  throw: { tex: cloth('#9fb0b5', 234, 10, 3, 'knit'), size: 0.42, r: 1, bump: 0.9 },
+  cushionA: { tex: cloth('#b9c4b2', 235, 8, 2, 'linen'), size: 0.3, r: 0.95, bump: 0.2 },
+  cushionB: { tex: cloth('#d9b8a8', 236, 9, 2, 'velvet'), size: 0.4, r: 0.8 },
+  curtain: { tex: cloth('#f1eee7', 237, 7, 2, 'linen'), size: 0.4, r: 0.95 },
   sheer: { c: '#ffffff', r: 0.9, opacity: 0.4 },
   pot: { c: '#f4f1ea', r: 0.55 },
   decorA: { c: '#9fb0b5', r: 0.5 },

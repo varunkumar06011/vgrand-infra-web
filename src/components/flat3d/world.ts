@@ -250,7 +250,7 @@ export class FlatWorld {
   build(id: PlanId) {
     this.disposePlan();
     const plan = (this.plan = PLANS[id]);
-    const kit = new Kit();
+    const kit = new Kit(this.q.hi ? 1 : 0.62);
     buildShell(kit, plan);
     this.wallSolids = kit.solids.slice();
     furnish(kit, plan);
