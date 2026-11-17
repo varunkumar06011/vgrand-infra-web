@@ -3,25 +3,26 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
-import { Move3d } from 'lucide-react';
+import { Move3d, Play } from 'lucide-react';
+import PlanSvg from '@/components/flat3d/PlanSvg';
 
-// three.js + the viewer only load when the visitor gets near this block
-const FlatViewer = dynamic(() => import('./FlatViewer'), { ssr: false });
+// three.js + the whole walkthrough only load when the visitor gets near this block
+const FlatExperience = dynamic(() => import('@/components/flat3d/FlatExperience'), { ssr: false });
 
-const MODEL_URL = '/models/flat-premium.glb';
+const FEATURES = ['Guided room-by-room tour', 'Dollhouse view', 'Three interior styles', 'Morning to night', 'East & West facing'];
 
 export default function FlatWalkthrough() {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // warm the viewer chunk + model when the block nears the viewport
+  // warm the viewer chunk when the block nears the viewport
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
-          import('./FlatViewer');
+          import('@/components/flat3d/FlatExperience');
           io.disconnect();
         }
       },
@@ -31,12 +32,16 @@ export default function FlatWalkthrough() {
     return () => io.disconnect();
   }, []);
 
-  // lock page scroll while the walkthrough is open
+  // lock page scroll while the walkthrough is open, and let the page's own 3D intro stand down
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    window.dispatchEvent(new CustomEvent('flat3d:open', { detail: true }));
+    return () => {
+      document.body.style.overflow = prev;
+      window.dispatchEvent(new CustomEvent('flat3d:open', { detail: false }));
+    };
   }, [open]);
 
   // /projects/<slug>?tour=open — launched from the "View Flat" card button
@@ -53,36 +58,43 @@ export default function FlatWalkthrough() {
   const close = useCallback(() => setOpen(false), []);
 
   return (
-    <div ref={wrapRef} style={{ marginBottom: 56 }}>
-      <h2 style={{ fontFamily: 'var(--font-heading)', color: '#1a1a1a', fontSize: 28, marginBottom: 16, fontWeight: 700 }}>
-        3D Walkthrough: Step Inside the Sample Flat
-      </h2>
-      <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', marginBottom: 24 }}>
-        Walk through the fully furnished 3 BHK flat in real 3D on your phone or laptop. Use the on-screen joystick
-        to move and drag to look around — or WASD and the mouse on a computer.
+    <div ref={wrapRef}>
+      <h2 className="font-heading text-forest">Step inside the 3 BHK</h2>
+      <p className="mt-4 !text-[17px] !leading-[1.8]">
+        Walk through the furnished flat in 3D, on your phone or laptop. It is built to scale from the floor plan, for both the East and West
+        facing homes — take the guided tour or explore every room yourself.
       </p>
 
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open the 3D walkthrough"
-        style={{
-          position: 'relative', display: 'block', width: '100%', aspectRatio: '16 / 9', maxHeight: 460,
-          border: 'none', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', padding: 0,
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #3a2f25 55%, #3b7122 130%)',
-        }}
+        aria-label="Open the 3D walkthrough of the 3 BHK flat"
+        className="group relative mt-8 block w-full overflow-hidden rounded-xl bg-forest text-left"
       >
-        <span style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#fff' }}>
-          <span style={{ width: 72, height: 72, borderRadius: '50%', background: '#3b7122', display: 'grid', placeItems: 'center', boxShadow: '0 8px 30px rgba(192,57,43,.5)' }}>
-            <Move3d size={34} />
+        <span aria-hidden className="dither-bg-dark absolute inset-0 opacity-70" />
+        <span className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 md:p-9">
+          <span aria-hidden className="flex shrink-0 items-end justify-center gap-4 sm:gap-5">
+            <PlanSvg plan="east" className="h-[150px] w-[104px] transition-transform duration-700 ease-out group-hover:-translate-y-1 md:h-[190px] md:w-[132px]" />
+            <PlanSvg plan="west" className="h-[150px] w-[104px] transition-transform delay-75 duration-700 ease-out group-hover:-translate-y-1 md:h-[190px] md:w-[132px]" />
           </span>
-          <span style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(18px, 3vw, 26px)', fontWeight: 700 }}>
-            Enter the 3D Walkthrough
+          <span className="min-w-0">
+            <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-meadow-400">
+              <Move3d size={15} /> 3D walkthrough
+            </span>
+            <span className="mt-3 block font-heading text-[clamp(22px,3vw,30px)] leading-tight text-white">Walk every room before you visit.</span>
+            <span className="mt-4 flex flex-wrap gap-2">
+              {FEATURES.map((f) => (
+                <span key={f} className="rounded-md border border-white/20 px-2.5 py-1 text-[12px] text-white/85">{f}</span>
+              ))}
+            </span>
+            <span className="mt-6 inline-flex items-center gap-2 rounded-lg bg-meadow-600 px-5 py-3 text-sm font-semibold text-white transition-colors group-hover:bg-meadow-500">
+              <Play size={16} /> Enter the 3D home
+            </span>
           </span>
-          <span style={{ fontSize: 13, opacity: 0.75 }}>Tap to start · works on mobile &amp; desktop</span>
         </span>
       </button>
 
-      {open && typeof document !== 'undefined' && createPortal(<FlatViewer url={MODEL_URL} onClose={close} />, document.body)}
+      {open && typeof document !== 'undefined' && createPortal(<FlatExperience onClose={close} />, document.body)}
     </div>
   );
 }

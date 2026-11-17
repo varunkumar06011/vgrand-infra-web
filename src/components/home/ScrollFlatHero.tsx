@@ -60,6 +60,14 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
   const progressRef = useRef(0);
   const [status, setStatus] = useState<'checking' | 'loading' | 'ready' | 'fallback'>('checking');
   const [calm, setCalm] = useState(false);
+  // the full-screen walkthrough is open: hand the graphics memory over to it
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    const on = (e: Event) => setPaused(!!(e as CustomEvent<boolean>).detail);
+    window.addEventListener('flat3d:open', on);
+    return () => window.removeEventListener('flat3d:open', on);
+  }, []);
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -104,10 +112,11 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{ backgroundImage: `url('${tour.poster}')`, opacity: status === 'ready' ? 0 : 0.35 }}
         />
-        {status !== 'checking' && (
+        {status !== 'checking' && !paused && (
           <div className={`absolute inset-0 transition-opacity duration-1000 ${status === 'ready' ? 'opacity-100' : 'opacity-0'}`}>
             <FlatScene
               url={tour.modelUrl}
+              plan={tour.plan}
               camPath={tour.camPath}
               lookPath={tour.lookPath}
               shiftKeys={tour.shiftKeys}
