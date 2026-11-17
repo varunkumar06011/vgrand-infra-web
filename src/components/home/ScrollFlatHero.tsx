@@ -10,7 +10,6 @@ import type { FlatTourChapter, FlatTourConfig } from '@/data/flatTours';
 // three.js + model are only fetched on the client, after first paint
 const FlatScene = dynamic(() => import('./FlatScene'), { ssr: false });
 
-const NAVBAR_H = 84;
 
 function ChapterBlock({ progress, chapter, last, first, calm, children }: {
   progress: MotionValue<number>; chapter: FlatTourChapter; last: boolean; first: boolean; calm: boolean; children: React.ReactNode;
@@ -37,7 +36,7 @@ function ChapterBlock({ progress, chapter, last, first, calm, children }: {
   return (
     <motion.div
       style={{ opacity, y, pointerEvents: pe }}
-      className={`absolute inset-0 flex flex-col justify-end md:justify-center ${align} px-6 md:px-[8vw] pb-[16vh] md:pb-0`}
+      className={`absolute inset-0 flex flex-col justify-end md:justify-center ${align} px-6 md:px-[8vw] pb-[calc(12vh_+_100vh_-_100svh)] md:pb-0`}
     >
       {children}
     </motion.div>
@@ -90,7 +89,8 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
     return () => { lenis.options.wheelMultiplier = prev.w; lenis.options.touchMultiplier = prev.t; };
   }, []);
 
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: [`start ${NAVBAR_H}px`, 'end end'] });
+  // the section is padded by the header height, so the pinned stage sits right under the header from the first pixel
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] });
   useMotionValueEvent(scrollYProgress, 'change', (v) => { progressRef.current = v; });
 
   const hintOpacity = useTransform(scrollYProgress, (p) => Math.max(0, 1 - p / 0.03));
@@ -104,10 +104,15 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
     <section
       ref={sectionRef}
       style={{ height: `${tour.scrollVh}vh` }}
-      className="relative bg-[radial-gradient(ellipse_at_50%_40%,#3a1612_0%,#120d0d_70%)]"
+      className="relative pt-[64px] lg:pt-[76px] bg-[radial-gradient(ellipse_at_50%_40%,#3a1612_0%,#120d0d_70%)]"
       aria-label={`3D tour of the ${projectName} flat`}
     >
-      <div className="sticky overflow-hidden w-full" style={{ top: NAVBAR_H, height: `calc(100svh - ${NAVBAR_H}px)` }}>
+      {/*
+        Pinned under the navbar (64px, 76px from lg). 100vh is the full screen with the browser's
+        toolbars hidden on mobile, so the 3D view reaches the bottom edge once the page scrolls,
+        instead of leaving a dark strip where the toolbar used to be.
+      */}
+      <div className="sticky overflow-hidden w-full top-[64px] lg:top-[76px] h-[calc(100vh_-_64px)] lg:h-[calc(100vh_-_76px)]">
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{ backgroundImage: `url('${tour.poster}')`, opacity: status === 'ready' ? 0 : 0.35 }}
@@ -159,12 +164,12 @@ export default function ScrollFlatHero({ tour, projectName, fallback }: {
         ))}
 
         {status === 'loading' && (
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/70 text-xs tracking-[3px] uppercase">
+          <div className="absolute bottom-[calc(2.5rem_+_100vh_-_100svh)] left-1/2 -translate-x-1/2 text-white/70 text-xs tracking-[3px] uppercase">
             Loading 3D flat…
           </div>
         )}
 
-        <motion.div style={{ opacity: hintOpacity }} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
+        <motion.div style={{ opacity: hintOpacity }} className="absolute bottom-[calc(2rem_+_100vh_-_100svh)] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
           <span className="text-white/80 text-[10px] tracking-[4px] uppercase drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">Scroll</span>
           <span className="block w-px h-10 bg-gradient-to-b from-white/80 to-transparent animate-pulse" />
         </motion.div>
