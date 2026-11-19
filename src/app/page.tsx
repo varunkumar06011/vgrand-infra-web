@@ -2,11 +2,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { getTour } from '@/data/tours';
-import HomeHero from '@/components/home/HomeHero';
-import HomeMotion from '@/components/home/HomeMotion';
-import { BuildingDoodle, CoinsDoodle, GateDoodle, HouseDoodle, LeafDoodle } from '@/components/home/Doodles';
+import DitherHero from '@/components/home/DitherHero';
 import ProjectCard from '@/components/ProjectCard';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import Reveal from '@/components/ui/Reveal';
+import Counter from '@/components/ui/Counter';
 import { getAdminClient } from '@/lib/supabaseAdmin';
 import { mergeProjects } from '@/lib/mergeProjects';
 import { renderSafeHtml } from '@/lib/safeHtml';
@@ -14,28 +14,6 @@ import { testimonials } from '@/data/testimonials';
 import { SITE_WHATSAPP_NUMBER } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * Runs while the HTML is parsed, before first paint: picks the motion tier (see HomeMotion)
- * so the CSS below can hide the hero pieces that are about to animate. If the animation code
- * has not started within 4 s (slow network, script error) everything is shown as is.
- */
-const MOTION_BOOT = `(function(){try{var d=document.documentElement;if(matchMedia('(prefers-reduced-motion: reduce)').matches){d.dataset.motion='none';return}var n=navigator,c=n.hardwareConcurrency||8,m=n.deviceMemory||8;d.dataset.motion=(c<=4||m<=4)?'lite':'full';setTimeout(function(){if(!d.dataset.motionRan)d.dataset.motion='none'},4000)}catch(e){}})();`;
-
-const GRAIN =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.19 0 0 0 0 0.11 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
-
-const HOME_CSS = `
-html[data-motion='full'] [data-word]{transform:translateY(110%)}
-html[data-motion='lite'] [data-word]{opacity:0}
-html[data-motion='full'] :is([data-hero-fade],[data-hero-scene]),html[data-motion='lite'] :is([data-hero-fade],[data-hero-scene]){opacity:0}
-.home-grain{position:relative;isolation:isolate}
-.home-grain::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.09;background-image:${GRAIN}}
-.home-grain.on-dark::before{filter:invert(1);opacity:.06}
-@keyframes home-marquee{to{transform:translate3d(-50%,0,0)}}
-.home-marquee{display:flex;width:max-content;animation:home-marquee 42s linear infinite}
-@media (prefers-reduced-motion: reduce){.home-marquee{animation:none}}
-`;
 
 const faqs = [
   {
@@ -62,9 +40,6 @@ const values = [
   { title: 'Modern Gated Community', body: 'Each project is a <strong>modern gated community with security in Ongole</strong>, offering peace of mind for families.' },
   { title: 'EMI & Finance', body: 'We provide <strong>low cost flats in Ongole with EMI options</strong> to make your dream home a reality within your budget.' },
 ];
-
-/** one doodle per value above, in the same order */
-const valueDoodles = [LeafDoodle, BuildingDoodle, GateDoodle, CoinsDoodle];
 
 const nextSteps = [
   { title: 'EMI calculator', body: 'Work out the monthly instalment.', href: '/emi-calculator' },
@@ -113,45 +88,17 @@ export default async function Home() {
     })),
   };
 
-  const facts = [
-    'First gated community in Koppolu',
-    'Next to the NH-16 highway',
-    flagship?.type,
-    flagship?.handover ? `Handover ${flagship.handover}` : null,
-    'RERA registered developer',
-    '25+ years of experience',
-  ].filter(Boolean) as string[];
-
   return (
-    <HomeMotion>
     <div className="bg-petal">
-      <script dangerouslySetInnerHTML={{ __html: MOTION_BOOT }} />
-      <style dangerouslySetInnerHTML={{ __html: HOME_CSS }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema).replace(/</g, '\\u003c') }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, '\\u003c') }} />
 
-      <HomeHero />
-
-      {/* Facts band — a slow CSS marquee (transform only); stops for reduced-motion users */}
-      <div className="overflow-hidden border-y border-forest/15 bg-cream py-4" aria-label="Elite Homes at a glance">
-        <ul className="home-marquee">
-          {[0, 1].map((copy) => (
-            <li key={copy} className="flex shrink-0 items-center" aria-hidden={copy === 1 ? true : undefined}>
-              {facts.map((f) => (
-                <span key={f} className="flex items-center whitespace-nowrap px-6 font-heading text-[18px] text-forest md:text-[20px]">
-                  {f}
-                  <span className="ml-12 h-1.5 w-1.5 rounded-full bg-meadow-600" aria-hidden="true" />
-                </span>
-              ))}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <DitherHero />
 
       {/* Projects: one flagship feature, the rest smaller */}
       <section className="section">
         <div className="container-x">
-          <div data-reveal className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <Reveal className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <h2 className="font-heading text-forest">Homes in Koppolu, a hospital in Ongole</h2>
               <p className="mt-4">
@@ -161,12 +108,12 @@ export default async function Home() {
             <Link href="/projects" className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-forest underline underline-offset-4 decoration-forest/30 hover:decoration-forest">
               All projects <ArrowRight size={16} />
             </Link>
-          </div>
+          </Reveal>
 
           {flagship && (
-            <div data-reveal>
+            <Reveal>
               <article className="card grid overflow-hidden lg:grid-cols-[1.35fr_1fr]">
-                <div data-img-reveal className="relative min-h-[280px] overflow-hidden lg:min-h-[500px]">
+                <div className="relative min-h-[280px] lg:min-h-[500px]">
                   <Image
                     src={flagship.image}
                     alt={flagship.name}
@@ -218,7 +165,7 @@ export default async function Home() {
                   </div>
                 </div>
               </article>
-            </div>
+            </Reveal>
           )}
 
           <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -230,10 +177,10 @@ export default async function Home() {
       </section>
 
       {/* About / founder, with the key numbers underneath */}
-      <section className="section home-grain on-dark bg-forest text-white">
-        <div className="container-x relative z-10">
+      <section className="section bg-forest text-white">
+        <div className="container-x">
           <div className="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
-            <div data-reveal>
+            <Reveal>
               <p className="eyebrow !text-meadow-400">Trusted Builders in Ongole</p>
               <h2 className="mt-4 font-heading text-white">Infrastructure company in Prakasam district</h2>
               <p className="mt-6 !text-white/75 !text-[17px]">
@@ -242,8 +189,8 @@ export default async function Home() {
               <Link href="/about" className="btn btn-light mt-8">
                 Our story <ArrowRight size={16} />
               </Link>
-            </div>
-            <div data-reveal>
+            </Reveal>
+            <Reveal delay={0.1}>
               <div className="mx-auto max-w-md">
                 <Image
                   src="/images/founder-vinod-kumar.jpg"
@@ -254,10 +201,10 @@ export default async function Home() {
                 />
                 <p className="mt-3 text-[13px] !text-white/65">Vinod Kumar Talasila — Founder, V Grand Infra</p>
               </div>
-            </div>
+            </Reveal>
           </div>
 
-          <dl className="mt-16 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-white/20 pt-10 md:grid-cols-4">
+          <dl className="mt-16 grid grid-cols-2 gap-y-8 border-t border-white/20 pt-10 md:grid-cols-4">
             {[
               { n: 25, s: '+', l: 'Years of experience', count: true },
               { n: 60, s: '+', l: 'Apartments built', count: true },
@@ -266,14 +213,7 @@ export default async function Home() {
             ].map((x) => (
               <div key={x.l}>
                 <dd className="font-heading text-[clamp(36px,4.4vw,56px)] leading-none tabular-nums text-white">
-                  {x.count ? (
-                    <span data-count={x.n} data-suffix={x.s}>
-                      {x.n}
-                      {x.s}
-                    </span>
-                  ) : (
-                    `${x.n}${x.s}`
-                  )}
+                  {x.count ? <Counter to={x.n} suffix={x.s} /> : `${x.n}${x.s}`}
                 </dd>
                 <dt className="mt-2 text-[13px] text-white/65">{x.l}</dt>
               </div>
@@ -285,25 +225,21 @@ export default async function Home() {
       {/* What you get — plain ruled list, no cards or icons */}
       <section className="section">
         <div className="container-x">
-          <div data-reveal className="max-w-2xl">
+          <Reveal className="max-w-2xl">
             <h2 className="font-heading text-forest">What you get when you buy from V Grand Infra</h2>
-          </div>
-          <div data-stagger className="mt-12 grid gap-x-14 gap-y-10 md:grid-cols-2">
-            {values.map((v, i) => {
-              const Doodle = valueDoodles[i % valueDoodles.length];
-              return (
-              <div key={v.title}>
+          </Reveal>
+          <div className="mt-12 grid gap-x-14 gap-y-10 md:grid-cols-2">
+            {values.map((v, i) => (
+              <Reveal key={v.title} delay={(i % 2) * 0.06}>
                 <div className="border-t border-forest/25 pt-5">
-                  <Doodle className="h-11 w-11 text-meadow-600" />
-                  <h3 className="mt-4 font-heading text-[24px] text-forest">{v.title}</h3>
+                  <h3 className="font-heading text-[24px] text-forest">{v.title}</h3>
                   <p className="mt-3 !text-[16px]">{renderSafeHtml(v.body)}</p>
                 </div>
-              </div>
-              );
-            })}
+              </Reveal>
+            ))}
           </div>
 
-          <div data-stagger className="mt-20 grid gap-8 border-t border-forest/25 pt-8 md:grid-cols-3">
+          <div className="mt-20 grid gap-8 border-t border-forest/25 pt-8 md:grid-cols-3">
             {nextSteps.map((t) => (
               <Link key={t.title} href={t.href} className="group block">
                 <span className="flex items-center justify-between font-heading text-[22px] text-forest">
@@ -321,19 +257,19 @@ export default async function Home() {
       {testimonials.length > 0 && (
         <section className="section border-t border-forest/15">
           <div className="container-x">
-            <div data-reveal className="max-w-2xl">
+            <Reveal className="max-w-2xl">
               <h2 className="font-heading text-forest">In their own words</h2>
-            </div>
-            <div data-stagger className="mt-12 grid gap-6 md:grid-cols-3">
-              {testimonials.map((t) => (
-                <div key={t.name}>
+            </Reveal>
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {testimonials.map((t, i) => (
+                <Reveal key={t.name} delay={i * 0.07}>
                   <figure className="card h-full p-7">
                     <blockquote className="font-heading text-[20px] leading-snug text-forest">“{t.quote}”</blockquote>
                     <figcaption className="mt-5 text-[14px] text-forest/70">
                       <strong className="text-forest">{t.name}</strong> · {t.role ?? t.project}
                     </figcaption>
                   </figure>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -343,9 +279,9 @@ export default async function Home() {
       {/* FAQ */}
       <section className="section border-t border-forest/15">
         <div className="mx-auto max-w-[900px]">
-          <div data-reveal>
+          <Reveal>
             <h2 className="font-heading text-forest">Ongole real estate: your questions answered</h2>
-          </div>
+          </Reveal>
           <div className="mt-10 divide-y divide-forest/15 border-y border-forest/15">
             {faqs.map((f) => (
               <details key={f.q} className="group py-6">
@@ -364,22 +300,20 @@ export default async function Home() {
       </section>
 
       {/* Closing call to action */}
-      <section className="home-grain border-t border-forest/15 bg-cream px-5 py-20 md:px-8 md:py-24">
-        <div data-reveal className="container-x relative z-10 grid items-center gap-10 md:grid-cols-[1.4fr_1fr]">
+      <section className="border-t border-forest/15 bg-cream px-5 py-20 md:px-8 md:py-24">
+        <div className="container-x grid items-center gap-10 md:grid-cols-[1.4fr_1fr]">
           <div>
-            <HouseDoodle className="mb-6 h-20 w-28 text-meadow-600" />
             <h2 className="font-heading text-forest">Visit Elite Homes in Koppolu</h2>
             <p className="mt-4 max-w-xl">
               Looking for <strong>flats in Ongole for sale</strong>? Explore our <strong>new housing projects in Ongole 2026</strong> and secure your investment in the <strong>best infrastructure projects in Ongole</strong>.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 md:justify-end">
-            <Link href="/site-visit" data-magnetic className="btn btn-primary">Book a site visit</Link>
+            <Link href="/site-visit" className="btn btn-primary">Book a site visit</Link>
             <WhatsAppButton variant="pill" phoneNumber={SITE_WHATSAPP_NUMBER} showText={true} />
           </div>
         </div>
       </section>
     </div>
-    </HomeMotion>
   );
 }
