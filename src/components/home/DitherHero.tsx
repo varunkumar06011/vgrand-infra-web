@@ -93,17 +93,12 @@ export default function DitherHero() {
     const photo = photoRef.current;
     if (!section || !stage || !canvas || !photo) return;
 
+    // Reduced motion (an OS setting many desktops have on): keep the dot picture, the cursor/finger
+    // lens and the scroll reveal, since those only move when the visitor moves. Drop what moves on
+    // its own: the idle drifting lens and the eased glide (the lens sits exactly under the pointer).
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) {
-      // Static fallback: plain photo with the closing line only (no animation, no lens).
-      photo.style.setProperty('--sr', '3000px');
-      if (copyRef.current) copyRef.current.style.display = 'none';
-      if (copy2Ref.current) {
-        copy2Ref.current.style.opacity = '1';
-        copy2Ref.current.style.pointerEvents = 'auto';
-      }
-      return;
-    }
+    const follow = reduceMotion ? 1 : 0.16;
+    const grow = reduceMotion ? 1 : 0.14;
 
     // ---- halftone base ----
     const img = new window.Image();
@@ -156,9 +151,9 @@ export default function DitherHero() {
       }
 
       // Ease lens toward pointer
-      state.x += (state.tx - state.x) * 0.16;
-      state.y += (state.ty - state.y) * 0.16;
-      state.lr += (state.lrTarget - state.lr) * 0.14;
+      state.x += (state.tx - state.x) * follow;
+      state.y += (state.ty - state.y) * follow;
+      state.lr += (state.lrTarget - state.lr) * grow;
 
       // Sunrise radius: eased, finishes around 70% of the pinned scroll
       const t = Math.min(1, state.p / 0.7);
@@ -249,10 +244,10 @@ export default function DitherHero() {
     window.addEventListener('scroll', readScroll, { passive: true });
     readScroll();
 
-    // Idle lens on every device, so the hero moves before anyone touches it; the first real
-    // pointer move (mouse or finger) takes over.
+    // Idle lens on every device (except reduced motion), so the hero moves before anyone touches
+    // it; the first real pointer move (mouse or finger) takes over.
     const demoTimer = window.setTimeout(() => {
-      if (state.p < 0.06) {
+      if (state.p < 0.06 && !reduceMotion) {
         state.demo = true;
         needsFrame();
       }
