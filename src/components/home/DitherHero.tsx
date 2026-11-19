@@ -66,7 +66,9 @@ function drawHalftone(canvas: HTMLCanvasElement, img: HTMLImageElement) {
     for (let c = 0; c < cols; c++) {
       const i = (r * cols + c) * 4;
       const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
-      const radius = cell * 0.4 * (0.04 + 0.96 * Math.pow(1 - lum, 1.35));
+      // the 0.2 floor keeps a light field of dots in the bright sky, so the whole hero reads as
+      // a dotted picture on wide screens (where the sky is the top ~40% of the frame)
+      const radius = cell * 0.4 * (0.2 + 0.8 * Math.pow(1 - lum, 1.35));
       if (radius < 0.35) continue;
       ctx.beginPath();
       ctx.arc(c * cell + offset, y, radius, 0, Math.PI * 2);
@@ -108,6 +110,7 @@ export default function DitherHero() {
     img.src = HERO_SRC;
     const paint = () => img.complete && img.naturalWidth && drawHalftone(canvas, img);
     img.onload = paint;
+    if (img.complete) paint(); // already cached
     let resizeTimer: number | undefined;
     const onResize = () => {
       window.clearTimeout(resizeTimer);
@@ -117,6 +120,10 @@ export default function DitherHero() {
       }, 150);
     };
     window.addEventListener('resize', onResize);
+    // repaint whenever the canvas itself changes size (e.g. a scrollbar appearing or going away),
+    // which does not fire a window resize
+    const ro = new ResizeObserver(onResize);
+    ro.observe(canvas);
 
     // ---- lens + sunrise state ----
     const state = {
@@ -129,8 +136,6 @@ export default function DitherHero() {
     let raf = 0;
     let running = false;
     let lingerTimer: number | undefined;
-    let demoTimer: number | undefined;
-    const coarse = window.matchMedia('(pointer: coarse)').matches;
 
     const render = () => {
       const rect = stage.getBoundingClientRect();
@@ -244,14 +249,14 @@ export default function DitherHero() {
     window.addEventListener('scroll', readScroll, { passive: true });
     readScroll();
 
-    if (coarse) {
-      demoTimer = window.setTimeout(() => {
-        if (state.p < 0.06) {
-          state.demo = true;
-          needsFrame();
-        }
-      }, 1200);
-    }
+    // Idle lens on every device, so the hero moves before anyone touches it; the first real
+    // pointer move (mouse or finger) takes over.
+    const demoTimer = window.setTimeout(() => {
+      if (state.p < 0.06) {
+        state.demo = true;
+        needsFrame();
+      }
+    }, 1200);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -259,6 +264,7 @@ export default function DitherHero() {
       window.clearTimeout(lingerTimer);
       window.clearTimeout(demoTimer);
       window.removeEventListener('resize', onResize);
+      ro.disconnect();
       window.removeEventListener('scroll', readScroll);
       stage.removeEventListener('pointermove', onMove);
       stage.removeEventListener('pointerdown', onMove);
