@@ -3,6 +3,7 @@ import type { Kit, SoftOpts } from './kit';
 import { FT, roomById, type PlanDef } from './plans';
 import { CUT, H, sidePanels, type Side } from './shell';
 import { ART_GRID, rng } from './textures';
+import * as IN from './indian';
 
 /**
  * Furniture is modelled from simple primitives, in metres. Pieces that stand against a wall
@@ -245,10 +246,9 @@ function coffeeTable(k: Kit, w: number, d: number) {
   k.box('counter', w, 0.035, d, 0, 0.365, 0, { r: 0.012 });
   k.box('wood', w - 0.14, 0.03, d - 0.14, 0, 0.13, 0, { sw: true });
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) k.box('metal', 0.024, 0.365, 0.024, sx * (w / 2 - 0.05), 0, sz * (d / 2 - 0.05));
-  books(k, -w * 0.24, 0.4, 0.03, 0.3);
-  k.cyl('metal', 0.15, 0.15, 0.012, w * 0.2, 0.4, -0.02, { seg: 20 });
-  k.cyl('ceramic', 0.035, 0.03, 0.07, w * 0.16, 0.412, 0.02, { seg: 12 });
-  k.cyl('ceramic', 0.035, 0.03, 0.07, w * 0.26, 0.412, -0.06, { seg: 12 });
+  books(k, -w * 0.3, 0.4, 0.03, 0.3);
+  // a brass urli of floating flowers and diyas in the middle of the table
+  IN.urli(k, w * 0.12, 0.4, 0, Math.min(0.2, d * 0.36));
   // on the lower shelf: small enough to stay under the tabletop (0.365 m)
   smallPlant(k, w * 0.2, 0.16, 0.02, 0.55);
   k.foot(w, d, 0, 0, 0.34, 0.2);
@@ -316,10 +316,8 @@ function diningSet(k: Kit, w = 1.68, d = 0.95) {
     k.at(x, z, ry, () => {
       chair(k);
       // a place setting in front of each chair, 0.37 m out: clear of its neighbours and the candles
-      k.cyl('ceramic', 0.135, 0.1, 0.014, 0, top, 0.37, { seg: 20 });
-      k.cyl('ceramic', 0.085, 0.07, 0.012, 0, top + 0.014, 0.37, { seg: 16 });
-      k.cyl('glass', 0.034, 0.027, 0.11, gx, top, gz, { seg: 10 });
-      k.box('cushionB', 0.05, 0.008, 0.17, -0.19, top, 0.37);
+      IN.thali(k, top);
+      void gx; void gz;
     });
   };
   for (const sx of [-1, 1]) {
@@ -452,6 +450,14 @@ function wardrobe(k: Kit, w: number, mirrorAt = -1) {
     k.box(i === mirrorAt ? 'mirror' : 'wood', pw - 0.006, h - 0.1, 0.02, x, 0.09, dp + 0.01);
     k.box('metal', 0.012, 0.9, 0.022, x + (i % 2 ? -1 : 1) * (pw / 2 - 0.045), 0.75, dp + 0.031);
   }
+  // the loft above, right up to the ceiling — every Indian bedroom has one
+  k.box('lacquer', w, CUT - h, dp, 0, h, dp / 2);
+  k.layer(true, () => {
+    k.box('lacquer', w, H - CUT - 0.01, dp, 0, CUT, dp / 2);
+    for (let i = 1; i < n; i++) k.box('black', 0.004, H - h - 0.06, 0.004, -w / 2 + pw * i, h + 0.03, dp + 0.002);
+    k.box('black', w, 0.004, 0.004, 0, h + 0.005, dp + 0.002);
+    for (let i = 0; i < n; i++) k.box('metal', 0.1, 0.012, 0.016, -w / 2 + pw * (i + 0.5), h + 0.12, dp + 0.01);
+  });
   k.foot(w, dp + 0.03, 0, (dp + 0.03) / 2, 0.42, 0.26);
 }
 
@@ -510,11 +516,44 @@ type RunOpts = { sink?: number; hob?: number; win?: [number, number]; props?: bo
 /** wall-origin base cabinets with a stone top; sink / hob positions are local x */
 function counterRun(k: Kit, len: number, o: RunOpts = {}) {
   const dp = 0.6, hgt = 0.86, th = 0.04, td = dp + 0.02;
+  // modular cabinets under the platform are fit-out
   k.box('black', len, 0.1, dp - 0.07, 0, 0, dp / 2 - 0.035);
   k.box('cabinet', len, hgt - 0.1, dp - 0.02, 0, 0.1, (dp - 0.02) / 2);
   const n = Math.max(1, Math.round(len / 0.55));
   for (let i = 1; i < n; i++) k.box('black', 0.004, hgt - 0.12, 0.004, -len / 2 + (len * i) / n, 0.11, dp - 0.018);
   for (let i = 0; i < n; i++) k.box('metal', 0.16, 0.012, 0.018, -len / 2 + (len * (i + 0.5)) / n, hgt - 0.1, dp - 0.01);
+  // the builder hands over the granite platform on brick piers, the sink, the tap and the dado tiles
+  k.fit(false, () => counterShell(k, len, o));
+  k.fit(false, () => k.foot(len, td, 0, td / 2, 0.44, 0.26));
+  const top = hgt + th;
+  if (o.hob !== undefined) {
+    const hx = o.hob;
+    IN.gasStove(k, hx, top, dp / 2 + 0.03);
+    k.box('steel', 0.6, 0.07, 0.48, hx, 1.52, 0.24, { r: 0.006 });
+    k.box('steel', 0.26, CUT - 1.6, 0.24, hx, 1.59, 0.13);
+    k.box('cove', 0.4, 0.006, 0.05, hx, 1.514, 0.3);
+    // dinner on: the cooker on one burner, the kadai on another
+    IN.pressureCooker(k, hx - 0.24, top + 0.05, dp / 2 + 0.01, 0.4);
+    IN.kadai(k, hx + 0.24, top + 0.05, dp / 2 + 0.01);
+  }
+  if (o.props !== false) {
+    const free = (x: number) => (o.sink === undefined || Math.abs(x - o.sink) > 0.42) && (o.hob === undefined || Math.abs(x - o.hob) > 0.5);
+    const spots = [-len / 2 + 0.22, -len / 2 + 0.62, len / 2 - 0.22, len / 2 - 0.62, 0].filter(free);
+    const put = [
+      (x: number) => IN.masalaDabba(k, x, top, 0.36),
+      (x: number) => IN.dabbas(k, x - 0.18, top, 0.12, 3),
+      (x: number) => bowl(k, x, top, 0.34),
+      (x: number) => { k.box('wood', 0.3, 0.02, 0.2, x, top, 0.3, { ry: 0.15 }); smallPlant(k, x + 0.02, top, 0.12, 0.75); },
+    ];
+    spots.slice(0, put.length).forEach((x, i) => put[i](x));
+  }
+}
+
+function counterShell(k: Kit, len: number, o: RunOpts) {
+  const dp = 0.6, hgt = 0.86, th = 0.04, td = dp + 0.02;
+  const piers = Math.max(2, Math.round(len / 1.1) + 1);
+  for (let i = 0; i < piers; i++) k.box('wall', 0.1, hgt, dp - 0.05, -len / 2 + 0.05 + ((len - 0.1) * i) / (piers - 1), 0, (dp - 0.05) / 2);
+  k.box('granite', len, 0.02, dp - 0.1, 0, 0.18, (dp - 0.1) / 2);
 
   if (o.sink !== undefined) {
     const sx = o.sink, sw = 0.54, sd = 0.4, sz = 0.31;
@@ -535,41 +574,15 @@ function counterRun(k: Kit, len: number, o: RunOpts = {}) {
   } else {
     k.box('counter', len, th, td, 0, hgt, td / 2);
   }
-
+  // a bullnose front edge on the granite
+  k.cyl('counter', 0.02, 0.02, len, 0, hgt + th / 2 - len / 2, td, { seg: 8, rz: Math.PI / 2 });
   const top = hgt + th;
-  if (o.hob !== undefined) {
-    const hx = o.hob;
-    k.box('screen', 0.6, 0.008, 0.5, hx, top, dp / 2 + 0.01);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-      k.cyl('steel', 0.062, 0.062, 0.012, hx + sx * 0.15, top + 0.008, dp / 2 + 0.01 + sz * 0.12, { seg: 14 });
-      k.cyl('black', 0.045, 0.045, 0.016, hx + sx * 0.15, top + 0.008, dp / 2 + 0.01 + sz * 0.12, { seg: 12 });
-    }
-    k.box('steel', 0.6, 0.07, 0.48, hx, 1.52, 0.24, { r: 0.006 });
-    k.box('steel', 0.26, CUT - 1.6, 0.24, hx, 1.59, 0.13);
-    k.box('cove', 0.4, 0.006, 0.05, hx, 1.514, 0.3);
-    // a pot on the hob
-    k.cyl('steel', 0.1, 0.1, 0.11, hx - 0.15, top + 0.024, dp / 2 - 0.11, { seg: 16 });
-    k.cyl('steel', 0.105, 0.105, 0.01, hx - 0.15, top + 0.134, dp / 2 - 0.11, { seg: 16 });
-  }
 
   // splashback, cut around the window when there is one
   const sb = (x0: number, x1: number, y0: number, y1: number) => { if (x1 - x0 > 0.02) k.box('backsplash', x1 - x0, y1 - y0, 0.012, (x0 + x1) / 2, y0, 0.006); };
   if (o.win) {
     sb(-len / 2, o.win[0], top, 1.5); sb(o.win[1], len / 2, top, 1.5); sb(o.win[0], o.win[1], top, 1.03);
   } else sb(-len / 2, len / 2, top, 1.5);
-
-  if (o.props !== false) {
-    const free = (x: number) => (o.sink === undefined || Math.abs(x - o.sink) > 0.42) && (o.hob === undefined || Math.abs(x - o.hob) > 0.42);
-    const spots = [-len / 2 + 0.22, -len / 2 + 0.62, len / 2 - 0.22, len / 2 - 0.62, 0].filter(free);
-    const put = [
-      (x: number) => bowl(k, x, top, 0.34),
-      (x: number) => { for (let i = 0; i < 3; i++) { k.cyl('glass', 0.042, 0.042, 0.13 + i * 0.03, x - 0.1 + i * 0.1, top, 0.13, { seg: 10 }); k.cyl('wood', 0.045, 0.045, 0.015, x - 0.1 + i * 0.1, top + 0.13 + i * 0.03, 0.13, { seg: 10 }); } },
-      (x: number) => { k.cyl('steel', 0.07, 0.085, 0.17, x, top, 0.2, { seg: 14 }); k.cyl('black', 0.025, 0.03, 0.03, x, top + 0.17, 0.2, { seg: 8 }); },
-      (x: number) => { k.box('wood', 0.3, 0.02, 0.2, x, top, 0.3, { ry: 0.15 }); smallPlant(k, x + 0.02, top, 0.12, 0.75); },
-    ];
-    spots.slice(0, put.length).forEach((x, i) => put[i](x));
-  }
-  k.foot(len, td, 0, td / 2, 0.44, 0.26);
 }
 
 /** wall-origin wall cabinets; `gap` leaves room for the chimney at that local x */
@@ -638,6 +651,11 @@ function mandir(k: Kit, w: number) {
 /* ------------------------------------------------------------------ bathrooms */
 
 function wc(k: Kit) {
+  k.fit(false, () => wcBody(k));
+}
+
+function wcBody(k: Kit) {
+  k.at(0.36, 0, 0, () => IN.healthFaucet(k, 0.62));
   k.box('ceramic', 0.38, 0.4, 0.17, 0, 0.4, 0.085, { r: 0.03 });
   k.box('ceramic', 0.36, 0.4, 0.5, 0, 0, 0.42, { r: 0.1 });
   k.box('white', 0.37, 0.024, 0.45, 0, 0.4, 0.41, { r: 0.01 });
@@ -650,10 +668,14 @@ function wc(k: Kit) {
 function vanity(k: Kit, w: number) {
   k.box('wood', w, 0.3, 0.46, 0, 0.5, 0.23, { sw: true });
   k.box('black', 0.004, 0.28, 0.004, 0, 0.51, 0.462);
-  k.box('counter', w + 0.02, 0.03, 0.48, 0, 0.8, 0.24);
-  k.cyl('ceramic', 0.2, 0.15, 0.12, 0, 0.83, 0.25, { seg: 22 });
-  k.cyl('chrome', 0.013, 0.013, 0.24, 0, 0.83, 0.05, { seg: 8 });
-  k.box('chrome', 0.02, 0.02, 0.16, 0, 1.06, 0.12);
+  k.fit(false, () => {
+    k.box('granite', w + 0.02, 0.03, 0.48, 0, 0.8, 0.24);
+    k.cyl('ceramic', 0.2, 0.15, 0.12, 0, 0.83, 0.25, { seg: 22 });
+    k.cyl('chrome', 0.013, 0.013, 0.24, 0, 0.83, 0.05, { seg: 8 });
+    k.box('chrome', 0.02, 0.02, 0.16, 0, 1.06, 0.12);
+    for (const sx of [-1, 1]) k.box('chrome', 0.03, 0.2, 0.4, sx * (w / 2 - 0.1), 0.6, 0.21);
+    k.foot(w, 0.5, 0, 0.25, 0.28, 0.16);
+  });
   const mw = Math.min(w - 0.06, 0.9);
   k.box('metal', mw + 0.03, 0.83, 0.02, 0, 1.07, 0.01);
   k.wallQuad('mirror', mw, 0.8, 0, 1.485, 0.0215);
@@ -663,14 +685,21 @@ function vanity(k: Kit, w: number) {
   k.cyl('decorA', 0.022, 0.026, 0.13, w / 2 - 0.12, 0.83, 0.16, { seg: 8 });
   k.cyl('decorB', 0.02, 0.024, 0.1, w / 2 - 0.19, 0.83, 0.2, { seg: 8 });
   k.soft('towel', 0.22, 0.07, 0.16, -w / 2 + 0.16, 0.865, 0.26, { side: 3, corner: 0.035, puff: 0.005, step: 0.04 });
-  k.foot(w, 0.5, 0, 0.25, 0.28, 0.16);
 }
 
-function shower(k: Kit) {
-  k.box('chrome', 0.12, 0.12, 0.03, 0, 0.98, 0.015, { r: 0.008 });
-  k.cyl('chrome', 0.011, 0.011, 1.06, 0, 1.04, 0.035, { seg: 8 });
-  k.box('chrome', 0.02, 0.02, 0.36, 0, 2.08, 0.2);
-  k.cyl('chrome', 0.11, 0.11, 0.014, 0, 2.05, 0.38, { seg: 18 });
+/** wall-origin shower bay; `geyserAt` is where the water heater hangs along the wall (null = no room for one) */
+function shower(k: Kit, geyserAt: number | null = 0.45, bucket = true) {
+  k.fit(false, () => {
+    k.box('chrome', 0.12, 0.12, 0.03, 0, 0.98, 0.015, { r: 0.008 });
+    k.cyl('chrome', 0.011, 0.011, 1.06, 0, 1.04, 0.035, { seg: 8 });
+    k.box('chrome', 0.02, 0.02, 0.36, 0, 2.08, 0.2);
+    k.cyl('chrome', 0.11, 0.11, 0.014, 0, 2.05, 0.38, { seg: 18 });
+    IN.lowTap(k, 0.6);
+    IN.floorDrain(k, 0.22, 0.45);
+  });
+  // the bucket and mug under the low tap, and the geyser up on the wall
+  if (bucket) k.at(-0.05, 0.3, 0, () => IN.bucketMug(k));
+  if (geyserAt !== null) k.at(geyserAt, 0, 0, () => IN.geyser(k, 1.82));
   k.box('counter', 0.34, 0.02, 0.1, 0.34, 1.12, 0.05);
   k.cyl('decorA', 0.024, 0.024, 0.15, 0.27, 1.14, 0.05, { seg: 8 });
   k.cyl('white', 0.026, 0.026, 0.13, 0.36, 1.14, 0.05, { seg: 8 });
@@ -678,6 +707,10 @@ function shower(k: Kit) {
 
 /** centred; glass runs along local x */
 function glassScreen(k: Kit, len: number) {
+  k.fit(false, () => glassScreenBody(k, len));
+}
+
+function glassScreenBody(k: Kit, len: number) {
   k.box('glass', len, 1.98, 0.01, 0, 0.03, 0);
   k.box('chrome', len, 0.022, 0.022, 0, 2.01, 0);
   k.box('chrome', len, 0.03, 0.022, 0, 0, 0);
@@ -685,8 +718,10 @@ function glassScreen(k: Kit, len: number) {
 }
 
 function towelRail(k: Kit) {
-  k.box('chrome', 0.62, 0.016, 0.016, 0, 1.16, 0.06);
-  for (const sx of [-1, 1]) k.box('chrome', 0.016, 0.016, 0.06, sx * 0.3, 1.16, 0.03);
+  k.fit(false, () => {
+    k.box('chrome', 0.62, 0.016, 0.016, 0, 1.16, 0.06);
+    for (const sx of [-1, 1]) k.box('chrome', 0.016, 0.016, 0.06, sx * 0.3, 1.16, 0.03);
+  });
   overBar(k, 'towel', 0.42, 0.5, -0.04, 1.168, 0.06);
 }
 
@@ -701,15 +736,6 @@ function loungeChair(k: Kit) {
   k.soft('fabric', 0.54, 0.1, 0.54, 0, 0.35, 0.01, { ...CUSHION, sag: 0.01 });
   upright(k, 'fabric', 0.54, 0.42, 0.1, 0, 0.6, -0.25, 0.2, 0, { side: 4, corner: 0.07, puff: 0.01, step: 0.06 });
   k.foot(0.66, 0.66, 0, 0, 0.3, 0.16);
-}
-
-function bistroTable(k: Kit) {
-  k.cyl('counter', 0.26, 0.26, 0.025, 0, 0.52, 0, { seg: 22 });
-  k.cyl('metal', 0.015, 0.015, 0.52, 0, 0, 0, { seg: 6 });
-  k.cyl('metal', 0.17, 0.18, 0.014, 0, 0, 0, { seg: 18 });
-  smallPlant(k, 0.02, 0.545, 0.02, 0.85);
-  k.cyl('ceramic', 0.036, 0.03, 0.07, -0.1, 0.545, -0.06, { seg: 10 });
-  k.foot(0.5, 0.5, 0, 0, 0.26, 0.16);
 }
 
 function washer(k: Kit) {
@@ -760,8 +786,10 @@ export function furnish(k: Kit, plan: PlanDef) {
     sideTable(k, 1.5 * FT, 2.5 * FT);
     floorLamp(k, 9 * FT, 11.4 * FT);
     plant(k, 15.5 * FT, 1.3 * FT, 1.65);
-    P(4.9, 12.417, U, () => { art(k, 1.3, 0.85, 0, 0, 1.62); });
+    IN.kuthuvilakku(k, 14 * FT, 0, 0.9 * FT, 1.1);
+    P(4.9, 12.417, U, () => IN.kalamkari(k, 1.45, 1.6));
     P(14.4, 0, D, () => art(k, 0.6, 0.8, 3, 0, 1.55));
+    P(13.4, 0, D, () => IN.splitAC(k));
 
     /* kitchen — L counter: sink under the east window, hob beside it */
     P(21.792, 0, D, () => {
@@ -772,28 +800,29 @@ export function furnish(k: Kit, plan: PlanDef) {
     // a 66 cm fridge: the gap between the counter and the mandir is 67 cm
     P(17.167, 8.9, R, () => fridge(k, 0.66));
     P(18.5, 10, D, () => mandir(k, 0.7));
+    P(21.792, 0, D, () => k.at(-1.24, 0, 0, () => IN.roPurifier(k)));
 
     /* service balcony */
     P(27.8, -0.42, D, () => washer(k));
-    P(29.62, -0.42, D, () => utilitySink(k));
+    P(29.62, -0.42, D, () => k.fit(false, () => utilitySink(k)));
     P(30.5, 4.2, L, () => dryingRack(k));
     P(29.2, 11.7, D, () => planter(k, 0.8));
+    P(27.6, 3.0, D, () => IN.lpgCylinder(k));
 
     /* dining */
     P(20.2, 17.9, D, () => { rug(k, 'rugC', 2.9, 2.2); diningSet(k); });
     P(21.2, 23.833, U, () => { sideboard(k, 2.0); art(k, 1.5, 0.8, 1, 0, 1.6); });
     plant(k, 25.5 * FT, 23 * FT, 1.5);
-    P(11.667, 20.2, R, () => { art(k, 0.55, 0.75, 4, -0.36, 1.5); art(k, 0.55, 0.75, 5, 0.36, 1.5); });
+    P(11.667, 20.2, R, () => { art(k, 0.55, 0.75, 4, -0.36, 1.5); art(k, 0.55, 0.75, 5, 0.36, 1.5); IN.wallClock(k, 2.1); });
 
-    /* balcony */
-    P(28.3, 18.5, R, () => loungeChair(k));
-    P(28.3, 22.65, R, () => loungeChair(k));
-    P(28.7, 20.6, D, () => bistroTable(k));
-    P(28.9, 13.5, D, () => planter(k, 0.9));
+    /* balcony — the oonjal facing out over the town, the tulsi kota at the end */
+    P(28.85, 20.3, R, () => IN.oonjal(k));
+    P(29.4, 13.95, D, () => IN.tulsiKota(k));
+    smallPlant(k, 30.1 * FT, 0, 23.2 * FT, 1.8);
 
     /* bedroom 1 */
     accent('bed1', 'top');
-    P(4.7, 12.833, D, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); });
+    P(4.7, 12.833, D, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); IN.splitAC(k); });
     P(1.15, 12.833, D, () => nightstand(k));
     P(1.6, 23.833, U, () => wardrobe(k, 3.2 * FT));
     P(8.575, 23.833, U, () => wardrobe(k, 5.35 * FT, 1));
@@ -809,7 +838,7 @@ export function furnish(k: Kit, plan: PlanDef) {
 
     /* bedroom 2 */
     accent('bed2', 'top');
-    P(4.7, 29.667, D, () => { bed(k, 1.53); art(k, 0.5, 0.65, 6, -0.34, 1.8); art(k, 0.5, 0.65, 7, 0.34, 1.8); });
+    P(4.7, 29.667, D, () => { bed(k, 1.53); art(k, 0.5, 0.65, 6, -0.34, 1.8); art(k, 0.5, 0.65, 7, 0.34, 1.8); IN.splitAC(k); });
     P(1.15, 29.667, D, () => nightstand(k));
     P(7.475, 41, U, () => wardrobe(k, 7.55 * FT, 2));
     P(11.25, 36.2, L, () => dresser(k, 1.0));
@@ -827,7 +856,8 @@ export function furnish(k: Kit, plan: PlanDef) {
     /* common bathroom */
     P(11.667, 40.2, R, () => wc(k));
     P(15.667, 37.4, L, () => vanity(k, 0.6));
-    P(15.667, 34.75, L, () => shower(k));
+    // only 4 ft wide: no room for a geyser or a bucket clear of the doorway
+    P(15.667, 34.75, L, () => shower(k, null, false));
 
     /* master bathroom */
     P(20.2, 27.92, R, () => glassScreen(k, 2.65 * FT));
@@ -838,7 +868,7 @@ export function furnish(k: Kit, plan: PlanDef) {
 
     /* master bedroom — bed on the south wall, window seat between wardrobes on the west wall */
     accent('master', 'right', 'panel');
-    P(30.083, 36.3, L, () => { bed(k, 1.83, 2.0, 0.55); art(k, 1.5, 0.55, 10, 0, 1.85); });
+    P(30.083, 36.3, L, () => { bed(k, 1.83, 2.0, 0.55); art(k, 1.5, 0.55, 10, 0, 1.85); IN.splitAC(k); });
     P(30.083, 32.3, L, () => nightstand(k, true, 0.18));
     P(30.083, 40.3, L, () => nightstand(k, true, 0.18));
     P(25.1, 36.3, R, () => rug(k, 'rugB', 2.9, 2.1));
@@ -856,9 +886,13 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(26.35, 31.25, D, () => k.at(0, 0, -0.3, () => armchair(k)));
     floorLamp(k, 29.3 * FT, 30.5 * FT);
 
-    /* corridor outside the front door */
+    /* corridor outside the front door: toran, nameplate, rangoli and the chappal stand */
     P(5.95, -1.75, D, () => k.box('fabric2', 0.85, 0.014, 0.5, 0, 0.002, 0));
     plant(k, 9.6 * FT, -1.6 * FT, 1.3);
+    P(5.95, -0.75, U, () => IN.toran(k, 3.5 * FT, 2.2));
+    P(8.6, -0.75, U, () => IN.nameplate(k));
+    P(5.95, -4.2, D, () => IN.rangoli(k, 0.85));
+    P(2.7, -0.75, U, () => IN.chappalStand(k));
   } else {
     /* living — L-sofa in the north-east corner, TV on the master-bedroom wall, as drawn */
     P(0, 35.9, R, () => sofa(k, 8 * FT, true, false));
@@ -869,12 +903,13 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(8.2, 43.667, U, () => entryConsole(k, 1.15));
     sideTable(k, 9.25 * FT, 32.7 * FT);
     plant(k, 14.3 * FT, 42.4 * FT, 1.65);
-    P(5.2, 31.667, D, () => art(k, 1.3, 0.85, 0, 0, 1.62));
-    P(12.3, 43.667, U, () => art(k, 0.6, 0.8, 3, 0, 1.55));
+    IN.kuthuvilakku(k, 10.6 * FT, 0, 42.8 * FT, 1.1);
+    P(5.2, 31.667, D, () => IN.kalamkari(k, 1.45, 1.6));
+    P(12.3, 43.667, U, () => { art(k, 0.6, 0.8, 3, 0, 1.55); IN.splitAC(k); });
 
     /* dining */
     P(6.4, 9.2, D, () => { rug(k, 'rugC', 2.9, 2.2); diningSet(k); });
-    P(5.8, 14.417, U, () => { sideboard(k, 2.0); art(k, 1.5, 0.8, 1, 0, 1.6); });
+    P(5.8, 14.417, U, () => { sideboard(k, 2.0); art(k, 1.5, 0.8, 1, 0, 1.6); IN.wallClock(k, 2.25); });
     plant(k, 1 * FT, 12.9 * FT, 1.5);
 
     /* puja alcove */
@@ -889,22 +924,23 @@ export function furnish(k: Kit, plan: PlanDef) {
     });
     P(24.07, 7.5, U, () => { counterRun(k, 4.53 * FT); upperRun(k, -2.26 * FT, 2.26 * FT); });
     P(20.65, 7.5, U, () => fridge(k));
+    P(16, 1.75, R, () => IN.roPurifier(k, 1.0));
 
     /* service balcony */
     P(27.8, -0.42, D, () => washer(k));
-    P(29.62, -0.42, D, () => utilitySink(k));
+    P(29.62, -0.42, D, () => k.fit(false, () => utilitySink(k)));
+    P(29.8, 2.3, D, () => IN.lpgCylinder(k));
     // narrower here: it has to fit between the folded-back door and the far wall
     P(28.83, 7.5, U, () => dryingRack(k, 0.9));
 
-    /* east balcony */
-    P(1.1, 1.5, R, () => loungeChair(k));
-    P(5.5, 1.5, L, () => loungeChair(k));
-    P(3.3, 1.3, D, () => bistroTable(k));
-    P(10.2, 0.45, D, () => planter(k, 0.6));
+    /* east balcony — sunrise from the oonjal */
+    P(0.5, 1.3, R, () => loungeChair(k));
+    P(4.0, 1.0, U, () => IN.oonjal(k));
+    P(10.05, 0.45, D, () => IN.tulsiKota(k));
 
     /* bedroom 3 — desk under the south window, wardrobe beside it */
     accent('bed3', 'top');
-    P(22.4, 7.917, D, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); });
+    P(22.4, 7.917, D, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); IN.splitAC(k); });
     P(18.9, 7.917, D, () => nightstand(k));
     P(25.9, 7.917, D, () => nightstand(k, false));
     P(30, 10.6, L, () => desk(k, 1.05));
@@ -932,7 +968,7 @@ export function furnish(k: Kit, plan: PlanDef) {
 
     /* bedroom 2 */
     accent('bed2', 'top');
-    P(5, 14.833, D, () => { bed(k, 1.53); art(k, 0.5, 0.65, 6, -0.34, 1.8); art(k, 0.5, 0.65, 7, 0.34, 1.8); });
+    P(5, 14.833, D, () => { bed(k, 1.53); art(k, 0.5, 0.65, 6, -0.34, 1.8); art(k, 0.5, 0.65, 7, 0.34, 1.8); IN.splitAC(k); });
     P(1.5, 14.833, D, () => nightstand(k));
     P(8.5, 14.833, D, () => nightstand(k, false));
     P(7.275, 26.333, U, () => wardrobe(k, 7.95 * FT, 2));
@@ -946,7 +982,7 @@ export function furnish(k: Kit, plan: PlanDef) {
 
     /* master bedroom — bed on the south wall between two slim windows, wardrobe along the west wall */
     accent('master', 'right', 'panel');
-    P(30, 35.3, L, () => { bed(k, 1.83, 2.0, 0.1); art(k, 1.5, 0.55, 10, 0, 1.85); });
+    P(30, 35.3, L, () => { bed(k, 1.83, 2.0, 0.1); art(k, 1.5, 0.55, 10, 0, 1.85); IN.splitAC(k); });
     P(30, 31.3, L, () => nightstand(k, true, 0.18));
     P(30, 39.3, L, () => nightstand(k, true, 0.18));
     P(25.1, 35.3, R, () => rug(k, 'rugB', 2.9, 2.1));
@@ -957,5 +993,9 @@ export function furnish(k: Kit, plan: PlanDef) {
     /* corridor outside the front door */
     P(2.45, 45.45, D, () => k.box('fabric2', 0.85, 0.014, 0.5, 0, 0.002, 0));
     plant(k, 7.6 * FT, 45.6 * FT, 1.3);
+    P(2.45, 44.417, D, () => IN.toran(k, 3.5 * FT, 2.2));
+    P(4.8, 44.417, D, () => IN.nameplate(k));
+    P(2.45, 47.7, D, () => IN.rangoli(k, 0.85));
+    P(5.2, 44.417, D, () => IN.chappalStand(k));
   }
 }

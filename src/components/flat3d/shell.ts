@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Kit } from './kit';
+import { architrave, exhaustFan, flushDoorLeaf, mainDoorLeaf, switchboard, windowGrill } from './indian';
 import { CEIL, FT, roomAt, type Opening, type PlanDef, type RoomDef, type WallDef } from './plans';
 
 /** ceiling height and the height the dollhouse view slices the walls at (metres) */
@@ -126,36 +127,37 @@ function buildOpening(k: Kit, plan: PlanDef, w: WallDef, op: Opening) {
 
   place(() => {
     if (op.kind === 'main' || op.kind === 'door' || op.kind === 'bath' || op.kind === 'gdoor') {
-      const frame = op.kind === 'gdoor' ? 'upvc' : 'frame';
+      const frame = op.kind === 'gdoor' ? 'upvc' : op.kind === 'main' ? 'teak' : 'frame';
       const fd = t + 0.03;
-      k.box(frame, 0.05, head, fd, -wd / 2 + 0.025, 0, 0);
-      k.box(frame, 0.05, head, fd, wd / 2 - 0.025, 0, 0);
-      k.box(frame, wd - 0.1, 0.05, fd, 0, head - 0.05, 0);
-      const len = wd - 0.11;
+      const fw = op.kind === 'main' ? 0.1 : 0.05;
+      k.box(frame, fw, head, fd, -wd / 2 + fw / 2, 0, 0);
+      k.box(frame, fw, head, fd, wd / 2 - fw / 2, 0, 0);
+      k.box(frame, wd - 2 * fw, fw, fd, 0, head - fw, 0);
+      if (op.kind !== 'gdoor') {
+        // casings on both faces, and a granite threshold (bathrooms step down a little)
+        for (const face of [-1, 1] as const) architrave(k, wd, head, face * (t / 2), face);
+        k.box(op.kind === 'bath' ? 'granite' : 'counter', wd - 0.02, op.kind === 'bath' ? 0.018 : 0.008, t + 0.02, 0, 0, 0);
+        // a switch plate just past the latch side, on each face
+        const latch = op.hinge !== 'b' ? 1 : -1;
+        for (const face of [-1, 1] as const) {
+          const side = indoorSideOf(plan, w, op, face * nz);
+          if (!side) continue;
+          k.at(latch * (wd / 2 + 0.2), face * (t / 2), face > 0 ? 0 : Math.PI, () => switchboard(k, 0, 1.22, op.kind === 'main' ? 8 : 6));
+        }
+      }
+      const len = wd - 2 * fw - 0.01;
       const hingeA = op.hinge !== 'b';
       const s = (op.swing ?? 1) * nz;
       const ang = ((op.angle ?? 90) * Math.PI) / 180;
       const dx = (hingeA ? 1 : -1) * Math.cos(ang), dz = s * Math.sin(ang);
-      const hx = (hingeA ? -1 : 1) * (wd / 2 - 0.055), hz = s * (t / 2 + 0.02);
-      const lh = head - 0.065;
+      const hx = (hingeA ? -1 : 1) * (wd / 2 - fw - 0.005), hz = s * (t / 2 + 0.02);
+      const lh = head - fw - 0.015;
       k.at(hx, hz, Math.atan2(-dz, dx), () => {
         if (op.kind === 'gdoor') {
           glazedLeaf(k, len, lh, 0.01, 0);
           k.box('metal', 0.02, 0.14, 0.07, len - 0.06, 0.98, 0);
-        } else {
-          const slot = op.kind === 'main' ? 'doorMain' : 'doorLeaf';
-          k.box(slot, len, lh, 0.042, len / 2, 0.01, 0);
-          if (op.kind === 'main') {
-            // a tall pull handle and a slim inlay, both faces
-            for (const zz of [-0.045, 0.045]) k.box('metal', 0.03, 0.7, 0.03, len - 0.14, 0.75, zz);
-            k.box('metal', 0.012, lh - 0.3, 0.046, len * 0.3, 0.16, 0);
-          } else {
-            for (const zz of [-0.04, 0.04]) {
-              k.box('metal', 0.05, 0.05, 0.02, len - 0.08, 0.98, zz);
-              k.box('metal', 0.13, 0.02, 0.02, len - 0.13, 1.0, zz * 1.5);
-            }
-          }
-        }
+        } else if (op.kind === 'main') mainDoorLeaf(k, len, lh);
+        else flushDoorLeaf(k, len, lh, op.kind === 'bath');
       });
       return;
     }
@@ -182,6 +184,11 @@ function buildOpening(k: Kit, plan: PlanDef, w: WallDef, op: Opening) {
       for (let i = 1; i < panes; i++) k.box('upvc', 0.045, h - 2 * fr, 0.06, -wd / 2 + (wd * i) / panes, sill + fr, 0);
       k.box('glass', wd - 2 * fr, h - 2 * fr, 0.008, 0, sill + fr, 0);
       if (op.kind === 'vent') for (let i = 1; i < 4; i++) k.box('upvc', wd - 2 * fr, 0.012, 0.05, 0, sill + (h * i) / 4, 0, { rx: 0.5 });
+      // every Indian window has a grill on the outside; bathroom ventilators get an exhaust fan
+      if (inside.side) {
+        if (op.kind === 'window') windowGrill(k, wd - 0.02, sill, head, -inside.side * nz * (t / 2 - 0.02));
+        else k.fit(true, () => exhaustFan(k, sill + h / 2 - 0.12, inside.side * nz * 0.03));
+      }
       // stone sill board on the room side
       if (inside.side) k.box('counter', wd + 0.08, 0.03, 0.1, 0, sill - 0.03, inside.side * nz * (t / 2 + 0.03));
     }
@@ -193,9 +200,17 @@ function buildOpening(k: Kit, plan: PlanDef, w: WallDef, op: Opening) {
     if (!inside.side || !inside.room) return;
     const area = wd * (head - sill);
     k.light('window', 0, Math.min(1.7, (sill + head) / 2 + 0.1), s * (t / 2 + 0.5), Math.min(4.2, 0.9 + area * 0.75), 0xffffff);
+    // the glazing itself as a soft panel of daylight (used where the device can afford area lights)
+    if (op.kind !== 'vent') k.windowLight(0, (sill + head) / 2, s * (t / 2 + 0.3), wd - 0.1, head - sill - 0.1, Math.min(4.2, 0.9 + area * 0.75), s > 0 ? 1 : -1);
     const kind = inside.room.kind;
     const soft = kind === 'living' || kind === 'dining' || kind === 'bed' || kind === 'master';
     if (!soft) return;
+    k.fit(true, () => curtains(k, op, wd, s, t));
+  });
+}
+
+function curtains(k: Kit, op: Opening, wd: number, s: number, t: number) {
+  {
     const top = 2.27, z = s * (t / 2 + 0.09);
     k.box('metal', wd + 0.62, 0.022, 0.022, 0, top, z);
     k.box('metal', 0.04, 0.04, 0.04, -wd / 2 - 0.31, top - 0.009, z);
@@ -203,8 +218,20 @@ function buildOpening(k: Kit, plan: PlanDef, w: WallDef, op: Opening) {
     const stack = Math.min(0.42, wd * 0.2 + 0.12);
     drape(k, 'curtain', stack, top - 0.01, 0.03, -wd / 2 - 0.3 + stack / 2, z, 4, 0.035);
     drape(k, 'curtain', stack, top - 0.01, 0.03, wd / 2 + 0.3 - stack / 2, z, 4, 0.035);
-    if (op.kind === 'window') drape(k, 'sheer', wd + 0.1, top - 0.012, 0.03, 0, z - s * 0.035, Math.max(3, Math.round(wd * 3)), 0.018);
-  });
+    // the sheer is drawn back to one side so the view stays open
+    if (op.kind === 'window') {
+      const sw = Math.min(0.7, wd * 0.32);
+      drape(k, 'sheer', sw, top - 0.012, 0.03, wd / 2 - sw / 2 - 0.02, z - s * 0.035, Math.max(3, Math.round(sw * 9)), 0.02);
+    }
+  }
+}
+
+/** is the given face of a wall (+1 = right / down side) indoors? */
+function indoorSideOf(plan: PlanDef, w: WallDef, op: Opening, dir: number): boolean {
+  const mid = (op.a + op.b) / 2;
+  const d = dir > 0 ? w.c + w.t + 0.7 : w.c - 0.7;
+  const r = w.o === 'h' ? roomAt(plan, mid, d) : roomAt(plan, d, mid);
+  return !!r && r.kind !== 'balcony' && r.kind !== 'service';
 }
 
 /** the visible wall surface on one side of a room, as rectangles (feet) */
@@ -255,7 +282,7 @@ function ceilingLights(k: Kit, room: RoomDef) {
       k.cyl('downlight', 0.045, 0.045, 0.006, x, H - 0.017, z, { seg: 12 });
     }
     const big = room.kind === 'living' || room.kind === 'dining' || room.kind === 'master';
-    if (big) {
+    if (big) k.fit(true, () => {
       // a dropped border with a concealed strip of light — the "tray" ceiling
       const m = 0.42, bw = 0.34, drop = 0.11;
       const iw = w - 2 * m, id = d - 2 * m;
@@ -265,8 +292,14 @@ function ceilingLights(k: Kit, room: RoomDef) {
         k.box('cove', iw - 2 * bw, 0.018, 0.02, cx, H - 0.03, cz + s * (id / 2 - bw - 0.012));
         k.box('cove', 0.02, 0.018, id - 2 * bw, cx + s * (iw / 2 - bw - 0.012), H - 0.03, cz);
       }
-    }
+    });
   });
+  // a ceiling fan in every living space and bedroom — standard in an Andhra home
+  if (room.kind === 'living' || room.kind === 'bed' || room.kind === 'master') {
+    // keep the canopy clear of the downlight grid
+    const fz = nz % 2 && nx % 2 ? cz + d / (2 * nz) : cz;
+    k.fit(true, () => k.fan(cx, H - 0.5, fz, 0.6));
+  }
   const area = w * d;
   k.light('ceiling', cx, H - 0.35, cz, outdoor ? 2.2 : Math.min(15, 3.5 + area * 0.62), 0xffdcb0);
   k.glow(cx, 0.008, cz, Math.min(w, d) * 0.62 + 0.3, true, outdoor ? 0.5 : 0.85);

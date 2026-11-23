@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowRight, Box, CalendarCheck, Footprints, Maximize, Minimize, Moon, Pause, Play, RotateCcw, SkipForward, Sun, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowRight, Box, CalendarCheck, ChevronsLeftRight, Columns2, Footprints, Maximize, Minimize, Moon, Pause, Play, RotateCcw, SkipForward, Sofa, Sun, Volume2, VolumeX, X } from 'lucide-react';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import { SITE_NAME, SITE_PROJECT_AREA, SITE_WHATSAPP_NUMBER } from '@/lib/site';
 import { Ambient } from './audio';
@@ -22,6 +22,12 @@ const CSS = `
 .flat3d-range::-moz-range-track{height:6px;border-radius:99px;background:linear-gradient(90deg,#f39a63 0%,#ffe6b8 9%,#bfe0ff 24%,#d4ebff 55%,#ffd68f 72%,#ff8748 82%,#4b4f88 90%,#0c1230 100%)}
 .flat3d-range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:#fff;border:3px solid #3b7122;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 .flat3d-range::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #3b7122;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.flat3d-split{position:absolute;top:0;bottom:0;left:0;width:0;opacity:0;transition:opacity .35s;will-change:transform}
+.flat3d-split-line{position:absolute;top:0;bottom:0;left:-1px;width:2px;background:rgba(255,255,255,.92);box-shadow:0 0 0 1px rgba(0,0,0,.12),0 0 18px rgba(255,255,255,.45)}
+.flat3d-split-hit{position:absolute;top:0;bottom:0;left:-22px;width:44px;cursor:ew-resize;touch-action:none}
+.flat3d-split-knob{position:absolute;top:50%;left:0;width:52px;height:52px;transform:translate(-50%,-50%);border-radius:50%;background:#fff;color:#14301c;display:grid;place-items:center;box-shadow:0 4px 18px rgba(0,0,0,.35);cursor:ew-resize;touch-action:none;transition:transform .15s}
+.flat3d-split-knob:hover,.flat3d-split-knob:focus-visible{transform:translate(-50%,-50%) scale(1.08);outline:none;box-shadow:0 0 0 3px #3b7122,0 4px 18px rgba(0,0,0,.35)}
+.flat3d-split-tag{position:absolute;white-space:nowrap;padding:6px 11px;border-radius:999px;font:600 12px/1 var(--font-body),Inter,sans-serif;color:#fff;background:rgba(20,48,28,.82);border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);cursor:pointer}
 @keyframes flat3d-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .flat3d-in{animation:flat3d-in .45s cubic-bezier(.22,1,.36,1) both}
 @media (prefers-reduced-motion:reduce){.flat3d-in{animation:none}}
@@ -103,6 +109,11 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
   const [locked, setLocked] = useState(false);
   const [hint, setHint] = useState(false);
   const [full, setFull] = useState(false);
+  /** compare slider open, and which version is on screen when it is closed */
+  const [compare, setCompare] = useState(false);
+  const [furnished, setFurnished] = useState(true);
+  const splitRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
   /** bumped to build a fresh 3D view after the device dropped the old one */
   const [epoch, setEpoch] = useState(0);
 
@@ -110,6 +121,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
     setError(null); setReady(false); setLive(false); setProgress(0);
     setPlan('east'); setStyle('lux'); setTime(16.4); setMode('doll'); setRoom(null);
     setTour({ status: 'idle', step: 0, total: 0, stop: null });
+    setCompare(false); setFurnished(true);
     setEpoch((e) => e + 1);
   };
 
@@ -128,8 +140,10 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
         room: (r) => { setRoom(r); setRoomShown(!!r); },
         tour: setTour,
         lock: (l) => { setLocked(l); if (!l) unlockedAt.current = performance.now(); },
+        compare: (c) => { setCompare(c.on); setFurnished(c.furnished); },
       },
     );
+    engine.setDivider(splitRef.current);
     engineRef.current = engine;
     audioRef.current = new Ambient();
     if (process.env.NODE_ENV !== 'production') (window as unknown as { __flat?: FlatEngine }).__flat = engine;
@@ -177,6 +191,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Escape') {
         if (document.pointerLockElement || performance.now() - unlockedAt.current < 900) return;
+        if (compare) { setCompare(false); engineRef.current?.setCompare(false); return; }
         onClose();
       } else if (!live) return;
       else if (e.code === 'KeyM') toggleMute();
@@ -184,7 +199,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [live, onClose, toggleMute, tourButton, tour.status]);
+  }, [live, onClose, toggleMute, tourButton, tour.status, compare]);
 
   const go = (guided: boolean) => {
     const e = engineRef.current;
@@ -211,6 +226,66 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
   };
   const stick = useCallback((x: number, y: number) => engineRef.current?.setStick(x, y), []);
 
+  /* ---- furnished vs bare shell ---- */
+  const openCompare = () => {
+    const e = engineRef.current;
+    if (!e) return;
+    if (tour.status === 'running') e.pauseTour();
+    setCompare(true);
+    e.setCompare(true);
+    setAria(0.5);
+  };
+  const closeCompare = () => { setCompare(false); engineRef.current?.setCompare(false); };
+  const jump = (v: number) => { engineRef.current?.setSplit(v, true); setAria(v); };
+  const setAria = (v: number) => {
+    const k = knobRef.current;
+    if (!k) return;
+    k.setAttribute('aria-valuenow', String(Math.round((1 - v) * 100)));
+    k.setAttribute('aria-valuetext', `${Math.round(v * 100)}% bare shell, ${Math.round((1 - v) * 100)}% furnished`);
+  };
+  // drag the divider (the knob or anywhere along the line)
+  useEffect(() => {
+    const el = splitRef.current, root = rootRef.current;
+    if (!el || !root || !compare) return;
+    let id = -1;
+    const at = (x: number) => {
+      const r = root.getBoundingClientRect();
+      const v = Math.min(1, Math.max(0, (x - r.left) / r.width));
+      engineRef.current?.setSplit(v);
+      setAria(v);
+    };
+    const down = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.flat3d-split-hit,.flat3d-split-knob')) return;
+      e.preventDefault(); e.stopPropagation();
+      id = e.pointerId; t.setPointerCapture?.(id); at(e.clientX);
+    };
+    const move = (e: PointerEvent) => { if (e.pointerId === id) at(e.clientX); };
+    const up = (e: PointerEvent) => { if (e.pointerId === id) id = -1; };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+  }, [compare]);
+  const knobKey = (ev: React.KeyboardEvent) => {
+    const now = 1 - Number(knobRef.current?.getAttribute('aria-valuenow') ?? 50) / 100;
+    const step = ev.shiftKey ? 0.2 : 0.05;
+    let v: number | null = null;
+    if (ev.key === 'ArrowLeft') v = now - step;
+    else if (ev.key === 'ArrowRight') v = now + step;
+    else if (ev.key === 'Home') v = 0;
+    else if (ev.key === 'End') v = 1;
+    if (v === null) return;
+    ev.preventDefault(); ev.stopPropagation();
+    jump(Math.min(1, Math.max(0, v)));
+  };
+
   const tl = timeLabel(time);
   const touring = tour.status === 'running' || tour.status === 'paused';
   const done = tour.status === 'done';
@@ -233,6 +308,27 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
       <style>{CSS}</style>
       <div ref={mountRef} className="absolute inset-0" />
       <div ref={labelRef} className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500" />
+
+      {/* the compare divider: the engine slides it; bare shell to its left, furnished to its right */}
+      <div ref={splitRef} className="flat3d-split" style={{ pointerEvents: compare && live ? 'auto' : 'none' }} aria-hidden={!compare}>
+        <div className="flat3d-split-line" />
+        <div className="flat3d-split-hit" />
+        <button type="button" className="flat3d-split-tag right-[14px] top-[116px] md:top-[128px]" onClick={() => jump(1)} tabIndex={compare ? 0 : -1}>Bare shell</button>
+        <button type="button" className="flat3d-split-tag left-[14px] top-[116px] md:top-[128px]" onClick={() => jump(0)} tabIndex={compare ? 0 : -1}>Furnished</button>
+        <div
+          ref={knobRef}
+          className="flat3d-split-knob"
+          role="slider"
+          tabIndex={compare ? 0 : -1}
+          aria-label="Compare divider: drag left for more furnished, right for more bare shell"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={50}
+          onKeyDown={knobKey}
+        >
+          <ChevronsLeftRight size={24} />
+        </div>
+      </div>
 
       {/* ---------------- top bar ---------------- */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5 pt-[max(10px,env(safe-area-inset-top))] md:p-4">
@@ -342,7 +438,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
           )}
 
           {/* guided tour card */}
-          {touring && (
+          {touring && !compare && (
             <div className={`${panel} flat3d-in absolute inset-x-2.5 top-[66px] rounded-2xl p-3.5 max-md:landscape:left-auto max-md:landscape:w-[320px] md:inset-x-auto md:bottom-[104px] md:left-4 md:top-auto md:w-[360px] md:p-5`}>
               <div className="flex items-center justify-between gap-3">
                 <p className="!text-[11px] font-semibold uppercase tracking-[0.2em] !text-meadow-400">
@@ -399,6 +495,25 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
             </div>
           )}
 
+          {/* compare toolbar */}
+          {compare && (
+            <div className={`${panel} flat3d-in absolute inset-x-0 top-[62px] mx-auto flex w-fit max-w-[calc(100vw-20px)] items-center gap-1 rounded-xl p-1 md:top-[78px]`} role="group" aria-label="Compare furnished and bare shell">
+              <button type="button" className={`${seg(false)} !px-2.5 sm:!px-3`} onClick={() => jump(1)}>Bare<span className="hidden sm:inline"> shell</span></button>
+              <button type="button" className={`${seg(false)} !px-2.5 sm:!px-3`} onClick={() => jump(0.5)}>Split</button>
+              <button type="button" className={seg(false)} onClick={() => jump(0)}>Furnished</button>
+              <span className="mx-1 h-6 w-px bg-white/20" aria-hidden />
+              <button type="button" onClick={closeCompare} className="rounded-md bg-cream px-3 py-2 text-[13px] font-semibold text-forest">Done</button>
+            </div>
+          )}
+          {!compare && !furnished && (
+            <div className={`${panel} flat3d-in absolute inset-x-0 top-[62px] mx-auto flex w-fit max-w-[calc(100vw-20px)] items-center gap-2 rounded-full py-1 pl-4 pr-1 text-[12.5px] md:top-[78px]`}>
+              <span className="whitespace-nowrap">Bare shell — as handed over</span>
+              <button type="button" onClick={() => engineRef.current?.setFurnished(true)} className="inline-flex items-center gap-1.5 rounded-full bg-meadow-600 px-3 py-1.5 font-semibold hover:bg-meadow-500">
+                <Sofa size={14} /> Furnish
+              </button>
+            </div>
+          )}
+
           {/* how to move */}
           {hint && !touring && !done && (
             <div className={`${panel} flat3d-in pointer-events-none absolute left-1/2 max-w-[92vw] -translate-x-1/2 rounded-full px-4 py-2 text-center text-[12.5px] md:text-[13px] ${touch ? 'top-[118px]' : 'bottom-[104px]'}`}>
@@ -421,7 +536,17 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
                 </button>
                 <button type="button" onClick={toggleView} aria-pressed={mode === 'doll'} className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/20 px-3.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/10 md:px-4">
                   {mode === 'walk' ? <Box size={16} /> : <Footprints size={16} />}
-                  <span>{mode === 'walk' ? 'Dollhouse' : 'Walk inside'}</span>
+                  <span className="sr-only sm:not-sr-only">{mode === 'walk' ? 'Dollhouse' : 'Walk inside'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={compare ? closeCompare : openCompare}
+                  aria-pressed={compare}
+                  title="Compare the furnished home with the bare shell"
+                  className={`inline-flex h-11 items-center gap-2 rounded-lg border px-3.5 text-[13.5px] font-semibold transition-colors md:px-4 ${compare ? 'border-cream bg-cream text-forest' : 'border-white/20 text-white hover:bg-white/10'}`}
+                >
+                  <Columns2 size={16} />
+                  <span>Compare</span>
                 </button>
               </div>
 

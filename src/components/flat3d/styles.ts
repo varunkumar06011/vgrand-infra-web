@@ -22,7 +22,11 @@ export type TexSpec =
   | { gen: 'plaster'; base: string; seed: number }
   | { gen: 'grid'; cols: number; rows: number; base: string; grout: string; variance: number; bond?: boolean; seed: number }
   | { gen: 'rug'; kind: RugKind; pal: string[]; seed: number; aspect: number }
-  | { gen: 'art'; kind: ArtKind; pal: string[]; seed: number };
+  | { gen: 'art'; kind: ArtKind; pal: string[]; seed: number }
+  | { gen: 'granite'; base: string; flecks: string[]; seed: number }
+  | { gen: 'print'; base: string; ink: string[]; seed: number; motif: 'butti' | 'jaal' }
+  | { gen: 'kalamkari'; seed: number }
+  | { gen: 'rangoli'; seed: number };
 
 export type MatSpec = {
   /** flat colour, or a tint over the texture */
@@ -66,6 +70,12 @@ export const SLOT_FLAGS: Record<string, SlotFlags> = {
   screen: { cast: false },
   leaf: { double: true }, leaf2: { double: true },
   curtain: { double: true },
+  kalamkari: { kind: 'unit', cast: false },
+  rangoli: { kind: 'glass', cast: false, recv: true, hideInMirror: true },
+  water: { cast: false },
+  marigold: { cast: false },
+  flame: { kind: 'emit', cast: false, recv: false },
+  acLed: { kind: 'emit', cast: false, recv: false },
 };
 
 const wood = (base: string, dark: string, seed: number, cols = 1, variance = 0.25): TexSpec =>
@@ -82,7 +92,7 @@ const COMMON: Record<string, MatSpec> = {
   black: { c: '#101012', r: 0.3 },
   screen: { c: '#06070a', r: 0.06, env: 1.5 },
   white: { c: '#f3f2ef', r: 0.45 },
-  glass: { c: '#dfeef2', r: 0.03, opacity: 0.16, env: 1.8 },
+  glass: { c: '#e6f2f4', r: 0.05, opacity: 0.1, env: 0.55 },
   mirror: { c: '#f2f6f7', r: 0.02, m: 1, env: 2.2 },
   leaf: { c: '#3f6b3a', r: 0.62 },
   leaf2: { c: '#5d8a47', r: 0.6 },
@@ -100,6 +110,29 @@ const COMMON: Record<string, MatSpec> = {
   paper: { c: '#f1ede4', r: 0.8 },
   fruit: { c: '#d98a2b', r: 0.5 },
   fruit2: { c: '#8f2f25', r: 0.45 },
+  /* Indian household things — the same in every style */
+  brass: { c: '#c99a3e', r: 0.26, m: 1, env: 1.5 },
+  copper: { c: '#b9643d', r: 0.3, m: 1, env: 1.4 },
+  vessel: { c: '#dfe2e4', r: 0.14, m: 1, env: 1.6 },
+  plastic: { c: '#2f6db5', r: 0.32 },
+  plasticR: { c: '#c4261c', r: 0.36 },
+  grill: { c: '#2c2c2e', r: 0.45, m: 0.5 },
+  acBody: { c: '#f4f4f2', r: 0.32 },
+  acLed: { c: '#6fd0ff', e: '#4fc3ff', r: 0.4 },
+  terracotta: { c: '#a9582f', r: 0.85 },
+  whitewash: { c: '#f1ece1', r: 0.9 },
+  marigold: { c: '#f39612', r: 0.75 },
+  jasmine: { c: '#fbf8ef', r: 0.7 },
+  rose: { c: '#b8182c', r: 0.6 },
+  water: { c: '#1c2a2a', r: 0.04, env: 2 },
+  flame: { c: '#ffcf6b', e: '#ffb02e', r: 0.5 },
+  rope: { c: '#8a6b45', r: 0.95 },
+  granite: { tex: { gen: 'granite', base: '#121112', flecks: ['#9b7b4b', '#c4a070', '#8c8f96', '#d8d2c6', '#5a4a3a'], seed: 61 }, size: 0.7, r: 0.12, env: 1.4 },
+  kalamkari: { tex: { gen: 'kalamkari', seed: 71 }, r: 0.9 },
+  rangoli: { tex: { gen: 'rangoli', seed: 72 }, r: 0.95, opacity: 1 },
+  teak: { tex: { gen: 'wood', cols: 1, base: '#7a4a26', dark: '#3e2310', variance: 0.3, gap: 0, joints: false, seed: 73 }, size: 0.9, r: 0.36, bump: 0.3, env: 1.1 },
+  laminate: { tex: { gen: 'wood', cols: 1, base: '#a57c55', dark: '#6b4a2e', variance: 0.2, gap: 0, joints: false, seed: 74 }, size: 1.4, r: 0.4, bump: 0.1 },
+  tileFloorB: { tex: { gen: 'grid', cols: 4, rows: 4, base: '#a9a29a', grout: '#8b847c', variance: 0.06, seed: 75 }, size: 1.2192, r: 0.6, bump: 0.5 },
 };
 
 const LUX: Record<string, MatSpec> = {
@@ -113,19 +146,19 @@ const LUX: Record<string, MatSpec> = {
   floorDeck: { tex: { gen: 'wood', cols: 8, base: '#8a5f41', dark: '#4e3322', variance: 0.4, gap: 3, joints: true, seed: 10 }, size: 1.1, r: 0.7, bump: 0.6 },
   bathWall: { tex: { gen: 'grid', cols: 2, rows: 4, base: '#e8dfd0', grout: '#d0c4b0', variance: 0.035, seed: 12 }, size: 1.2192, r: 0.2, env: 1.1 },
   backsplash: { tex: { gen: 'slab', base: '#f1ece2', veins: ['#bca98c', '#d9cdb8'], vein: 0.5, seed: 13 }, size: 2.2, r: 0.12 },
-  counter: { tex: { gen: 'slab', base: '#f2eee6', veins: ['#b9a88d', '#d6cab5'], vein: 0.45, seed: 14 }, size: 1.8, r: 0.1, env: 1.2 },
+  counter: { tex: { gen: 'granite', base: '#121112', flecks: ['#9b7b4b', '#c4a070', '#8c8f96', '#d8d2c6', '#5a4a3a'], seed: 14 }, size: 0.7, r: 0.1, env: 1.4 },
   wood: { tex: wood('#6e4c35', '#3d281b', 21), size: 0.9, r: 0.42, bump: 0.25 },
   wood2: { tex: wood('#4c3525', '#271810', 22), size: 0.9, r: 0.4, bump: 0.25 },
   cabinet: { tex: wood('#6e4c35', '#3d281b', 23, 4, 0.2), size: 1.2, r: 0.4 },
   cabinetUp: { c: '#ece5d7', r: 0.38 },
   lacquer: { c: '#ece5d7', r: 0.4 },
   doorLeaf: { tex: wood('#7a543a', '#42291b', 24), size: 1.1, r: 0.45, bump: 0.2 },
-  doorMain: { tex: wood('#5b3a26', '#2a170d', 25, 3, 0.25), size: 1.1, r: 0.38, bump: 0.3 },
+  doorMain: { tex: wood('#6e4224', '#341b0b', 25, 1, 0.25), size: 1.1, r: 0.34, bump: 0.3, env: 1.1 },
   frame: { tex: wood('#5b3a26', '#2a170d', 26), size: 0.8, r: 0.45 },
   metal: { c: '#b9985c', r: 0.3, m: 1, env: 1.3 },
   fabric: { tex: cloth('#d6cab7', 31, 10, 3, 'boucle'), size: 0.22, r: 0.98, bump: 0.7 },
   fabric2: { tex: cloth('#8c6a4e', 32, 9, 2, 'velvet'), size: 0.45, r: 0.78, bump: 0.15 },
-  duvet: { tex: cloth('#f2ede4', 33, 6, 2, 'linen'), size: 0.5, r: 0.97, bump: 0.15 },
+  duvet: { tex: { gen: 'print', base: '#f3ead8', ink: ['#a8342a', '#3c5a46', '#2a2320'], seed: 33, motif: 'butti' }, size: 0.42, r: 0.96 },
   throw: { tex: cloth('#a5673f', 34, 10, 3, 'knit'), size: 0.42, r: 1, bump: 0.9 },
   cushionA: { tex: cloth('#a5673f', 35, 9, 2, 'velvet'), size: 0.4, r: 0.8 },
   cushionB: { tex: cloth('#3f5a4a', 36, 8, 2, 'linen'), size: 0.3, r: 0.95, bump: 0.2 },
@@ -139,6 +172,8 @@ const LUX: Record<string, MatSpec> = {
   rugB: { tex: { gen: 'rug', kind: 'persian', pal: ['#e3d5bb', '#8a4a39', '#9a7d58', '#4a6052'], seed: 42, aspect: 1.45 }, r: 1 },
   rugC: { tex: { gen: 'rug', kind: 'persian', pal: ['#2f3d50', '#e6d6ba', '#7d3f31', '#bd9156'], seed: 43, aspect: 1.3 }, r: 1 },
   rugR: { tex: { gen: 'rug', kind: 'persian', pal: ['#7d3f31', '#e6d6ba', '#27344a', '#bd9156'], seed: 44, aspect: 3.2 }, r: 1 },
+  fanBlade: { tex: wood('#6e4224', '#341b0b', 27), size: 0.6, r: 0.4 },
+  fanBody: { c: '#c99a3e', r: 0.28, m: 1, env: 1.4 },
   art: { tex: { gen: 'art', kind: 'warm', pal: ['#e9dcc4', '#b5673c', '#d9a35c', '#51634e', '#7d4a33', '#f1e6cf'], seed: 51 }, r: 0.8 },
 };
 
@@ -179,6 +214,8 @@ const MODERN: Record<string, MatSpec> = {
   rugB: { tex: { gen: 'rug', kind: 'geo', pal: ['#cfd0d1', '#8f9194', '#e6e6e4', '#232427'], seed: 142, aspect: 1.45 }, r: 1 },
   rugC: { tex: { gen: 'rug', kind: 'geo', pal: ['#3b3d41', '#5a5c60', '#8f9194', '#c9a227', '#d8d8d6'], seed: 143, aspect: 1.3 }, r: 1 },
   rugR: { tex: { gen: 'rug', kind: 'geo', pal: ['#d8d8d6', '#a9abad', '#6f7275', '#232427'], seed: 144, aspect: 3.2 }, r: 1 },
+  fanBlade: { c: '#1b1b1d', r: 0.4, m: 0.3 },
+  fanBody: { c: '#1b1b1d', r: 0.35, m: 0.6 },
   art: { tex: { gen: 'art', kind: 'graphic', pal: ['#111113', '#c9a227', '#8f9194', '#2b4c7e', '#d8d8d6'], seed: 151 }, r: 0.8 },
 };
 
@@ -205,7 +242,7 @@ const SCANDI: Record<string, MatSpec> = {
   metal: { c: '#c3c5c8', r: 0.34, m: 1, env: 1.2 },
   fabric: { tex: cloth('#ddd7cc', 231, 10, 3, 'boucle'), size: 0.22, r: 0.98, bump: 0.7 },
   fabric2: { tex: cloth('#9fb0b5', 232, 8, 2, 'linen'), size: 0.3, r: 0.92, bump: 0.25 },
-  duvet: { tex: cloth('#fbfaf6', 233, 6, 2, 'linen'), size: 0.5, r: 0.97, bump: 0.15 },
+  duvet: { tex: { gen: 'print', base: '#f6f3ec', ink: ['#2e4a78', '#6f8fb8', '#22314f'], seed: 233, motif: 'jaal' }, size: 0.42, r: 0.96 },
   throw: { tex: cloth('#9fb0b5', 234, 10, 3, 'knit'), size: 0.42, r: 1, bump: 0.9 },
   cushionA: { tex: cloth('#b9c4b2', 235, 8, 2, 'linen'), size: 0.3, r: 0.95, bump: 0.2 },
   cushionB: { tex: cloth('#d9b8a8', 236, 9, 2, 'velvet'), size: 0.4, r: 0.8 },
@@ -219,6 +256,8 @@ const SCANDI: Record<string, MatSpec> = {
   rugB: { tex: { gen: 'rug', kind: 'berber', pal: ['#f1ece2', '#b9a58a', '#d9b8a8'], seed: 242, aspect: 1.45 }, r: 1 },
   rugC: { tex: { gen: 'rug', kind: 'berber', pal: ['#e7e3da', '#8a9a8a', '#b9c4b2'], seed: 243, aspect: 1.3 }, r: 1 },
   rugR: { tex: { gen: 'rug', kind: 'berber', pal: ['#efe9dd', '#6b6f73', '#9fb0b5'], seed: 244, aspect: 3.2 }, r: 1 },
+  fanBlade: { tex: wood('#dcc5a1', '#b39369', 227), size: 0.6, r: 0.5 },
+  fanBody: { c: '#f3f2ee', r: 0.35 },
   art: { tex: { gen: 'art', kind: 'line', pal: ['#f7f4ee', '#b9c4b2', '#d9b8a8', '#9fb0b5', '#e3d3b8'], seed: 251 }, r: 0.85 },
 };
 

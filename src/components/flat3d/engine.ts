@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import type { Quality, Rect } from './kit';
+import type { Post } from './post';
 import { FT, roomAt, roomById, sqft, type PlanDef, type PlanId, type RoomDef } from './plans';
 import { CUT, H } from './shell';
 import type { StyleId } from './styles';
-import { FlatWorld, TIME_MAX, TIME_MIN } from './world';
+import { FlatWorld, preloadWorld, TIME_MAX, TIME_MIN } from './world';
 
 export type Mode = 'walk' | 'doll';
 export type RoomInfo = { id: string; name: string; dims: string; sqft: number | null; point: string };
@@ -17,6 +18,8 @@ export type EngineEvents = {
   room?: (r: RoomInfo | null) => void;
   tour?: (t: TourState) => void;
   lock?: (locked: boolean) => void;
+  /** the compare slider closed by itself (after a sweep), leaving this version on screen */
+  compare?: (c: { on: boolean; furnished: boolean }) => void;
 };
 
 const EYE = 1.6;
@@ -34,12 +37,68 @@ type Pose = { pos: THREE.Vector3; quat: THREE.Quaternion; fov: number };
 type Stop = { x: number; z: number; lookX: number; lookZ: number; info: RoomInfo };
 type Leg = { curve: THREE.CatmullRomCurve3; len: number };
 
-export function pickQuality(): Quality {
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
-  const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
-  const hi = !coarse && mem >= 4;
-  return { hi, bump: hi, mirror: hi, shadow: hi ? 2048 : 1024, lights: hi ? 6 : 4 };
+/** the GPU's name, where the browser will say (lower case, '' if it will not) */
+function gpuName(): string {
+  try {
+    const c = document.createElement('canvas');
+    const gl = (c.getContext('webgl2') || c.getContext('webgl')) as WebGLRenderingContext | null;
+    if (!gl) return 'none';
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return name.toLowerCase();
+  } catch { return ''; }
 }
+
+/**
+ * Sort the device into one of four tiers from what the browser reports (GPU, memory, cores,
+ * touch, data saver) — the adaptive governor in the render loop then steps down further if the
+ * frame rate still sags. `?flatq=0..3` in the address forces a tier for testing.
+ */
+export function pickTier(): Quality['tier'] {
+  const forced = new URLSearchParams(window.location.search).get('flatq');
+  if (forced && /^[0-3]$/.test(forced)) return +forced as Quality['tier'];
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  const mem = nav.deviceMemory ?? (coarse ? 4 : 8);
+  const cores = nav.hardwareConcurrency ?? 4;
+  const gpu = gpuName();
+  let tier: Quality['tier'];
+  if (gpu === 'none' || /swiftshader|llvmpipe|software|basic render|microsoft basic/.test(gpu)) tier = 0;
+  else if (!coarse) {
+    if (/rtx|gtx|radeon (rx|pro|vii)|apple m\d|apple gpu|arc\(?tm\)? a|quadro|nvidia/.test(gpu)) tier = 3;
+    else if (/iris|uhd|radeon|vega|intel|mali|adreno/.test(gpu)) tier = 2;
+    else tier = mem >= 8 && cores >= 8 ? 3 : 2;
+  } else {
+    if (/apple/.test(gpu)) tier = cores >= 6 ? 2 : 1;
+    else if (/adreno[^\d]*(7\d\d|6[5-9]\d)|mali-g(7[1-9]\d|6[1-9]\d|7[6-9])|immortalis|xclipse/.test(gpu)) tier = mem >= 6 ? 2 : 1;
+    else if (/adreno[^\d]*(6\d\d|5[4-9]\d)|mali-g(5\d|7[0-5]|[6-9]\d)|powervr/.test(gpu)) tier = mem >= 3 ? 1 : 0;
+    else tier = mem >= 6 && cores >= 8 ? 1 : 0;
+  }
+  if (nav.connection?.saveData) tier = Math.min(tier, 1) as Quality['tier'];
+  if (mem <= 2) tier = 0;
+  return tier;
+}
+
+export function pickQuality(tier: Quality['tier'] = pickTier()): Quality {
+  const hi = tier >= 2;
+  return {
+    tier, hi,
+    bump: tier >= 1,
+    mirror: tier >= 2,
+    shadow: tier >= 2 ? 2048 : 1024,
+    lights: [3, 4, 5, 7][tier],
+    post: tier >= 2,
+    ao: tier >= 2,
+    area: tier >= 2,
+    animate: tier >= 1,
+    town: [0.3, 0.55, 0.85, 1][tier],
+  };
+}
+
+/** device pixel ratio ceiling and pixel budget per tier */
+const DPR_MAX = [1.25, 1.6, 1.75, 2];
+const PIXELS = [1.0e6, 1.6e6, 2.4e6, 3.6e6];
 
 export function roomInfo(r: RoomDef): RoomInfo {
   const open = r.kind === 'balcony' || r.kind === 'service' || r.kind === 'passage';
@@ -70,6 +129,14 @@ export class FlatEngine {
   private started = false;
   private w = 1; private h = 1; private dpr = 1; private maxDpr = 2;
   private slow = 0; private frames = 0; private mirrorOn = true;
+  private post: Post | null = null;
+
+  // furnished / bare-shell compare: left of the divider is the bare shell, right is furnished
+  private comparing = false;
+  private furnishedView = true;
+  private splitCur = 0; private splitTarget = 0;
+  private splitDone: (() => void) | null = null;
+  private divider: HTMLElement | null = null;
 
   // first-person state
   private pos = new THREE.Vector2(2, 2);
@@ -121,7 +188,7 @@ export class FlatEngine {
   async init() {
     const q = this.opts.quality;
     try {
-      this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', alpha: false, stencil: false });
+      this.renderer = new THREE.WebGLRenderer({ antialias: !q.post, powerPreference: 'high-performance', alpha: false, stencil: false });
     } catch {
       this.ev.error?.('Your browser could not start 3D graphics. Please try another browser or device.');
       return;
@@ -129,11 +196,11 @@ export class FlatEngine {
     const r = this.renderer;
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.02;
+    r.toneMappingExposure = q.post ? 0.78 : 0.92;
     r.shadowMap.enabled = true;
-    r.shadowMap.type = q.hi ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    r.shadowMap.type = q.hi ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
     r.shadowMap.autoUpdate = false;
-    this.maxDpr = q.hi ? 2 : 1.5;
+    this.maxDpr = DPR_MAX[q.tier];
     this.canvas = r.domElement;
     this.canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;outline:none;cursor:grab';
     this.canvas.addEventListener('webglcontextlost', (e) => {
@@ -147,7 +214,10 @@ export class FlatEngine {
     await frame();
     if (this.disposed) return;
 
+    await preloadWorld(q);
+    if (this.disposed) return;
     this.world = new FlatWorld(r, q, this.opts.style, this.opts.time);
+    this.world.animate = q.animate && !this.opts.reducedMotion;
     this.ev.progress?.(0.3);
     await frame();
     if (this.disposed) return;
@@ -157,6 +227,13 @@ export class FlatEngine {
     if (this.disposed) return;
 
     this.afterBuild();
+    if (q.post) {
+      try {
+        const { Post } = await import('./post');
+        if (this.disposed) return;
+        this.post = new Post(r, this.world.scene, this.camera, q);
+      } catch { this.post = null; }
+    }
     this.resize();
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(this.mount);
@@ -167,6 +244,7 @@ export class FlatEngine {
     this.applyDoll();
     this.camera.near = 0.6;
     this.camera.updateProjectionMatrix();
+    this.camera.layers.enableAll();
     r.compile(this.world.scene, this.camera);
     this.world.update(1, this.world.centre);
     this.ev.progress?.(1);
@@ -245,12 +323,13 @@ export class FlatEngine {
     if (!w || !h) return;
     this.w = w; this.h = h;
     // cap the pixel count so a 4K screen does not quadruple the work
-    const budget = this.opts.quality.hi ? 3.4e6 : 1.7e6;
+    const budget = PIXELS[this.opts.quality.tier];
     const cap = Math.sqrt(budget / (w * h));
     this.dpr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, this.maxDpr, cap));
     this.renderer.setPixelRatio(this.dpr);
     this.renderer.setSize(w, h, false);
     this.world?.setSize(w * this.dpr, h * this.dpr);
+    this.post?.setSize(w, h, this.dpr);
     this.camera.aspect = w / h;
     if (this.shift > 0) this.camera.setViewOffset(w, h, -this.shift * w, 0, w, h);
     if (!this.flight) this.camera.fov = this.fovFor(this.mode);
@@ -375,6 +454,75 @@ export class FlatEngine {
   }
 
   setTime(t: number) { this.timeTarget = clamp(t, TIME_MIN, TIME_MAX); this.hot = 4; }
+
+  /* ---------------------------------------------------------------- furnished / bare shell */
+
+  /** the element that marks the divider; the engine slides it to wherever the split is */
+  setDivider(el: HTMLElement | null) { this.divider = el; this.placeDivider(); }
+
+  /** open or close the compare slider. Closing keeps whichever version fills more of the screen. */
+  setCompare(on: boolean) {
+    if (on === this.comparing && !this.splitDone) return;
+    if (on) {
+      this.splitDone = null;
+      this.comparing = true;
+      this.world.comparing = true;
+      // the other version sweeps in from its own side and stops half way
+      this.splitCur = this.furnishedView ? 0 : 1;
+      this.splitTarget = 0.5;
+    } else {
+      const bare = this.splitTarget > 0.5 || (this.splitTarget === 0.5 && this.splitCur > 0.5);
+      this.sweepTo(bare ? 1 : 0, () => this.endCompare(!bare));
+    }
+    this.hot = 4;
+  }
+
+  /** where the divider sits, 0 (all furnished) .. 1 (all bare shell) */
+  setSplit(v: number, animate = false) {
+    if (!this.comparing) return;
+    this.splitDone = null;
+    this.splitTarget = clamp(v, 0, 1);
+    if (!animate) this.splitCur = this.splitTarget;
+    this.hot = 4;
+  }
+
+  /** switch the whole view between furnished and bare, as a wipe across the screen */
+  setFurnished(v: boolean) {
+    if (this.comparing) { this.sweepTo(v ? 0 : 1, () => this.endCompare(v)); return; }
+    if (v === this.furnishedView) return;
+    this.comparing = true;
+    this.world.comparing = true;
+    this.splitCur = v ? 1 : 0;
+    this.sweepTo(v ? 0 : 1, () => this.endCompare(v));
+  }
+
+  get furnished() { return this.furnishedView; }
+
+  private sweepTo(v: number, done: () => void) {
+    this.splitTarget = v;
+    this.splitDone = done;
+    this.hot = 4;
+  }
+
+  private endCompare(furnished: boolean) {
+    this.comparing = false;
+    this.furnishedView = furnished;
+    this.world.comparing = false;
+    this.world.setFurnished(furnished);
+    this.splitCur = this.splitTarget = furnished ? 0 : 1;
+    this.splitDone = null;
+    this.placeDivider();
+    this.ev.compare?.({ on: false, furnished });
+    this.hot = 4;
+  }
+
+  private placeDivider() {
+    const el = this.divider;
+    if (!el) return;
+    const show = this.comparing;
+    el.style.opacity = show ? '1' : '0';
+    el.style.transform = `translateX(${(this.splitCur * this.w).toFixed(1)}px)`;
+  }
 
   /** the welcome screen has been dismissed: controls are live from here */
   begin() { this.started = true; this.spin = false; this.syncLabels(); this.hot = 4; }
@@ -773,6 +921,17 @@ export class FlatEngine {
     this.trackRoom(dt);
     world.update(dt, this.mode === 'walk' ? cam.position : world.centre);
 
+    // the compare divider glides to where it was dropped
+    if (this.comparing) {
+      const d = this.splitTarget - this.splitCur;
+      if (Math.abs(d) > 1e-4) {
+        const rate = this.splitDone ? 5.5 : 9;
+        this.splitCur = Math.abs(d) < 0.002 ? this.splitTarget : this.splitCur + d * (1 - Math.exp(-dt * rate));
+        this.hot = Math.max(this.hot, 2);
+      } else if (this.splitDone) this.splitDone();
+      this.placeDivider();
+    }
+
     if (this.fadeT < 1) {
       this.fadeT = Math.min(1, this.fadeT + dt / this.fadeDur);
       this.fade.style.opacity = String(1 - ease(this.fadeT));
@@ -786,8 +945,7 @@ export class FlatEngine {
 
     const t0 = performance.now();
     cam.updateMatrixWorld();
-    world.prepare(cam, this.mirrorOn && this.mode === 'walk' && !this.flight);
-    this.renderer.render(world.scene, cam);
+    this.renderFrame();
     this.placeLabels();
 
     if (this.snap) {
@@ -812,10 +970,41 @@ export class FlatEngine {
     if (this.frames > 20 && rawMs < 250) this.slow = this.slow * 0.94 + (rawMs > 34 || cost > 26 ? 1 : 0) * 0.06;
     if (this.slow > 0.65 && this.frames > 90) {
       this.slow = 0; this.frames = 30;
-      if (this.mirrorOn && this.world.q.mirror) this.mirrorOn = false;
+      // shed work in the order you would least notice: AO, bloom, reflections, resolution, motion
+      if (this.post && this.post.degrade()) { /* stepped down the post chain */ }
+      else if (this.mirrorOn && this.world.q.mirror) this.mirrorOn = false;
       else if (this.maxDpr > 0.8) { this.maxDpr = Math.max(0.8, this.dpr * 0.82); this.resize(); }
+      else this.world.animate = false;
     }
   };
+
+  /** one finished frame: the furnished home, the bare shell, or both either side of the divider */
+  renderFrame() {
+    const world = this.world, cam = this.camera, r = this.renderer;
+    const mirror = this.mirrorOn && this.mode === 'walk' && !this.flight;
+    const s = this.splitCur;
+    const both = this.comparing && s > 0.001 && s < 0.999;
+    if (!both) {
+      const furn = this.comparing ? s < 0.5 : this.furnishedView;
+      world.setPass(furn, cam);
+      world.prepare(cam, mirror);
+      if (this.post) this.post.frame(); else r.render(world.scene, cam);
+      return;
+    }
+    if (this.post) {
+      world.setPass(false, cam); world.prepare(cam, mirror); this.post.keep();
+      world.setPass(true, cam); world.prepare(cam, mirror); this.post.join(s);
+      return;
+    }
+    // no post chain: draw each version straight to the screen inside its own half
+    const x = Math.round(s * this.w);
+    r.setScissorTest(true);
+    r.setScissor(0, 0, x, this.h);
+    world.setPass(false, cam); world.prepare(cam, mirror); r.render(world.scene, cam);
+    r.setScissor(x, 0, this.w - x, this.h);
+    world.setPass(true, cam); world.prepare(cam, mirror); r.render(world.scene, cam);
+    r.setScissorTest(false);
+  }
 
   /* ---------------------------------------------------------------- checks (used to verify the model against the plan) */
 
@@ -853,7 +1042,7 @@ export class FlatEngine {
 
   stats() {
     const i = this.renderer.info;
-    return { tris: this.world.tris, calls: i.render.calls, dpr: this.dpr, mirror: this.mirrorOn && this.world.q.mirror, textures: i.memory.textures, geometries: i.memory.geometries };
+    return { tier: this.world.q.tier, post: this.post?.level ?? -1, tris: this.world.tris, calls: i.render.calls, frameTris: i.render.triangles, dpr: this.dpr, mirror: this.mirrorOn && this.world.q.mirror, textures: i.memory.textures, geometries: i.memory.geometries };
   }
 
   /** development only: put the camera anywhere (feet) */
@@ -887,6 +1076,7 @@ export class FlatEngine {
     document.removeEventListener('pointerlockchange', this.onLockChange);
     document.removeEventListener('visibilitychange', this.onVis);
     if (this.canvas && document.pointerLockElement === this.canvas) document.exitPointerLock();
+    this.post?.dispose();
     this.world?.dispose();
     if (this.renderer) {
       this.renderer.dispose();

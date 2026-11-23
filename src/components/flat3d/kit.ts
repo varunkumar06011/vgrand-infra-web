@@ -5,6 +5,8 @@ import { ALL_STYLES, SLOT_FLAGS, matSpec, type MatSpec, type StyleId, type TexSp
 import * as TX from './textures';
 
 export type Quality = {
+  /** 0 = old / budget phone · 1 = typical phone or tablet · 2 = flagship phone or laptop · 3 = desktop-class GPU */
+  tier: 0 | 1 | 2 | 3;
   /** laptop / desktop class device */
   hi: boolean;
   /** surface relief on fabric, timber and grout */
@@ -13,7 +15,29 @@ export type Quality = {
   mirror: boolean;
   shadow: number;
   lights: number;
+  /** screen-space ambient occlusion, bloom and grading (tier 2+) */
+  post: boolean;
+  /** ambient occlusion inside the post chain (tier 3, or tier 2 at reduced resolution) */
+  ao: boolean;
+  /** soft rectangular daylight from the nearest windows */
+  area: boolean;
+  /** ceiling fans turn, clouds drift — needs a frame every tick */
+  animate: boolean;
+  /** how much of the town outside is built (0.4 .. 1) */
+  town: number;
 };
+
+/** render layers: the bare shell and the furniture can be drawn apart for the compare view */
+export const LAYER = {
+  /** shell, seen in the floor reflection */
+  shell: 0,
+  /** shell overlays that must not appear in the reflection (the floor itself, contact shadows) */
+  shellFlat: 1,
+  /** furniture, seen in the floor reflection */
+  furn: 2,
+  /** furniture overlays kept out of the reflection */
+  furnFlat: 3,
+} as const;
 
 export type Rect = [number, number, number, number];
 
@@ -56,6 +80,10 @@ export class Mats {
       case 'grid': t = TX.gridTex({ ...spec, size: hi ? 512 : 256 }); break;
       case 'rug': t = TX.rugTex({ ...spec, size: hi ? 768 : 512 }); break;
       case 'art': t = TX.artAtlas(spec.kind, spec.pal, spec.seed, hi ? 1024 : 512); break;
+      case 'granite': t = TX.graniteTex({ ...spec, size: hi ? 1024 : 512 }); break;
+      case 'print': t = TX.printTex({ ...spec, size: hi ? 512 : 256 }); break;
+      case 'kalamkari': t = TX.kalamkariTex(hi ? 1024 : 512, spec.seed); break;
+      case 'rangoli': t = TX.rangoliTex(hi ? 512 : 256, spec.seed); break;
     }
     if (size) t.repeat.set(1 / size, 1 / size);
     if (!this.q.hi) t.anisotropy = 4;
@@ -171,9 +199,13 @@ export type Fixture = {
   kind: 'window' | 'ceiling' | 'lamp' | 'always';
   power: number;
   color: number;
+  /** belongs to the furniture (off in the bare-shell view) */
+  furn: boolean;
+  /** windows: inward-facing normal on the plan and the glazed size */
+  nx?: number; nz?: number; w?: number; h?: number;
 };
 
-export type GlowSpot = { x: number; y: number; z: number; r: number; up: boolean; k: number };
+export type GlowSpot = { x: number; y: number; z: number; r: number; up: boolean; k: number; furn: boolean };
 
 /** cloth lying on something and falling over its edges, measured from the soft piece's centre */
 export type Drape = {
@@ -204,9 +236,12 @@ export type SoftOpts = AddOpts & {
   seed?: number;
 };
 
-type Batch = { slot: string; upper: boolean; style: StyleId | null; geos: THREE.BufferGeometry[] };
+type Batch = { slot: string; upper: boolean; style: StyleId | null; furn: boolean; geos: THREE.BufferGeometry[] };
 
-export type BuiltGroup = { group: THREE.Group; upper: boolean; style: StyleId | null };
+export type BuiltGroup = { group: THREE.Group; upper: boolean; style: StyleId | null; furn: boolean };
+
+/** a ceiling fan: world position of the hub (metres) and blade span */
+export type Fan = { x: number; y: number; z: number; r: number; furn: boolean; phase: number };
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -227,16 +262,28 @@ export class Kit {
   upper = false;
   /** set while building pieces that only exist in one style */
   only: StyleId | null = null;
-  /** world-space AABBs [x0, z0, x1, z1] in metres that block walking */
+  /** true while building furniture and interior fit-out (hidden in the bare-shell view) */
+  furn = false;
+  /** world-space AABBs [x0, z0, x1, z1] in metres that block walking — structure */
   solids: Rect[] = [];
+  /** ...and furniture, which you can walk through in the bare-shell view */
+  furnSolids: Rect[] = [];
   ao: TX.AoRect[] = [];
+  aoFurn: TX.AoRect[] = [];
   aoWalls: TX.AoRect[] = [];
   fixtures: Fixture[] = [];
   glows: GlowSpot[] = [];
-  halos: { x: number; y: number; z: number }[] = [];
+  halos: { x: number; y: number; z: number; furn: boolean }[] = [];
+  fans: Fan[] = [];
   tris = 0;
   /** how many of the first `solids` are walls (set once the shell is built) */
   walls = 0;
+
+  /** build interior fit-out (true) or structure the builder hands over (false) */
+  fit(furn: boolean, fn: () => void) {
+    const prev = this.furn; this.furn = furn;
+    try { fn(); } finally { this.furn = prev; }
+  }
 
   /** true when local point (x, z) is within `margin` metres of a wall */
   nearWall(x: number, z: number, margin = 0.03) {
@@ -285,9 +332,9 @@ export class Kit {
       for (let i = 0; i < n; i++) idx[i] = i;
       g.setIndex(new THREE.BufferAttribute(idx, 1));
     }
-    const key = `${slot}|${this.upper ? 1 : 0}|${this.only ?? ''}`;
+    const key = `${slot}|${this.upper ? 1 : 0}|${this.only ?? ''}|${this.furn ? 1 : 0}`;
     let b = this.batches.get(key);
-    if (!b) { b = { slot, upper: this.upper, style: this.only, geos: [] }; this.batches.set(key, b); }
+    if (!b) { b = { slot, upper: this.upper, style: this.only, furn: this.furn, geos: [] }; this.batches.set(key, b); }
     b.geos.push(g);
   }
 
@@ -461,12 +508,12 @@ export class Kit {
   }
 
   /** something you cannot walk through; local rect centred at (x, z) */
-  solid(w: number, d: number, x = 0, z = 0) { this.solids.push(this.rect(w, d, x, z)); }
+  solid(w: number, d: number, x = 0, z = 0) { (this.furn ? this.furnSolids : this.solids).push(this.rect(w, d, x, z)); }
 
   /** soft contact shadow on the floor under a piece */
   shadow(w: number, d: number, x = 0, z = 0, dark = 0.3, soft = 0.22) {
     const [x0, z0, x1, z1] = this.rect(w, d, x, z);
-    this.ao.push({ x0, z0, x1, z1, dark, soft });
+    (this.furn ? this.aoFurn : this.ao).push({ x0, z0, x1, z1, dark, soft });
   }
 
   /** both of the above — most furniture */
@@ -476,28 +523,41 @@ export class Kit {
 
   light(kind: Fixture['kind'], x: number, y: number, z: number, power: number, color = 0xffd9a8) {
     const p = this.point(x, y, z);
-    this.fixtures.push({ x: p.x, y: p.y, z: p.z, kind, power, color });
+    this.fixtures.push({ x: p.x, y: p.y, z: p.z, kind, power, color, furn: this.furn });
+  }
+
+  /** a window's daylight as a soft panel: centre, inward normal and size (local frame, facing local +z) */
+  windowLight(x: number, y: number, z: number, w: number, h: number, power: number, nz: 1 | -1) {
+    const p = this.point(x, y, z);
+    const n = _v.set(0, 0, nz).transformDirection(this.top).clone();
+    this.fixtures.push({ x: p.x, y: p.y, z: p.z, kind: 'window', power, color: 0xffffff, furn: false, nx: n.x, nz: n.z, w, h });
+  }
+
+  /** a ceiling fan hanging at local (x, z) with the blades at height y */
+  fan(x: number, y: number, z: number, r = 0.6) {
+    const p = this.point(x, y, z);
+    this.fans.push({ x: p.x, y: p.y, z: p.z, r, furn: this.furn, phase: (Math.abs(p.x * 7.3 + p.z * 3.1) % 1) * Math.PI * 2 });
   }
 
   /** a painted pool of light on the floor (up) or ceiling (down) that appears at night */
   glow(x: number, y: number, z: number, r: number, up = true, k = 1) {
     const p = this.point(x, y, z);
-    this.glows.push({ x: p.x, y: p.y, z: p.z, r, up, k });
+    this.glows.push({ x: p.x, y: p.y, z: p.z, r, up, k, furn: this.furn });
   }
 
   halo(x: number, y: number, z: number) {
     const p = this.point(x, y, z);
-    this.halos.push({ x: p.x, y: p.y, z: p.z });
+    this.halos.push({ x: p.x, y: p.y, z: p.z, furn: this.furn });
   }
 
-  /** merge everything; returns one group per (dollhouse layer × style) combination */
+  /** merge everything; returns one group per (dollhouse layer × style × furniture) combination */
   build(mats: Mats): BuiltGroup[] {
     const groups = new Map<string, BuiltGroup>();
     for (const b of this.batches.values()) {
-      const gk = `${b.upper ? 1 : 0}|${b.style ?? ''}`;
+      const gk = `${b.upper ? 1 : 0}|${b.style ?? ''}|${b.furn ? 1 : 0}`;
       let bg = groups.get(gk);
       if (!bg) {
-        bg = { group: new THREE.Group(), upper: b.upper, style: b.style };
+        bg = { group: new THREE.Group(), upper: b.upper, style: b.style, furn: b.furn };
         bg.group.name = `flat:${gk}`;
         groups.set(gk, bg);
       }
@@ -510,7 +570,7 @@ export class Kit {
       mesh.name = b.slot;
       mesh.castShadow = f.cast ?? true;
       mesh.receiveShadow = f.recv ?? true;
-      if (f.hideInMirror) mesh.layers.set(1);
+      mesh.layers.set(b.furn ? (f.hideInMirror ? LAYER.furnFlat : LAYER.furn) : f.hideInMirror ? LAYER.shellFlat : LAYER.shell);
       if (f.kind === 'glass' || f.kind === 'sheer') mesh.renderOrder = 5;
       mesh.matrixAutoUpdate = false;
       bg.group.add(mesh);

@@ -771,3 +771,179 @@ export function aoTex(rects: AoRect[], bounds: [number, number, number, number],
   t.anisotropy = 1;
   return t;
 }
+
+/* ------------------------------------------------------------------ Indian surfaces */
+
+/**
+ * Black galaxy granite, quarried at Chimakurthi in Prakasam district — the stone Ongole is known
+ * for. Near-black with fine bronze and silver flecks that catch the light.
+ */
+export function graniteTex(o: { size: number; base: string; flecks: string[]; seed: number }) {
+  const [c, g] = canvas(o.size);
+  const r = rng(o.seed);
+  const S = o.size;
+  g.fillStyle = o.base; g.fillRect(0, 0, S, S);
+  // soft mottling in the body of the stone
+  const N = 64, f = field(N, 8, 3, o.seed + 1);
+  const img = g.getImageData(0, 0, S, S), d = img.data, b = hex(o.base);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const v = (at(f, N, x / S, y / S) - 0.5) * 26, i = (y * S + x) * 4;
+    d[i] = b[0] + v; d[i + 1] = b[1] + v; d[i + 2] = b[2] + v * 1.1;
+  }
+  g.putImageData(img, 0, 0);
+  const fl = o.flecks.map(hex);
+  const n = (S * S) / 26;
+  for (let i = 0; i < n; i++) {
+    const col = fl[(r() * fl.length) | 0];
+    const rad = r() < 0.92 ? 0.45 + r() * 0.9 : 1.2 + r() * 1.8;
+    g.fillStyle = css(col, 0.45 + r() * 0.55);
+    g.beginPath(); g.ellipse(r() * S, r() * S, rad, rad * (0.5 + r() * 0.5), r() * 3, 0, Math.PI * 2); g.fill();
+  }
+  return finish(c);
+}
+
+/** hand block-printed cotton: small repeating buttis on a ground, with the slight misprint of a hand stamp */
+export function printTex(o: { size: number; base: string; ink: string[]; seed: number; motif: 'butti' | 'jaal' }) {
+  const [c, g] = canvas(o.size);
+  const r = rng(o.seed);
+  const S = o.size, ink = o.ink.map(hex);
+  g.fillStyle = o.base; g.fillRect(0, 0, S, S);
+  const n = 6, st = S / n;
+  const flower = (x: number, y: number, s: number, col: RGB, a: number) => {
+    g.fillStyle = css(col, a);
+    for (let k = 0; k < 6; k++) {
+      const ang = (k / 6) * Math.PI * 2;
+      g.beginPath(); g.ellipse(x + Math.cos(ang) * s * 0.55, y + Math.sin(ang) * s * 0.55, s * 0.42, s * 0.24, ang, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = css(ink[(ink.length - 1)], a); g.beginPath(); g.arc(x, y, s * 0.24, 0, Math.PI * 2); g.fill();
+  };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = (i + (j % 2 ? 0.5 : 0)) * st + (r() - 0.5) * 1.5, y = (j + 0.5) * st + (r() - 0.5) * 1.5;
+    const a = 0.75 + r() * 0.2;
+    if (o.motif === 'jaal') {
+      g.strokeStyle = css(ink[1 % ink.length], 0.55); g.lineWidth = S / 260;
+      g.beginPath(); g.moveTo(x - st / 2, y); g.quadraticCurveTo(x, y - st * 0.45, x + st / 2, y); g.quadraticCurveTo(x, y + st * 0.45, x - st / 2, y); g.stroke();
+    }
+    // a paisley-like leaf either side of each flower
+    g.fillStyle = css(ink[1 % ink.length], a * 0.8);
+    for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(x + sx * st * 0.2, y + st * 0.12, st * 0.09, st * 0.04, sx * 0.7, 0, Math.PI * 2); g.fill(); }
+    flower(x, y, st * 0.17, ink[0], a);
+  }
+  // wrap the tile seamlessly by redrawing across the edge
+  g.drawImage(c, S, 0); g.drawImage(c, 0, S);
+  grain(g, S, S, r, 10);
+  return finish(c);
+}
+
+/**
+ * Kalamkari — the hand-painted cotton of Srikalahasti and Machilipatnam in Andhra: a tree of life
+ * in madder red, indigo, mustard and black outline on unbleached cloth, inside patterned borders.
+ */
+export function kalamkariTex(size: number, seed: number) {
+  const W = size, Hh = Math.round(size * 0.66);
+  const [c, g] = canvas(W, Hh);
+  const r = rng(seed);
+  const cloth: RGB = [233, 214, 178], red: RGB = [150, 46, 32], ind: RGB = [40, 52, 86], mus: RGB = [199, 146, 46], blk: RGB = [32, 22, 18], grn: RGB = [72, 96, 62];
+  g.fillStyle = css(cloth); g.fillRect(0, 0, W, Hh);
+  const B = W * 0.06;
+  // borders: red band with a running vine, then a black rule
+  g.fillStyle = css(red); g.fillRect(0, 0, W, B); g.fillRect(0, Hh - B, W, B); g.fillRect(0, 0, B, Hh); g.fillRect(W - B, 0, B, Hh);
+  g.strokeStyle = css(mus); g.lineWidth = W / 300;
+  for (let x = B * 0.5; x < W; x += B * 0.8) for (const y of [B / 2, Hh - B / 2]) { g.beginPath(); g.arc(x, y, B * 0.26, 0, Math.PI * 2); g.stroke(); g.fillStyle = css(cloth); g.beginPath(); g.arc(x, y, B * 0.1, 0, Math.PI * 2); g.fill(); }
+  for (let y = B * 1.3; y < Hh - B; y += B * 0.8) for (const x of [B / 2, W - B / 2]) { g.beginPath(); g.arc(x, y, B * 0.26, 0, Math.PI * 2); g.stroke(); }
+  g.strokeStyle = css(blk); g.lineWidth = W / 220; g.strokeRect(B, B, W - 2 * B, Hh - 2 * B);
+  // trunk rising from a mound, branching into curling boughs
+  const cx = W / 2, base = Hh - B * 1.6, top = B * 1.8;
+  g.fillStyle = css(grn); g.beginPath(); g.ellipse(cx, base + B * 0.3, W * 0.16, B * 0.55, 0, Math.PI, 0); g.fill();
+  const bough = (x0: number, y0: number, ang: number, len: number, w: number, depth: number) => {
+    const x1 = x0 + Math.cos(ang) * len, y1 = y0 + Math.sin(ang) * len;
+    const mx = (x0 + x1) / 2 + Math.cos(ang + 1.57) * len * 0.18, my = (y0 + y1) / 2 + Math.sin(ang + 1.57) * len * 0.18;
+    g.strokeStyle = css(blk); g.lineWidth = w + W / 400; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx, my, x1, y1); g.stroke();
+    g.strokeStyle = css(red); g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx, my, x1, y1); g.stroke();
+    if (depth <= 0) {
+      // a lotus bloom or a paisley at the tip
+      const s = len * 0.42;
+      if (r() < 0.55) {
+        for (let k = 0; k < 7; k++) {
+          const a = -Math.PI / 2 + (k - 3) * 0.32;
+          g.fillStyle = css(k % 2 ? red : mus); g.strokeStyle = css(blk); g.lineWidth = W / 600;
+          g.beginPath(); g.ellipse(x1 + Math.cos(a) * s * 0.5, y1 + Math.sin(a) * s * 0.5, s * 0.5, s * 0.17, a, 0, Math.PI * 2); g.fill(); g.stroke();
+        }
+      } else {
+        g.fillStyle = css(r() < 0.5 ? ind : grn); g.strokeStyle = css(blk); g.lineWidth = W / 600;
+        g.beginPath(); g.ellipse(x1, y1, s * 0.5, s * 0.28, ang, 0, Math.PI * 2); g.fill(); g.stroke();
+        g.fillStyle = css(mus); g.beginPath(); g.arc(x1, y1, s * 0.12, 0, Math.PI * 2); g.fill();
+      }
+      return;
+    }
+    const n = depth > 1 ? 2 : 3;
+    for (let i = 0; i < n; i++) bough(x1, y1, ang + (i - (n - 1) / 2) * 0.75 + (r() - 0.5) * 0.3, len * 0.66, w * 0.62, depth - 1);
+  };
+  bough(cx, base, -Math.PI / 2, (base - top) * 0.42, W * 0.022, 3);
+  // leaves scattered along the boughs
+  for (let i = 0; i < 70; i++) {
+    const x = cx + (r() - 0.5) * W * 0.62, y = top + r() * (base - top) * 0.75;
+    g.fillStyle = css(r() < 0.5 ? grn : ind, 0.9); g.strokeStyle = css(blk); g.lineWidth = W / 900;
+    g.beginPath(); g.ellipse(x, y, W * 0.012, W * 0.005, r() * 3, 0, Math.PI * 2); g.fill(); g.stroke();
+  }
+  // two birds facing the tree
+  for (const sx of [-1, 1]) {
+    const bx = cx + sx * W * 0.25, by = base - B * 0.4;
+    g.fillStyle = css(ind); g.strokeStyle = css(blk); g.lineWidth = W / 500;
+    g.beginPath(); g.ellipse(bx, by, W * 0.04, W * 0.022, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.beginPath(); g.arc(bx - sx * W * 0.038, by - W * 0.022, W * 0.013, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = css(mus); g.beginPath(); g.moveTo(bx - sx * W * 0.05, by - W * 0.024); g.lineTo(bx - sx * W * 0.065, by - W * 0.018); g.lineTo(bx - sx * W * 0.05, by - W * 0.016); g.fill();
+    g.fillStyle = css(red); g.beginPath(); g.moveTo(bx + sx * W * 0.03, by); g.quadraticCurveTo(bx + sx * W * 0.08, by - W * 0.04, bx + sx * W * 0.09, by + W * 0.01); g.closePath(); g.fill(); g.stroke();
+  }
+  // vegetable-dyed cloth is never even
+  const img = g.getImageData(0, 0, W, Hh), d = img.data;
+  const N = 64, fl = field(N, 5, 3, seed + 3);
+  for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4, v = (at(fl, N, x / W, y / Hh) - 0.5) * 22 + (r() - 0.5) * 12;
+    d[i] += v; d[i + 1] += v * 0.9; d[i + 2] += v * 0.7;
+  }
+  g.putImageData(img, 0, 0);
+  return finish(c, false);
+}
+
+/** a kolam / rangoli at the threshold: concentric petals in festival colours on a rice-flour outline */
+export function rangoliTex(size: number, seed: number) {
+  const [c, g] = canvas(size);
+  const r = rng(seed);
+  const C = size / 2;
+  g.clearRect(0, 0, size, size);
+  const cols = ['#e8452c', '#f6b21b', '#1f8f5f', '#d6337b', '#2b6cc4', '#ff7a1a'];
+  const ring = (rad: number, n: number, len: number, wid: number, col: string, off = 0) => {
+    g.fillStyle = col;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2 + off;
+      g.beginPath(); g.ellipse(C + Math.cos(a) * rad, C + Math.sin(a) * rad, len, wid, a, 0, Math.PI * 2); g.fill();
+    }
+  };
+  g.fillStyle = 'rgba(250,246,236,0.95)'; g.beginPath(); g.arc(C, C, C * 0.96, 0, Math.PI * 2); g.fill();
+  g.fillStyle = cols[4]; g.beginPath(); g.arc(C, C, C * 0.9, 0, Math.PI * 2); g.fill();
+  ring(C * 0.78, 16, C * 0.14, C * 0.07, cols[1]);
+  ring(C * 0.78, 16, C * 0.07, C * 0.035, cols[0]);
+  g.fillStyle = cols[2]; g.beginPath(); g.arc(C, C, C * 0.6, 0, Math.PI * 2); g.fill();
+  ring(C * 0.45, 12, C * 0.15, C * 0.065, cols[3], 0.26);
+  ring(C * 0.45, 12, C * 0.08, C * 0.03, cols[1], 0.26);
+  g.fillStyle = cols[5]; g.beginPath(); g.arc(C, C, C * 0.25, 0, Math.PI * 2); g.fill();
+  ring(C * 0.16, 8, C * 0.07, C * 0.03, cols[1]);
+  g.fillStyle = cols[0]; g.beginPath(); g.arc(C, C, C * 0.07, 0, Math.PI * 2); g.fill();
+  // the white rice-flour dots and outline of the kolam
+  g.fillStyle = 'rgba(255,253,246,0.95)';
+  for (const [rad, n] of [[0.9, 48], [0.6, 32], [0.25, 16]]) for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2;
+    g.beginPath(); g.arc(C + Math.cos(a) * C * rad, C + Math.sin(a) * C * rad, size / 220, 0, Math.PI * 2); g.fill();
+  }
+  // powder is grainy at the edges
+  const img = g.getImageData(0, 0, size, size), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] === 0) continue;
+    const n = (r() - 0.5) * 40; d[i] += n; d[i + 1] += n; d[i + 2] += n;
+    if (r() < 0.04) d[i + 3] = 0;
+  }
+  g.putImageData(img, 0, 0);
+  return finish(c, false);
+}

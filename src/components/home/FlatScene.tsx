@@ -118,11 +118,14 @@ export default function FlatScene({ url, plan, camPath, lookPath, shiftKeys = []
           if (disposed) return;
           renderer.shadowMap.enabled = true;
           const q = pickQuality();
-          renderer.shadowMap.type = q.hi ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+          renderer.shadowMap.type = q.hi ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
           renderer.shadowMap.autoUpdate = false;
           renderer.toneMappingExposure = 1.02;
-          camera.layers.enable(1);
+          // the shell and the furniture live on separate layers (the walkthrough can show either)
+          camera.layers.enableAll();
           const w = new FlatWorld(renderer, q, 'lux', 16.6);
+          // the scroll drives every frame here; no need to keep drawing for fans and clouds
+          w.animate = false;
           await new Promise((r) => requestAnimationFrame(r));
           if (disposed) { w.dispose(); return; }
           w.build(plan);
