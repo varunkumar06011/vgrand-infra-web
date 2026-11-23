@@ -96,6 +96,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
   const [style, setStyle] = useState<StyleId>('lux');
   const [time, setTime] = useState(16.4);
   const [mode, setMode] = useState<Mode>('doll');
+  const [furnished, setFurnished] = useState(true);
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [roomShown, setRoomShown] = useState(false);
   const [tour, setTour] = useState<TourState>({ status: 'idle', step: 0, total: 0, stop: null });
@@ -108,7 +109,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
 
   const restart = () => {
     setError(null); setReady(false); setLive(false); setProgress(0);
-    setPlan('east'); setStyle('lux'); setTime(16.4); setMode('doll'); setRoom(null);
+    setPlan('east'); setStyle('lux'); setTime(16.4); setMode('doll'); setRoom(null); setFurnished(true);
     setTour({ status: 'idle', step: 0, total: 0, stop: null });
     setEpoch((e) => e + 1);
   };
@@ -210,6 +211,7 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
     else void rootRef.current?.requestFullscreen?.().catch(() => undefined);
   };
   const stick = useCallback((x: number, y: number) => engineRef.current?.setStick(x, y), []);
+  const toggleFurnished = () => { const next = !furnished; setFurnished(next); engineRef.current?.setFurnished(next); };
 
   const tl = timeLabel(time);
   const touring = tour.status === 'running' || tour.status === 'paused';
@@ -423,6 +425,11 @@ export default function FlatExperience({ onClose, projectName = 'Elite Homes' }:
                   {mode === 'walk' ? <Box size={16} /> : <Footprints size={16} />}
                   <span>{mode === 'walk' ? 'Dollhouse' : 'Walk inside'}</span>
                 </button>
+              </div>
+
+              <div className="order-4 flex shrink-0 rounded-lg bg-black/20 p-1" role="group" aria-label="Furniture view">
+                <button type="button" className={seg(furnished)} aria-pressed={furnished} onClick={() => furnished || toggleFurnished()}>Furnished</button>
+                <button type="button" className={seg(!furnished)} aria-pressed={!furnished} onClick={() => !furnished || toggleFurnished()}>Empty</button>
               </div>
 
               <button

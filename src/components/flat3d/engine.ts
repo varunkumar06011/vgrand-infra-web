@@ -362,6 +362,10 @@ export class FlatEngine {
     this.crossfade(() => this.world.setStyle(style), 0.9);
   }
 
+  setFurnished(visible: boolean) {
+    this.crossfade(() => this.world.setFurnished(visible), 0.55);
+  }
+
   setPlan(id: PlanId) {
     if (id === this.plan.id || this.flight) return;
     this.stopTour();

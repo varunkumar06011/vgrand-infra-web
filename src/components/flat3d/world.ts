@@ -126,6 +126,7 @@ export class FlatWorld {
   time: number;
   sunState: SunState = { el: 30, dayF: 1, lampF: 0 };
   upperVisible = true;
+  furnishedVisible = true;
   /** true when something changed that needs a new frame */
   dirty = true;
 
@@ -253,12 +254,16 @@ export class FlatWorld {
     const kit = new Kit(this.q.hi ? 1 : 0.62);
     buildShell(kit, plan);
     this.wallSolids = kit.solids.slice();
+    kit.furniture = true;
     furnish(kit, plan);
+    kit.furniture = false;
     this.groups = kit.build(this.mats);
     this.tris = kit.tris;
     this.solids = kit.solids;
     this.fixtures = kit.fixtures;
     for (const g of this.groups) this.planRoot.add(g.group);
+    // Furniture is tagged while the procedural kit builds the furnished plan.
+    // Keeping it in the same scene makes the comparison instantaneous and stable.
 
     const b = planBounds(plan);
     const e = plan.entry.r;
@@ -282,7 +287,7 @@ export class FlatWorld {
       mesh.renderOrder = 2;
       this.aoMats.push(mat);
       this.planRoot.add(mesh);
-      if (upper) this.groups.push({ group: mesh as unknown as THREE.Group, upper: true, style: null });
+      if (upper) this.groups.push({ group: mesh as unknown as THREE.Group, upper: true, style: null, furniture: false });
     };
     overlay(kit.ao, 0.0065, false, false);
     overlay(kit.aoWalls, H - 0.004, true, true);
@@ -325,8 +330,13 @@ export class FlatWorld {
     this.dirty = true;
   }
 
+  setFurnished(v: boolean) {
+    this.furnishedVisible = v;
+    this.applyVisibility();
+  }
+
   private applyVisibility() {
-    for (const g of this.groups) g.group.visible = (!g.upper || this.upperVisible) && (!g.style || g.style === this.mats.style);
+    for (const g of this.groups) g.group.visible = (!g.furniture || this.furnishedVisible) && (!g.upper || this.upperVisible) && (!g.style || g.style === this.mats.style);
     this.shadowDirty = true;
     this.dirty = true;
   }

@@ -204,9 +204,9 @@ export type SoftOpts = AddOpts & {
   seed?: number;
 };
 
-type Batch = { slot: string; upper: boolean; style: StyleId | null; geos: THREE.BufferGeometry[] };
+type Batch = { slot: string; upper: boolean; style: StyleId | null; furniture: boolean; geos: THREE.BufferGeometry[] };
 
-export type BuiltGroup = { group: THREE.Group; upper: boolean; style: StyleId | null };
+export type BuiltGroup = { group: THREE.Group; upper: boolean; style: StyleId | null; furniture: boolean };
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -227,6 +227,8 @@ export class Kit {
   upper = false;
   /** set while building pieces that only exist in one style */
   only: StyleId | null = null;
+  /** Set while the procedural furnishing pass is running. */
+  furniture = false;
   /** world-space AABBs [x0, z0, x1, z1] in metres that block walking */
   solids: Rect[] = [];
   ao: TX.AoRect[] = [];
@@ -285,9 +287,9 @@ export class Kit {
       for (let i = 0; i < n; i++) idx[i] = i;
       g.setIndex(new THREE.BufferAttribute(idx, 1));
     }
-    const key = `${slot}|${this.upper ? 1 : 0}|${this.only ?? ''}`;
+    const key = `${slot}|${this.upper ? 1 : 0}|${this.only ?? ''}|${this.furniture ? 1 : 0}`;
     let b = this.batches.get(key);
-    if (!b) { b = { slot, upper: this.upper, style: this.only, geos: [] }; this.batches.set(key, b); }
+    if (!b) { b = { slot, upper: this.upper, style: this.only, furniture: this.furniture, geos: [] }; this.batches.set(key, b); }
     b.geos.push(g);
   }
 
@@ -494,10 +496,10 @@ export class Kit {
   build(mats: Mats): BuiltGroup[] {
     const groups = new Map<string, BuiltGroup>();
     for (const b of this.batches.values()) {
-      const gk = `${b.upper ? 1 : 0}|${b.style ?? ''}`;
+      const gk = `${b.upper ? 1 : 0}|${b.style ?? ''}|${b.furniture ? 1 : 0}`;
       let bg = groups.get(gk);
       if (!bg) {
-        bg = { group: new THREE.Group(), upper: b.upper, style: b.style };
+        bg = { group: new THREE.Group(), upper: b.upper, style: b.style, furniture: b.furniture };
         bg.group.name = `flat:${gk}`;
         groups.set(gk, bg);
       }
