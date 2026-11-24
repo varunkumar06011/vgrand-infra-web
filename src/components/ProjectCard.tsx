@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getTour } from '@/data/tours';
+import { GATEWAY_SLUG } from '@/data/gatewayFlats';
 
 interface Project {
   slug: string;
@@ -25,7 +26,7 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
   const router = useRouter();
-  const hasTour = !!getTour(project.slug);
+  const hasTour = !!getTour(project.slug) || project.slug === GATEWAY_SLUG;
 
   const openFlat = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
