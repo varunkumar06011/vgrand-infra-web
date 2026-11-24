@@ -893,6 +893,10 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(8.6, -0.75, U, () => IN.nameplate(k));
     P(5.95, -4.2, D, () => IN.rangoli(k, 0.85));
     P(2.7, -0.75, U, () => IN.chappalStand(k));
+  } else if (plan.id === 'g900') {
+    gateway900(k, P, accent);
+  } else if (plan.id === 'g970') {
+    gateway970(k, P, accent);
   } else {
     /* living — L-sofa in the north-east corner, TV on the master-bedroom wall, as drawn */
     P(0, 35.9, R, () => sofa(k, 8 * FT, true, false));
@@ -998,4 +1002,174 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(2.45, 47.7, D, () => IN.rangoli(k, 0.85));
     P(5.2, 44.417, D, () => IN.chappalStand(k));
   }
+}
+
+/* ------------------------------------------------------------------ V Grand Gateway */
+
+type Place = (x: number, y: number, ry: number, fn: () => void) => void;
+type Accent = (id: string, side: Side, slot?: string, v1?: number) => void;
+
+/** 900 sq.ft: one long hall & dining, open kitchen, two bedrooms each with a bathroom */
+function gateway900(k: Kit, P: Place, accent: Accent) {
+  /* hall — TV on the bedroom wall, the sofa facing it with its back to the front door */
+  P(5.8, 12.69, U, () => { tvUnit(k, 1.6); IN.splitAC(k); });
+  P(5.8, 4.0, D, () => sofa(k, 2.1, true, true));
+  P(5.8, 8.9, D, () => rug(k, 'rugA', 2.5, 1.6));
+  P(5.8, 9.4, D, () => coffeeTable(k, 1.0, 0.5));
+  P(2.2, 9.6, R, () => armchair(k));
+  sideTable(k, 10.1 * FT, 5.4 * FT);
+  plant(k, 1.4 * FT, 12.0 * FT, 1.6);
+  IN.kuthuvilakku(k, 9.95 * FT, 0, 12.2 * FT, 1.0);
+  P(5.82, 0.73, D, () => IN.kalamkari(k, 0.9, 1.6));
+
+  /* dining — a six-seater at the kitchen end of the hall */
+  P(15.0, 8.6, R, () => { rug(k, 'rugC', 2.3, 1.8); diningSet(k, 1.0, 0.75); });
+  P(19.96, 11.6, L, () => art(k, 0.5, 0.7, 4, 0, 1.55));
+
+  /* puja niche */
+  P(17.96, 0.73, D, () => mandir(k, 0.85));
+  accent('puja', 'top', 'panel', 10);
+
+  /* kitchen — sink under the east window, a second counter and the fridge opposite */
+  P(24.98, 0.73, D, () => {
+    counterRun(k, 10.04 * FT, { sink: 0.19, hob: -0.98, win: [-0.405, 0.8] });
+    upperRun(k, -10.04 * FT / 2, -0.42, -0.98);
+  });
+  P(21.1, 10.23, U, () => fridge(k, 0.66));
+  P(26.15, 10.23, U, () => { counterRun(k, 7.7 * FT); upperRun(k, -7.7 * FT / 2, 7.7 * FT / 2); });
+  P(30.0, 7.0, L, () => IN.roPurifier(k));
+
+  /* utility */
+  P(31.97, 0.73, D, () => washer(k));
+  P(33.6, 8.0, L, () => k.fit(false, () => utilitySink(k)));
+  P(30.95, 10.23, U, () => IN.lpgCylinder(k));
+
+  /* master bedroom — bed on the outer wall, wardrobe on the kitchen wall, reading chair by the window */
+  accent('master', 'bottom', 'panel');
+  P(27.0, 25.19, U, () => { bed(k, 1.83, 2.0, 0.55); art(k, 1.5, 0.55, 10, 0, 1.85); IN.splitAC(k); });
+  P(23.0, 25.19, U, () => nightstand(k, true, 0.18));
+  P(31.0, 25.19, U, () => nightstand(k, true, 0.18));
+  P(27.0, 21.2, U, () => rug(k, 'rugB', 2.9, 2.1));
+  P(27.0, 16.9, U, () => bench(k, 1.4));
+  P(26.25, 10.58, D, () => wardrobe(k, 9.5 * FT, 1));
+  P(33.6, 19.0, L, () => dresser(k, 1.0));
+  P(31.7, 14.4, L, () => k.at(0, 0, 0.5, () => armchair(k)));
+  floorLamp(k, 32.9 * FT, 16.5 * FT);
+
+  /* master bathroom */
+  P(15.96, 19.0, R, () => vanity(k, 0.6));
+  P(15.96, 22.4, R, () => wc(k));
+  P(17.96, 25.19, U, () => shower(k, 0.4));
+  P(19.96, 23.2, L, () => towelRail(k));
+
+  /* bedroom */
+  accent('bed', 'bottom');
+  P(5.5, 25.19, U, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); IN.splitAC(k); });
+  P(1.95, 25.19, U, () => nightstand(k));
+  P(9.05, 25.19, U, () => nightstand(k, false));
+  P(4.8, 13.08, D, () => wardrobe(k, 5.4 * FT, 1));
+  P(0.73, 20.4, R, () => dresser(k, 0.9));
+  P(5.5, 21.0, U, () => rug(k, 'rugB', 2.35, 1.6));
+
+  /* bedroom bathroom */
+  P(15.62, 19.0, L, () => vanity(k, 0.6));
+  P(15.62, 22.4, L, () => wc(k));
+  P(13.6, 25.19, U, () => shower(k, 0.4));
+  P(11.6, 23.2, R, () => towelRail(k));
+
+  /* passage */
+  P(15.8, 14.75, D, () => rug(k, 'rugR', 2.3, 0.75));
+  P(15.8, 16.83, U, () => art(k, 0.9, 0.6, 8, 0, 1.55));
+
+  /* outside the front door: doormat, toran, nameplate, chappal stand and rangoli */
+  P(2.6, -1.4, D, () => k.box('fabric2', 0.8, 0.014, 0.5, 0, 0.002, 0));
+  P(2.6, 0, U, () => IN.toran(k, 2.79 * FT, 2.2));
+  P(4.6, 0, U, () => IN.nameplate(k));
+  P(5.9, 0, U, () => IN.chappalStand(k));
+  P(2.6, -3.6, D, () => IN.rangoli(k, 0.85));
+  plant(k, 6.4 * FT, -5.0 * FT, 1.3);
+}
+
+/** 970 sq.ft: hall at the front door, dining with a balcony, open kitchen, two bedrooms each with a bathroom */
+function gateway970(k: Kit, P: Place, accent: Accent) {
+  /* hall — TV on the dining-side wall, the sofa on the master-bedroom wall */
+  P(11.1, 21.0, R, () => tvUnit(k, 1.4));
+  P(23.13, 21.8, L, () => { sofa(k, 2.0, true, true); art(k, 1.2, 0.6, 3, 0, 1.6); IN.splitAC(k); });
+  P(17.2, 21.8, L, () => rug(k, 'rugA', 2.6, 1.9));
+  P(17.6, 21.8, L, () => coffeeTable(k, 1.0, 0.55));
+  sideTable(k, 21.5 * FT, 26.4 * FT);
+  P(18.3, 27.44, U, () => entryConsole(k, 1.1));
+  IN.kuthuvilakku(k, 11.8 * FT, 0, 16.4 * FT, 1.0);
+  P(19.2, 13.44, D, () => IN.kalamkari(k, 1.3, 1.6));
+
+  /* dining */
+  P(15.8, 8.6, D, () => { rug(k, 'rugC', 2.5, 1.9); diningSet(k, 1.0, 0.75); });
+  P(18.7, 13.06, U, () => IN.wallClock(k, 2.1));
+  plant(k, 11.9 * FT, 1.5 * FT, 1.4);
+
+  /* puja niche */
+  P(17.54, 0.75, D, () => mandir(k, 0.85));
+  accent('puja', 'top', 'panel', 10);
+
+  /* kitchen */
+  P(24.96, 0.75, D, () => {
+    counterRun(k, 10 * FT, { sink: 0.09, hob: -1.0, win: [-0.515, 0.698] });
+    upperRun(k, -5 * FT, -0.55, -1.0);
+  });
+  P(24.25, 8.65, U, () => fridge(k, 0.66));
+  P(27.65, 8.65, U, () => { counterRun(k, 4.6 * FT); upperRun(k, -2.3 * FT, 2.3 * FT); });
+  P(19.96, 3.3, R, () => IN.roPurifier(k, 1.0));
+
+  /* utility */
+  P(31.97, 0.75, D, () => washer(k));
+  P(33.6, 7.3, L, () => k.fit(false, () => utilitySink(k)));
+  P(31.0, 8.65, U, () => IN.lpgCylinder(k));
+
+  /* balcony — the oonjal facing out, tulsi kota in the corner, a chair by the door */
+  P(5.4, 3.6, U, () => IN.oonjal(k));
+  P(1.3, 1.3, D, () => IN.tulsiKota(k));
+  P(9.0, 1.6, L, () => loungeChair(k));
+  P(4.0, 6.45, D, () => planter(k, 1.4));
+  smallPlant(k, 9.9 * FT, 0, 6.3 * FT, 1.6);
+
+  /* bedroom — bed against the north wall, wardrobe beside the door */
+  accent('bed', 'left');
+  P(0.73, 16.5, R, () => { bed(k, 1.53); art(k, 1.1, 0.6, 2, 0, 1.78); IN.splitAC(k); });
+  P(0.73, 12.95, R, () => nightstand(k));
+  P(0.73, 20.05, R, () => nightstand(k, false));
+  P(4.9, 7.73, D, () => wardrobe(k, 5.4 * FT, 1));
+  P(10.73, 15.5, L, () => dresser(k, 1.0));
+  P(4.3, 16.5, R, () => rug(k, 'rugB', 2.35, 1.6));
+  P(10.73, 24.2, L, () => art(k, 0.6, 0.8, 9, 0, 1.55));
+
+  /* bedroom bathroom */
+  P(2.2, 21.44, D, () => vanity(k, 0.7));
+  P(0.73, 25.9, R, () => shower(k, null));
+  P(4.6, 27.44, U, () => wc(k));
+  P(6.25, 26.0, L, () => towelRail(k));
+
+  /* master bedroom — bed against the south wall, a full-height wardrobe opposite */
+  accent('master', 'right', 'panel');
+  P(33.6, 22.8, L, () => { bed(k, 1.53, 2.0); art(k, 1.3, 0.55, 10, 0, 1.85); IN.splitAC(k); });
+  P(33.6, 19.3, L, () => nightstand(k));
+  P(33.6, 26.3, L, () => nightstand(k));
+  P(23.52, 23.2, R, () => wardrobe(k, 8 * FT, 2));
+  P(25.2, 13.44, D, () => dresser(k, 0.9));
+  P(31.9, 15.9, L, () => k.at(0, 0, 0.5, () => armchair(k)));
+  P(29.6, 22.8, L, () => rug(k, 'rugB', 2.6, 2.0));
+
+  /* master bathroom — shower bay behind glass at one end, basin and WC at the other */
+  P(23.52, 11.07, R, () => shower(k));
+  P(26.2, 10.3, R, () => glassScreen(k, 2.4 * FT));
+  P(30.0, 9.08, D, () => vanity(k, 1.0));
+  P(33.6, 12.1, L, () => wc(k));
+  P(30.0, 13.06, U, () => towelRail(k));
+
+  /* outside the front door */
+  P(13.06, 29.4, D, () => k.box('fabric2', 0.8, 0.014, 0.5, 0, 0.002, 0));
+  P(13.06, 28.17, D, () => IN.toran(k, 2.92 * FT, 2.2));
+  P(15.0, 28.17, D, () => IN.nameplate(k));
+  P(16.3, 28.17, D, () => IN.chappalStand(k));
+  P(13.06, 31.7, D, () => IN.rangoli(k, 0.85));
+  plant(k, 11.3 * FT, 33.2 * FT, 1.3);
 }

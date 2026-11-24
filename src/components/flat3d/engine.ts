@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Quality, Rect } from './kit';
 import type { Post } from './post';
-import { FT, roomAt, roomById, sqft, type PlanDef, type PlanId, type RoomDef } from './plans';
+import { FT, roomAt, roomById, roomText, sqft, type Lang, type PlanDef, type PlanId, type RoomDef } from './plans';
 import { CUT, H } from './shell';
 import type { StyleId } from './styles';
 import { FlatWorld, preloadWorld, TIME_MAX, TIME_MIN } from './world';
@@ -100,9 +100,23 @@ export function pickQuality(tier: Quality['tier'] = pickTier()): Quality {
 const DPR_MAX = [1.25, 1.6, 1.75, 2];
 const PIXELS = [1.0e6, 1.6e6, 2.4e6, 3.6e6];
 
-export function roomInfo(r: RoomDef): RoomInfo {
-  const open = r.kind === 'balcony' || r.kind === 'service' || r.kind === 'passage';
-  return { id: r.id, name: r.name, dims: r.dims, sqft: open && r.dims.includes('wide') ? sqft(r.r) : sqft(r.r), point: r.point };
+export function roomInfo(r: RoomDef, lang: Lang = 'en'): RoomInfo {
+  const t = roomText(r, lang);
+  return { id: r.id, name: t.name, dims: r.dims, sqft: sqft(r.r), point: t.point };
+}
+
+/** the tour's first stop, outside the front door */
+function welcomeInfo(plan: PlanDef, lang: Lang, title?: string): RoomInfo {
+  const te = lang === 'te';
+  return {
+    id: 'entry',
+    name: te ? 'స్వాగతం' : title ?? 'Welcome',
+    dims: `${te && plan.te ? plan.te.label : plan.label} · ${plan.bhk ?? '3 BHK'}`,
+    sqft: null,
+    point: te
+      ? 'మెయిన్ డోర్ నుండి లోపలికి రండి — ప్రతి గదీ ఫ్లోర్ ప్లాన్ ప్రకారం సరిగ్గా అదే కొలతలో ఉంది.'
+      : 'Come in through the front door — every room is to scale with the floor plan.',
+  };
 }
 
 /**
@@ -171,7 +185,7 @@ export class FlatEngine {
   constructor(
     private mount: HTMLElement,
     private labelLayer: HTMLElement,
-    private opts: { plan: PlanId; style: StyleId; time: number; quality: Quality; reducedMotion: boolean },
+    private opts: { plan: PlanId; style: StyleId; time: number; quality: Quality; reducedMotion: boolean; lang?: Lang },
     private ev: EngineEvents,
   ) {
     this.fade = document.createElement('canvas');
@@ -280,11 +294,7 @@ export class FlatEngine {
       const p = new THREE.Vector3(n.p[0] * FT, 0, n.p[1] * FT);
       run.push(p);
       if (!n.stop) continue;
-      const def = roomById(plan, n.stop.room);
-      const info: RoomInfo = def
-        ? { ...roomInfo(def), name: n.stop.title ?? def.name }
-        : { id: n.stop.room, name: n.stop.title ?? 'Welcome', dims: plan.label + ' · 3 BHK', sqft: null, point: 'Come in through the front door — every room is to scale with the floor plan.' };
-      this.stops.push({ x: p.x, z: p.z, lookX: n.stop.look[0] * FT, lookZ: n.stop.look[1] * FT, info });
+      this.stops.push({ x: p.x, z: p.z, lookX: n.stop.look[0] * FT, lookZ: n.stop.look[1] * FT, info: this.stopInfo(n.stop) });
       if (run.length > 1) {
         const curve = new THREE.CatmullRomCurve3(run, false, 'centripetal');
         curve.arcLengthDivisions = Math.max(60, run.length * 30);
@@ -293,25 +303,52 @@ export class FlatEngine {
       run = [p.clone()];
     }
 
-    // dollhouse labels
+    this.buildLabels();
+    this.az = this.defaultAz();
+    this.zoom = 1;
+    this.refit();
+  }
+
+  private get lang(): Lang { return this.opts.lang ?? 'en'; }
+
+  private stopInfo(stop: NonNullable<PlanDef['tour'][number]['stop']>): RoomInfo {
+    const def = roomById(this.plan, stop.room);
+    if (!def) return welcomeInfo(this.plan, this.lang, stop.title);
+    const info = roomInfo(def, this.lang);
+    return this.lang === 'en' && stop.title ? { ...info, name: stop.title } : info;
+  }
+
+  /** dollhouse labels: tap one to step into that room */
+  private buildLabels() {
     this.labelLayer.replaceChildren();
     this.labels = [];
-    for (const room of plan.rooms) {
+    for (const room of this.plan.rooms) {
       if (room.quiet) continue;
+      const name = roomText(room, this.lang).name;
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'flat3d-label';
       el.innerHTML = `<b></b><span></span>`;
-      (el.firstChild as HTMLElement).textContent = room.name;
+      (el.firstChild as HTMLElement).textContent = name;
       (el.lastChild as HTMLElement).textContent = room.dims;
-      el.setAttribute('aria-label', `Step into the ${room.name}`);
+      el.setAttribute('aria-label', this.lang === 'te' ? `${name} లోపలికి వెళ్ళండి` : `Step into the ${name}`);
       el.addEventListener('click', () => this.enterRoom(room.id));
       this.labelLayer.appendChild(el);
       this.labels.push({ el, room });
     }
-    this.az = this.defaultAz();
-    this.zoom = 1;
-    this.refit();
+    this.hot = 4;
+  }
+
+  /** switch the room names, tour cards and labels between English and Telugu */
+  setLang(lang: Lang) {
+    if (lang === this.lang) return;
+    this.opts.lang = lang;
+    if (!this.world) return;
+    let i = 0;
+    for (const n of this.plan.tour) if (n.stop) this.stops[i++].info = this.stopInfo(n.stop);
+    this.buildLabels();
+    if (this.room) this.ev.room?.(roomInfo(this.room, lang));
+    if (this.tour.status !== 'idle') this.emitTour();
   }
 
   /* ---------------------------------------------------------------- sizing */
@@ -836,7 +873,7 @@ export class FlatEngine {
     const room = this.mode === 'walk' && !this.flight ? roomAt(this.plan, this.pos.x / FT, this.pos.y / FT) : null;
     if (room === this.room) return;
     this.room = room;
-    this.ev.room?.(room ? roomInfo(room) : null);
+    this.ev.room?.(room ? roomInfo(room, this.lang) : null);
   }
 
   /* ---------------------------------------------------------------- frame */
