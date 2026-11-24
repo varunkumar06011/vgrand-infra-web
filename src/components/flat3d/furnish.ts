@@ -841,7 +841,7 @@ export function furnish(k: Kit, plan: PlanDef) {
     P(4.7, 29.667, D, () => { bed(k, 1.53); art(k, 0.5, 0.65, 6, -0.34, 1.8); art(k, 0.5, 0.65, 7, 0.34, 1.8); IN.splitAC(k); });
     P(1.15, 29.667, D, () => nightstand(k));
     P(7.475, 41, U, () => wardrobe(k, 7.55 * FT, 2));
-    P(11.25, 36.2, L, () => dresser(k, 1.0));
+    P(11.25, 35.0, L, () => dresser(k, 0.75));
     P(4.7, 35.2, D, () => rug(k, 'rugB', 2.35, 1.6));
 
     /* bedroom balcony */
@@ -856,7 +856,7 @@ export function furnish(k: Kit, plan: PlanDef) {
     /* common bathroom */
     P(11.667, 40.2, R, () => wc(k));
     P(15.667, 37.4, L, () => vanity(k, 0.6));
-    // only 4 ft wide: no room for a geyser or a bucket clear of the doorway
+    // only 4 ft wide: no room for a geyser or a bucket; the door is on the bedroom 2 wall (west)
     P(15.667, 34.75, L, () => shower(k, null, false));
 
     /* master bathroom */
