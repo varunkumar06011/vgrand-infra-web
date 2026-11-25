@@ -1,4 +1,5 @@
 import type { ShiftKey, Vec } from '@/components/home/FlatScene';
+import { westBlueWalkGrid, westEarthWalkGrid } from '@/data/westFlatWalkGrid';
 
 export type FlatTourChapter = {
   /** scroll-progress window (0..1) in which this text is on screen */
@@ -9,11 +10,29 @@ export type FlatTourChapter = {
   text: string;
 };
 
+/**
+ * Walkable area for the full-screen walkthrough, as a packed bit grid (1 = walkable).
+ * Used when the GLB has no walkable metadata of its own; see scripts/build-flat-walk-grid.mjs.
+ */
+export type FlatWalkGrid = {
+  /** cell size in metres */
+  cell: number;
+  /** world x / z of cell (0, 0) */
+  x0: number;
+  z0: number;
+  cols: number;
+  rows: number;
+  /** base64 of the row-major bits, least-significant bit first */
+  data: string;
+  spawn: { x: number; z: number; lookX: number; lookZ: number };
+};
+
 /** A colour scheme of one flat. Each colour is its own GLB, so switching loads that model. */
 export type FlatTourColour = {
   id: string;
   label: string;
   modelUrl: string;
+  walkGrid?: FlatWalkGrid;
 };
 
 /** One facing of a flat (East, West, ...). Its path and chapters are tuned to its own layout. */
@@ -26,6 +45,8 @@ export type FlatTourVariant = {
   colours?: FlatTourColour[];
   /** overrides the GLB's light scale; for models that don't ship one in their scene extras */
   lightScale?: number;
+  /** walkable grid for the full-screen walkthrough, when the facing has no colour grid of its own */
+  walkGrid?: FlatWalkGrid;
   camPath: Vec[];
   lookPath: Vec[];
   shiftKeys?: ShiftKey[];
@@ -122,8 +143,8 @@ const flatTours: Record<string, FlatTourConfig> = {
         label: 'West facing',
         modelUrl: WEST_BLUE,
         colours: [
-          { id: 'blue', label: 'Blue', modelUrl: WEST_BLUE },
-          { id: 'earth', label: 'Earth', modelUrl: WEST_EARTH },
+          { id: 'blue', label: 'Blue', modelUrl: WEST_BLUE, walkGrid: westBlueWalkGrid },
+          { id: 'earth', label: 'Earth', modelUrl: WEST_EARTH, walkGrid: westEarthWalkGrid },
         ],
         lightScale: 0.005,
         camPath: [
