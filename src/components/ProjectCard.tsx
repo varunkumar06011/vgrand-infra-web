@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowUpRight, MapPin } from 'lucide-react';
-import { getTour } from '@/data/tours';
+import { hasWalkthrough } from '@/data/tours';
 import Reveal from '@/components/ui/Reveal';
 
 interface Project {
@@ -32,7 +32,7 @@ const statusStyle: Record<string, string> = {
 
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
   const router = useRouter();
-  const hasTour = !!getTour(project.slug);
+  const hasTour = hasWalkthrough(project.slug);
 
   const openFlat = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
