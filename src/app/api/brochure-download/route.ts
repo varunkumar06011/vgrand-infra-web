@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { insertWithSource, sourceFromRequest } from '@/lib/leadSource';
 import { rateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
@@ -37,19 +38,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          name,
-          email,
-          phone,
-          interested_flat: project || 'General',
-          source: 'brochure_download',
-          status: 'new',
-        }
-      ])
-      .select();
+    const { data, error } = await insertWithSource(
+      supabase,
+      'leads',
+      {
+        name,
+        email,
+        phone,
+        interested_flat: project || 'General',
+        source: 'brochure_download',
+        status: 'new',
+      },
+      sourceFromRequest(request)
+    );
 
     if (error) throw error;
 

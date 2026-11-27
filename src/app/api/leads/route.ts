@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabaseAdmin';
+import { insertWithSource, sourceFromRequest } from '@/lib/leadSource';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth';
 import { rateLimit, rateLimitedResponse } from '@/lib/rateLimit';
 
@@ -24,20 +25,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Input too long.' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          name,
-          email,
-          phone,
-          message,
-          project: project || 'Elite Homes',
-          source: source || 'Web Form',
-          status: 'New'
-        }
-      ])
-      .select();
+    const { data, error } = await insertWithSource(
+      supabase,
+      'leads',
+      {
+        name,
+        email,
+        phone,
+        message,
+        project: project || 'Elite Homes',
+        source: source || 'Web Form',
+        status: 'New'
+      },
+      sourceFromRequest(request)
+    );
 
     if (error) throw error;
 

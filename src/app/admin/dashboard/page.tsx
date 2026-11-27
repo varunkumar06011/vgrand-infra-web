@@ -22,6 +22,23 @@ import {
   Cell
 } from 'recharts';
 
+type Row = { name: string; total: number };
+type Activity = { total: number; byEvent: Row[]; bySource: Row[] } | null;
+
+/** plain names for the event types recorded by ClickTracker */
+const EVENT_NAMES: Record<string, string> = {
+  call_click: '📞 Call button',
+  whatsapp_click: '💬 WhatsApp',
+  directions_click: '📍 Directions / Maps',
+  form_submit: '📝 Form submitted',
+  '3d_open': '🏠 3D walkthrough opened',
+  brochure_click: '📄 Brochure',
+  email_click: '✉️ Email',
+  outbound_click: '↗️ Link to another site',
+  link_click: '🔗 Page link',
+  button_click: '🔘 Other button',
+};
+
 // Initial states for real-time data
 const visitData: any[] = [];
 const materialsSummary: any[] = [];
@@ -36,10 +53,15 @@ export default function AdminDashboard() {
     recentLeads: [] as any[]
   });
   const [loading, setLoading] = useState(true);
+  const [activity, setActivity] = useState<Activity>(null);
 
   useEffect(() => {
     setMounted(true);
     fetchDashboardData();
+    fetch('/api/track?days=30')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setActivity(d && Array.isArray(d.byEvent) ? d : null))
+      .catch(() => setActivity(null));
   }, []);
 
   const fetchDashboardData = async () => {
@@ -107,6 +129,47 @@ export default function AdminDashboard() {
           trend={{ value: 2, isUp: false }}
           color="orange"
         />
+      </div>
+
+      {/* Website activity: clicks and visitor sources (site_events) */}
+      <div className="mb-8 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-800">Website activity</h3>
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Last 30 days</span>
+        </div>
+        {activity === null ? (
+          <p className="text-sm text-slate-500">
+            No click data yet. Run <code className="rounded bg-slate-100 px-1">supabase_lead_tracking.sql</code> in Supabase once, and clicks will start appearing here.
+          </p>
+        ) : (
+          <div className="grid gap-8 md:grid-cols-2">
+            {[
+              { title: 'What visitors tapped', rows: activity.byEvent, label: (n: string) => EVENT_NAMES[n] ?? n },
+              { title: 'Where visitors came from', rows: activity.bySource, label: (n: string) => n },
+            ].map((col) => {
+              const max = Math.max(1, ...col.rows.map((r) => r.total));
+              return (
+                <div key={col.title}>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{col.title}</p>
+                  {col.rows.length === 0 && <p className="text-sm text-slate-500">Nothing yet.</p>}
+                  <ul className="space-y-2">
+                    {col.rows.slice(0, 8).map((r) => (
+                      <li key={r.name} className="text-sm">
+                        <div className="flex justify-between text-slate-700">
+                          <span>{col.label(r.name)}</span>
+                          <span className="font-semibold tabular-nums">{r.total.toLocaleString()}</span>
+                        </div>
+                        <div className="mt-1 h-1.5 rounded-full bg-slate-100">
+                          <div className="h-1.5 rounded-full bg-emerald-600" style={{ width: `${(r.total / max) * 100}%` }} />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Main Grid */}
