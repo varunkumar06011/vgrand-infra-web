@@ -7,6 +7,7 @@ import SmoothScroll from '@/components/SmoothScroll';
 import "./globals.css";
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import InfraOnly from '@/components/group/InfraOnly';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -137,12 +138,16 @@ export default async function RootLayout({
       {!isAdmin && <ClickTracker />}
       {!isAdmin && <ConsentPopup />}
       <RouteHandler />
-      {!isAdmin && <Navbar />}
+      {!isAdmin && <InfraOnly><Navbar /></InfraOnly>}
       <SmoothScroll>
         <main>{children}</main>
       </SmoothScroll>
-      {!isAdmin && <Footer />}
-      {!isAdmin && <WhatsAppButton variant="floating" phoneNumber="919030143333" />}
+      {!isAdmin && (
+        <InfraOnly>
+          <Footer />
+          <WhatsAppButton variant="floating" phoneNumber="919030143333" />
+        </InfraOnly>
+      )}
     </>
   );
 
