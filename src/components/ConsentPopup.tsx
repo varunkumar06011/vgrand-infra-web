@@ -5,6 +5,16 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const STORAGE_KEY = 'vgrand_consent_accepted';
+const CONTACT_TEXT =
+  '(Optional) I agree to be contacted by V Grand Infra by call, SMS, WhatsApp and email about properties and services.';
+
+/** 10-digit Indian mobile from what was typed (+91, 0 and spaces allowed); null if not valid */
+function indianMobile(raw: string): string | null {
+  let d = raw.replace(/\D/g, '');
+  if (d.length === 12 && d.startsWith('91')) d = d.slice(2);
+  if (d.length === 11 && d.startsWith('0')) d = d.slice(1);
+  return /^[6-9]\d{9}$/.test(d) ? d : null;
+}
 const EXEMPT_PATHS = ['/terms-and-conditions', '/privacy-policy'];
 
 /**
@@ -16,14 +26,32 @@ export default function ConsentPopup() {
   const pathname = usePathname();
   const [show, setShow] = useState(false);
   const [contactOk, setContactOk] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
-    const accepted = localStorage.getItem(STORAGE_KEY);
+    let accepted: string | null = null;
+    try {
+      accepted = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      accepted = null;
+    }
     setShow(!accepted && !EXEMPT_PATHS.includes(pathname));
   }, [pathname]);
 
   const accept = async () => {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    // The phone number is optional. Only check it when someone has typed one.
+    const typed = contactOk && phone.trim() !== '';
+    const mobile = typed ? indianMobile(phone) : null;
+    if (typed && !mobile) {
+      setPhoneError('Please enter a 10-digit mobile number, or leave it empty.');
+      return;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, 'true');
+    } catch {
+      /* private mode: the banner may show again next time */
+    }
     setShow(false);
     try {
       await fetch('/api/consent', {
@@ -33,6 +61,9 @@ export default function ConsentPopup() {
           accepted_terms: true,
           accepted_privacy: true,
           accepted_contact: contactOk,
+          // sent only when the visitor ticked "contact me" and typed a number themselves
+          phone: contactOk && mobile ? mobile : undefined,
+          consent_text: contactOk ? CONTACT_TEXT : undefined,
         }),
       });
     } catch {
@@ -65,11 +96,41 @@ export default function ConsentPopup() {
             <input
               type="checkbox"
               checked={contactOk}
-              onChange={(e) => setContactOk(e.target.checked)}
+              onChange={(e) => {
+                setContactOk(e.target.checked);
+                if (!e.target.checked) { setPhone(''); setPhoneError(''); }
+              }}
               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-meadow-600"
             />
-            <span>(Optional) I agree to be contacted by V Grand Infra by call, SMS, WhatsApp and email about properties and services.</span>
+            <span>{CONTACT_TEXT}</span>
           </label>
+          {contactOk && (
+            <div className="mt-2 pl-6">
+              <label htmlFor="consent-phone" className="block text-[12px] font-semibold text-forest/80">
+                Your mobile number <span className="font-normal text-forest/60">(optional, for updates and offers)</span>
+              </label>
+              <div className="mt-1 flex max-w-[280px] items-center overflow-hidden rounded-md border border-forest/25 bg-white focus-within:border-meadow-600">
+                <span className="px-2.5 text-[13px] text-forest/60">+91</span>
+                <input
+                  id="consent-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  maxLength={20}
+                  value={phone}
+                  onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') accept(); }}
+                  placeholder="98765 43210"
+                  aria-invalid={!!phoneError}
+                  aria-describedby={phoneError ? 'consent-phone-error' : undefined}
+                  className="w-full border-0 bg-transparent py-2 pr-2.5 text-[14px] text-forest outline-none"
+                />
+              </div>
+              {phoneError && (
+                <p id="consent-phone-error" role="alert" className="mt-1 !text-[12px] !text-red-700">{phoneError}</p>
+              )}
+            </div>
+          )}
         </div>
         <button
           onClick={accept}

@@ -128,7 +128,14 @@ const sections: { title: string; content: ReactNode }[] = [
           <li>Analyze Website traffic</li>
           <li>Improve user experience</li>
           <li>Track ad performance and remarketing campaigns</li>
+          <li>Remember which website or advertisement you first came from, so we know which of our ads work</li>
+          <li>Count which pages you visit and which buttons you tap (for example Call, WhatsApp or Directions), without recording what you type</li>
         </ul>
+        <p style={paragraph}>
+          If you tick &ldquo;I agree to be contacted&rdquo; and choose to enter your mobile number when you first visit, we save that
+          number with your consent so our team can contact you about properties and services. Giving your number is optional, and the
+          website works the same without it. To stop being contacted, message us on WhatsApp or email us and we will remove your number.
+        </p>
         <p style={paragraph}>You can control cookies through your browser settings.</p>
       </>
     ),

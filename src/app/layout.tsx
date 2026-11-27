@@ -115,6 +115,7 @@ export const metadata = {
 
 import { headers } from 'next/headers';
 import VisitTracker from '@/components/VisitTracker';
+import ClickTracker from '@/components/ClickTracker';
 import ConsentPopup from '@/components/ConsentPopup';
 import Script from 'next/script';
 
@@ -133,6 +134,7 @@ export default async function RootLayout({
   const content = (
     <>
       <VisitTracker />
+      {!isAdmin && <ClickTracker />}
       {!isAdmin && <ConsentPopup />}
       <RouteHandler />
       {!isAdmin && <Navbar />}
